@@ -1,0 +1,46 @@
+// Battle tuning. Change a number, save, press R in the game to restart the battle with it.
+{
+  "soldier": {
+    "walkSpeed": 1.5, "runSpeed": 3.5, "crawlSpeed": 0.6, "craterSpeedFactor": 0.7,
+    "skillMin": 0.8, "skillMax": 1.2,
+    "moraleMin": 60, "moraleMax": 85, "leaderMoraleBonus": 10,
+    "killChanceOnHit": 0.45
+  },
+  "perception": {
+    "interval": 0.5,             // seconds between looks around
+    "viewRange": 400,
+    "autoSpotRange": 25,         // closer than this, you always see him
+    "baseSpotChance": 0.5, "farSpotChance": 0.04,
+    "firingMultiplier": 4, "firingWindow": 3,
+    "movingMultiplier": 1.5, "proneMultiplier": 0.5, "coverMultiplier": 0.5,
+    "contactMemory": 30,         // seconds before an unseen enemy is forgotten
+    "sharedContactWindow": 2,
+    "muzzleFlashRevealChance": 0.35
+  },
+  "combat": {
+    "lowWallProtection": 0.7, "craterProtection": 0.6, "coverCheckDistance": 1.8,
+    "standingHitFactor": 1.0, "crouchedHitFactor": 0.6, "proneHitFactor": 0.35,
+    "movingTargetFactor": 0.7, "shakenAccuracy": 0.8,
+    "suppressionAccuracyLoss": 0.75, "coverSuppressionShield": 0.5
+  },
+  "morale": {
+    "shakenBelow": 50, "pinnedBelow": 32, "brokenBelow": 18, "rallyAbove": 40, "rallySafeDistance": 80,
+    "suppressionShaken": 35, "suppressionPinned": 55, "suppressionNoFire": 80, "suppressionMax": 100,
+    "suppressionDecayDelay": 1.5, "suppressionDecayPerSecond": 12,
+    "nearMissMoralePerSuppression": 0.08,
+    "friendKilled": 12, "friendWounded": 7, "friendRadius": 25,
+    "leaderKilled": 15, "enemyDownSeen": 3,
+    "groupBrokenFraction": 0.5, "groupBrokenShock": 12,
+    "recoverPerSecond": 0.4, "recoverInCoverPerSecond": 0.3, "recoverLeaderNearbyPerSecond": 0.3,
+    "leaderRadius": 25, "aloneDrainPerSecond": 0.3, "aloneRadius": 15, "noAmmoDrainPerSecond": 0.5, "quietSuppression": 10
+  },
+  "ai": {
+    "thinkInterval": 0.4,
+    "coverSearchRadius": 25, "suppressedCoverSearchRadius": 8,
+    "boundMin": 10, "boundMax": 40, "boundMinProgress": 8,
+    "dwellUnderFireMin": 8, "dwellUnderFireMax": 15,   // seconds a man fires from a position before the next rush
+    "dwellQuietMin": 1.5, "dwellQuietMax": 4,
+    "cohesionLead": 25,          // how far a man may get ahead of his mates
+    "objectiveRadius": 15, "stickinessBonus": 10, "underFireWindow": 5, "mapEdgeRoutDistance": 4
+  }
+}

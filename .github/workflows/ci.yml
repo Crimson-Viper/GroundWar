@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Simulation tests
+        run: dotnet test sim/GroundWar.Sim.Tests
+      - name: Headless test battles
+        run: dotnet run --project sim/GroundWar.Runner -- --battles 10
+      - name: Build the Godot game code
+        run: dotnet build GroundWar.csproj

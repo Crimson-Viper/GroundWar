@@ -1,0 +1,17 @@
+<Project Sdk="Godot.NET.Sdk/4.7.2">
+  <!-- The Godot game: drawing, camera, input. The battle itself lives in sim/GroundWar.Sim. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>GroundWar</RootNamespace>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The simulation, tests and runner are separate projects; don't compile their files into the game. -->
+    <Compile Remove="sim/**" />
+    <None Remove="sim/**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="sim/GroundWar.Sim/GroundWar.Sim.csproj" />
+  </ItemGroup>
+</Project>

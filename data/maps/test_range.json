@@ -1,0 +1,48 @@
+// Test range: 300 m x 200 m of flat ground. x runs west to east, y north to south.
+// Low walls give cover you can shoot over; high walls (ruins) block sight and bullets.
+{
+  "name": "Test range",
+  "width": 300,
+  "height": 200,
+  "walls": [
+    { "a": [45, 55],  "b": [45, 92],   "thickness": 0.7, "high": true },
+    { "a": [45, 108], "b": [45, 145],  "thickness": 0.7, "high": true },
+
+    { "a": [90, 40],  "b": [90, 88],   "thickness": 0.6 },
+    { "a": [90, 112], "b": [90, 170],  "thickness": 0.6 },
+    { "a": [140, 70], "b": [140, 130], "thickness": 0.6 },
+    { "a": [60, 175], "b": [85, 180],  "thickness": 0.6 },
+
+    { "a": [115, 45], "b": [131, 45],  "thickness": 0.7, "high": true },
+    { "a": [115, 45], "b": [115, 60],  "thickness": 0.7, "high": true },
+    { "a": [155, 145], "b": [170, 145], "thickness": 0.7, "high": true },
+    { "a": [170, 145], "b": [170, 158], "thickness": 0.7, "high": true },
+
+    { "a": [200, 55],  "b": [200, 96],  "thickness": 0.6 },
+    { "a": [200, 104], "b": [200, 145], "thickness": 0.6 },
+    { "a": [184, 60],  "b": [196, 52],  "thickness": 0.6 },
+
+    { "a": [220, 50], "b": [236, 50], "thickness": 0.7, "high": true },
+    { "a": [236, 50], "b": [236, 64], "thickness": 0.7, "high": true },
+    { "a": [220, 64], "b": [228, 64], "thickness": 0.7, "high": true },
+    { "a": [220, 50], "b": [220, 58], "thickness": 0.7, "high": true },
+
+    { "a": [240, 80], "b": [240, 120], "thickness": 0.6 }
+  ],
+  "craters": [
+    { "center": [60, 80],   "radius": 3.0 },
+    { "center": [70, 125],  "radius": 3.5 },
+    { "center": [50, 150],  "radius": 3.0 },
+    { "center": [100, 30],  "radius": 3.0 },
+    { "center": [110, 100], "radius": 4.0 },
+    { "center": [125, 85],  "radius": 3.0 },
+    { "center": [118, 125], "radius": 2.5 },
+    { "center": [130, 160], "radius": 4.0 },
+    { "center": [155, 110], "radius": 3.0 },
+    { "center": [165, 75],  "radius": 3.5 },
+    { "center": [175, 125], "radius": 2.5 },
+    { "center": [185, 95],  "radius": 3.0 },
+    { "center": [178, 140], "radius": 3.0 },
+    { "center": [260, 140], "radius": 3.5 }
+  ]
+}

@@ -1,0 +1,23 @@
+// Both squads advance into the middle of the range and meet there.
+{
+  "name": "Meeting engagement",
+  "description": "Two squads advance towards the same craters and walls and fight it out.",
+  "map": "maps/test_range.json",
+  "timeLimit": 600,
+  "sides": [
+    {
+      "side": "Blue", "name": "Blue", "rear": [-1, 0],
+      "groups": [
+        { "name": "Blue 1st Squad", "order": "Advance", "objective": [150, 100], "objectiveRadius": 20, "facing": [1, 0],
+          "spawnCenter": [30, 100], "spawnSize": [12, 30], "weapons": { "rifle": 9, "lmg": 1 } }
+      ]
+    },
+    {
+      "side": "Red", "name": "Red", "rear": [1, 0],
+      "groups": [
+        { "name": "Red 1st Squad", "order": "Advance", "objective": [150, 100], "objectiveRadius": 20, "facing": [-1, 0],
+          "spawnCenter": [270, 100], "spawnSize": [12, 30], "weapons": { "rifle": 9, "lmg": 1 } }
+      ]
+    }
+  ]
+}
