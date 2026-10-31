@@ -21,14 +21,14 @@
   "combat": {
     "lowWallProtection": 0.7, "craterProtection": 0.6, "coverCheckDistance": 1.8,
     "standingHitFactor": 1.0, "crouchedHitFactor": 0.6, "proneHitFactor": 0.35,
-    "movingTargetFactor": 0.7, "shakenAccuracy": 0.8,
-    "suppressionAccuracyLoss": 0.75, "coverSuppressionShield": 0.5
+    "movingTargetFactor": 0.5, "shakenAccuracy": 0.8,
+    "suppressionAccuracyLoss": 0.75, "coverSuppressionShield": 0.3
   },
   "morale": {
     "shakenBelow": 50, "pinnedBelow": 32, "brokenBelow": 18, "rallyAbove": 40, "rallySafeDistance": 80,
     "suppressionShaken": 35, "suppressionPinned": 55, "suppressionNoFire": 80, "suppressionMax": 100,
-    "suppressionDecayDelay": 1.5, "suppressionDecayPerSecond": 12,
-    "nearMissMoralePerSuppression": 0.08,
+    "suppressionDecayDelay": 2, "suppressionDecayPerSecond": 8,
+    "nearMissMoralePerSuppression": 0.05,
     "friendKilled": 12, "friendWounded": 7, "friendRadius": 25,
     "leaderKilled": 15, "enemyDownSeen": 3,
     "groupBrokenFraction": 0.5, "groupBrokenShock": 12,
@@ -38,10 +38,29 @@
   "ai": {
     "thinkInterval": 0.4,
     "coverSearchRadius": 25, "suppressedCoverSearchRadius": 8,
-    "boundMin": 10, "boundMax": 40, "boundMinProgress": 8,
-    "dwellUnderFireMin": 8, "dwellUnderFireMax": 15,   // seconds a man fires from a position before the next rush
-    "dwellQuietMin": 1.5, "dwellQuietMax": 4,
-    "cohesionLead": 25,          // how far a man may get ahead of his mates
-    "objectiveRadius": 15, "stickinessBonus": 10, "underFireWindow": 5, "mapEdgeRoutDistance": 4
+    "stickinessBonus": 10, "underFireWindow": 5, "mapEdgeRoutDistance": 4
+  },
+  "squad": {
+    "thinkInterval": 1.5,        // seconds between squad leader decisions
+    "travelStep": 40,            // metres per leg when no enemy is expected
+    "boundStep": 30,             // metres per bound in bounding overwatch
+    "rushStep": 22,              // metres per rush under fire
+    "teamRadius": 9,             // how spread out a team settles at its destination
+    "maxBoundTime": 40,
+    "boundingRange": 150,        // start bounding this close to the objective or known enemy
+    "contactRange": 350,         // known enemy closer than this makes the squad fight, not travel
+    "planRange": 140,            // attackers close in by bounds to this range, then plan a flank
+    "quietEndTime": 60,          // battle ends when nobody is attacking and nobody has fired for this long
+    "flankOffset": 50,           // how far to the side of the enemy the flanking team aims
+    "flankSideStep": 45,         // first leg of the flank goes this far sideways
+    "assaultRange": 60,          // rifle team assaults from this close
+    "liftFireRange": 25,         // gun team stops firing when the assault gets this close
+    "enemyQuietTime": 4,         // no incoming fire for this long = enemy is suppressed
+    "pinnedAbortTime": 20,       // flank given up if the rifle team is pinned this long
+    "fallBackStrength": 0.4,     // defenders fall back below this share of their men
+    "fallBackStep": 40,
+    "shareRadius": 80,           // squads this close share what they've seen
+    "areaFireAccuracy": 0.3,     // firing at where the enemy was seen, not at a man
+    "friendlyFireSafety": 8      // never fire where a friend is this close to the aim point
   }
 }

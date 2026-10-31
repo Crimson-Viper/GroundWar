@@ -1,0 +1,31 @@
+// Milestone 3: two Blue squads take the wall from one Red squad.
+// Blue 1st Squad sets up behind the low wall in the middle and keeps Red pinned.
+// Blue 2nd Squad attacks: it closes in by bounds, then its gun team fires while its rifle team goes round and assaults.
+// Red has a hidden machine-gun post in the ruin to the north-east that Blue doesn't know about.
+{
+  "name": "Squad attack",
+  "description": "Two Blue squads, one supporting and one attacking, take the wall from a Red squad with a hidden MG post.",
+  "map": "maps/test_range.json",
+  "timeLimit": 900,
+  "sides": [
+    {
+      "side": "Blue", "name": "Blue", "rear": [-1, 0],
+      "groups": [
+        { "name": "Blue 1st Squad", "order": "Suppress", "objective": [206, 100], "objectiveRadius": 20,
+          "supportPosition": [136, 100], "facing": [1, 0],
+          "spawnCenter": [28, 80], "spawnSize": [14, 20], "weapons": { "rifle": 8, "lmg": 2 } },
+        { "name": "Blue 2nd Squad", "order": "Attack", "objective": [206, 100], "objectiveRadius": 18, "facing": [1, 0],
+          "spawnCenter": [28, 122], "spawnSize": [14, 20], "weapons": { "rifle": 9, "lmg": 1 } }
+      ]
+    },
+    {
+      "side": "Red", "name": "Red", "rear": [1, 0],
+      "groups": [
+        { "name": "Red 1st Squad", "order": "Hold", "objective": [206, 100], "objectiveRadius": 18, "facing": [-1, 0],
+          "spawnCenter": [212, 100], "spawnSize": [10, 36], "weapons": { "rifle": 8, "lmg": 1 } },
+        { "name": "Red MG post", "order": "Hold", "objective": [228, 58], "objectiveRadius": 7, "facing": [-1, 0.3],
+          "spawnCenter": [228, 58], "spawnSize": [5, 5], "weapons": { "rifle": 2, "lmg": 1 } }
+      ]
+    }
+  ]
+}

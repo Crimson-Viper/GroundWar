@@ -43,6 +43,7 @@ public sealed partial class Battle
     private readonly List<ShotEvent> _shots = new();
     private readonly List<CasualtyEvent> _casualties = new();
     private readonly SoldierBrain _brain;
+    private readonly SquadBrain _squadBrain;
     internal SoldierHash Hash { get; }
 
     public Battle(GameData data, ScenarioDef scenario, MapDef mapDef, ulong seed)
@@ -54,6 +55,7 @@ public sealed partial class Battle
         Map = new BattleMap(mapDef, data.Rules.Combat);
         Grid = new BattleGrid(Map);
         _brain = new SoldierBrain(this);
+        _squadBrain = new SquadBrain(this);
         Hash = new SoldierHash(Map.Width, Map.Height);
         Spawn();
         Hash.Rebuild(_soldiers);
@@ -71,6 +73,16 @@ public sealed partial class Battle
 
     public Soldier? GetSoldier(int id) => id >= 0 && id < _soldiers.Count ? _soldiers[id] : null;
 
+    /// <summary>A sighting goes into the squad's picture and the side's picture (what the player sees).
+    /// From milestone 4 the side's picture will only be updated when a report reaches HQ.</summary>
+    internal void Report(Group g, Soldier enemy, Vector2 position, float confidence)
+    {
+        g.Knowledge.Report(enemy, position, Time, confidence);
+        _knowledge[(int)g.Side].Report(enemy, position, Time, confidence);
+    }
+
+    internal static Side Enemy(Side side) => side == Side.Blue ? Side.Red : Side.Blue;
+
     internal void Note(Soldier? s, string text) => Log.Add(Time, s?.Id ?? -1, s == null ? text : $"{s.Label} {text}");
 
     private void Spawn()
@@ -80,17 +92,18 @@ public sealed partial class Battle
             var side = Enum.Parse<Side>(sideDef.Side, ignoreCase: true);
             foreach (var gd in sideDef.Groups)
             {
-                var group = new Group
+                var group = new Group(side)
                 {
                     Id = _groups.Count,
-                    Side = side,
                     Name = gd.Name,
                     Order = Enum.Parse<GroupOrder>(gd.Order, ignoreCase: true),
                     Objective = BattleMap.V(gd.Objective),
                     ObjectiveRadius = gd.ObjectiveRadius,
                     Facing = Geo.SafeNormalize(BattleMap.V(gd.Facing), Vector2.UnitX),
                     Rear = Geo.SafeNormalize(BattleMap.V(sideDef.Rear), -Vector2.UnitX),
+                    SupportPosition = gd.SupportPosition != null ? BattleMap.V(gd.SupportPosition) : null,
                 };
+                group.OriginalOrder = group.Order;
                 _groups.Add(group);
                 var center = BattleMap.V(gd.SpawnCenter);
                 var size = BattleMap.V(gd.SpawnSize);
@@ -103,6 +116,16 @@ public sealed partial class Battle
                 }
                 var leader = group.Members.FirstOrDefault(m => !m.Weapon.IsMachineGun) ?? group.Members.FirstOrDefault();
                 if (leader != null) MakeLeader(group, leader, initial: true);
+                SplitIntoTeams(group);
+                group.StartStrength = group.Members.Count;
+                group.HoldPosition = group.Objective;
+                group.NextThink = Rng.Range(0f, Rules.Squad.ThinkInterval);
+                foreach (var m in group.Members)
+                {
+                    m.Task = TaskMode.Hold;
+                    m.TaskPosition = m.Position;
+                    m.TaskRadius = Rules.Squad.TeamRadius;
+                }
             }
         }
     }
@@ -134,6 +157,25 @@ public sealed partial class Battle
         group.Members.Add(s);
     }
 
+    /// <summary>Gun team: the machine guns plus enough riflemen to carry ammunition (about 40% of the squad).
+    /// Rifle team: the rest, with the sergeant.</summary>
+    private static void SplitIntoTeams(Group group)
+    {
+        var gun = new Team { Id = 0, Role = TeamRole.Gun };
+        var rifles = new Team { Id = 1, Role = TeamRole.Rifle };
+        int gunSize = Math.Max(1, (int)MathF.Round(group.Members.Count * 0.4f));
+        foreach (var m in group.Members.Where(m => m.Weapon.IsMachineGun)) gun.Members.Add(m);
+        foreach (var m in group.Members.Where(m => !m.Weapon.IsMachineGun && !m.IsLeader).Reverse())
+        {
+            if (gun.Members.Count >= gunSize) break;
+            gun.Members.Add(m);
+        }
+        foreach (var m in group.Members) if (!gun.Members.Contains(m)) rifles.Members.Add(m);
+        if (rifles.Members.Count == 0) { group.Teams.Add(gun); }
+        else { group.Teams.Add(gun); group.Teams.Add(rifles); }
+        foreach (var t in group.Teams) foreach (var m in t.Members) m.Team = t;
+    }
+
     private void MakeLeader(Group group, Soldier s, bool initial)
     {
         if (group.Leader != null) group.Leader.IsLeader = false;
@@ -163,6 +205,13 @@ public sealed partial class Battle
         float thinkInterval = Rules.Ai.ThinkInterval;
         long t0 = Profile.Start();
         Hash.Rebuild(_soldiers);
+        foreach (var g in _groups)
+        {
+            if (Time < g.NextThink) continue;
+            _squadBrain.Think(g);
+            g.NextThink = Time + Rules.Squad.ThinkInterval * Rng.Range(0.85f, 1.15f);
+        }
+        t0 = Profile.Lap("squads", t0);
         foreach (var s in _soldiers)
         {
             if (!s.IsActive || Time < s.NextPerceive) continue;
@@ -191,6 +240,7 @@ public sealed partial class Battle
         {
             UpdateGridControl();
             foreach (var k in _knowledge) k.Expire(Time, Rules.Perception.ContactMemory);
+            foreach (var g in _groups) g.Knowledge.Expire(Time, Rules.Perception.ContactMemory);
         }
         CheckEnd();
         Profile.Lap("other", t0);
@@ -236,6 +286,41 @@ public sealed partial class Battle
         }
     }
 
+    private float LastShotTime()
+    {
+        float t = 0f;
+        foreach (var s in _soldiers) if (s.LastFiredTime > t) t = s.LastFiredTime;
+        return t;
+    }
+
+    /// <summary>Nobody is attacking any more and the guns have gone quiet: whoever holds the ground has won.</summary>
+    private BattleResult QuietResult()
+    {
+        foreach (var side in new[] { Side.Blue, Side.Red })
+            if (_groups.Any(g => g.Side == side && g.TookObjective))
+                return new BattleResult { Winner = side, Time = Time, Reason = $"{side} took the objective" };
+        foreach (var side in new[] { Side.Blue, Side.Red })
+            if (_groups.Any(g => g.Side == side && g.AttackFailed))
+                return new BattleResult { Winner = Enemy(side), Time = Time, Reason = $"{side}'s attack failed" };
+        return new BattleResult { Winner = null, Time = Time, Reason = "The fighting died down" };
+    }
+
+    /// <summary>Out of time: the attacker wins only if it took the objective; otherwise the defender held.</summary>
+    private BattleResult TimeLimitResult()
+    {
+        foreach (var side in new[] { Side.Blue, Side.Red })
+            if (_groups.Any(g => g.Side == side && g.TookObjective))
+                return new BattleResult { Winner = side, Time = Time, Reason = $"Time up: {side} holds the objective" };
+        bool blueAttacked = _groups.Any(g => g.Side == Side.Blue && g.OriginalOrder != GroupOrder.Hold);
+        bool redAttacked = _groups.Any(g => g.Side == Side.Red && g.OriginalOrder != GroupOrder.Hold);
+        if (blueAttacked != redAttacked)
+        {
+            var defender = blueAttacked ? Side.Red : Side.Blue;
+            return new BattleResult { Winner = defender, Time = Time, Reason = $"Time up: {defender} held on" };
+        }
+        return new BattleResult { Winner = null, Time = Time, Reason = "Time up" };
+    }
+
     private void CheckEnd()
     {
         if (Result != null) return;
@@ -248,7 +333,9 @@ public sealed partial class Battle
         if (blue == 0 && red == 0) Result = new BattleResult { Winner = null, Time = Time, Reason = "Both sides broke" };
         else if (blue == 0) Result = new BattleResult { Winner = Side.Red, Time = Time, Reason = "Blue can no longer fight" };
         else if (red == 0) Result = new BattleResult { Winner = Side.Blue, Time = Time, Reason = "Red can no longer fight" };
-        else if (Time >= Scenario.TimeLimit) Result = new BattleResult { Winner = null, Time = Time, Reason = "Time limit reached" };
+        else if (!_groups.Any(g => g.IsAttacking && g.CountEffective > 0) && Time - LastShotTime() > Rules.Squad.QuietEndTime)
+            Result = QuietResult();
+        else if (Time >= Scenario.TimeLimit) Result = TimeLimitResult();
         if (Result != null) Note(null, $"Battle over: {Result.Reason}");
     }
 }

@@ -10,6 +10,32 @@ public sealed class Rules
     public CombatRules Combat { get; set; } = new();
     public MoraleRules Morale { get; set; } = new();
     public AiRules Ai { get; set; } = new();
+    public SquadRules Squad { get; set; } = new();
+}
+
+public sealed class SquadRules
+{
+    public float ThinkInterval { get; set; } = 1.5f;
+    public float TravelStep { get; set; } = 40f;
+    public float BoundStep { get; set; } = 30f;
+    public float RushStep { get; set; } = 22f;
+    public float TeamRadius { get; set; } = 9f;
+    public float MaxBoundTime { get; set; } = 40f;
+    public float BoundingRange { get; set; } = 150f;
+    public float ContactRange { get; set; } = 350f;
+    public float PlanRange { get; set; } = 140f;
+    public float QuietEndTime { get; set; } = 60f;
+    public float FlankOffset { get; set; } = 50f;
+    public float FlankSideStep { get; set; } = 45f;
+    public float AssaultRange { get; set; } = 60f;
+    public float LiftFireRange { get; set; } = 25f;
+    public float EnemyQuietTime { get; set; } = 4f;
+    public float PinnedAbortTime { get; set; } = 20f;
+    public float FallBackStrength { get; set; } = 0.4f;
+    public float FallBackStep { get; set; } = 40f;
+    public float ShareRadius { get; set; } = 80f;
+    public float AreaFireAccuracy { get; set; } = 0.3f;
+    public float FriendlyFireSafety { get; set; } = 8f;
 }
 
 public sealed class SoldierRules
@@ -97,15 +123,6 @@ public sealed class AiRules
     public float ThinkInterval { get; set; } = 0.4f;
     public float CoverSearchRadius { get; set; } = 25f;
     public float SuppressedCoverSearchRadius { get; set; } = 8f;
-    public float BoundMin { get; set; } = 10f;
-    public float BoundMax { get; set; } = 40f;
-    public float BoundMinProgress { get; set; } = 8f;
-    public float DwellUnderFireMin { get; set; } = 8f;
-    public float DwellUnderFireMax { get; set; } = 15f;
-    public float DwellQuietMin { get; set; } = 1.5f;
-    public float DwellQuietMax { get; set; } = 4f;
-    public float CohesionLead { get; set; } = 25f;
-    public float ObjectiveRadius { get; set; } = 15f;
     public float StickinessBonus { get; set; } = 10f;
     public float UnderFireWindow { get; set; } = 5f;
     public float MapEdgeRoutDistance { get; set; } = 4f;

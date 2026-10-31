@@ -22,7 +22,7 @@ public sealed class SoldierBrain
     private Data.AiRules Ai => _b.Rules.Ai;
     private Data.MoraleRules Mr => _b.Rules.Morale;
 
-    private enum Option { Idle, TakeCover, CrawlToCover, Engage, Advance, HugCover }
+    private enum Option { Idle, TakeCover, CrawlToCover, Engage, AreaFire, FollowOrders, HugCover }
 
     public void Think(Soldier s)
     {
@@ -41,17 +41,19 @@ public sealed class SoldierBrain
         if (s.IsMoving)
         {
             if (s.Action == SoldierAction.TakeCover) return; // a man dashing for cover doesn't stop to think
-            if (s.Action == SoldierAction.Advance && s.Suppression < Mr.SuppressionPinned && s.MoraleState != MoraleState.Pinned)
+            if (s.Action == SoldierAction.Advance && CanFollowMove(s) && s.Destination is Vector2 d &&
+                Vector2.Distance(d, s.TaskPosition) <= s.TaskRadius + 2f)
                 return;
             if (s.Action == SoldierAction.Flee) { _b.StopMoving(s); }
         }
 
         bool holding = IsHolding(s);
+        bool farFromTask = Vector2.Distance(s.Position, s.TaskPosition) > s.TaskRadius + 1.5f;
         Option best = Option.Idle;
         float bestScore = 10f;
         CoverPoint? bestCover = null;
-        Vector2 advanceDest = default;
-        CoverPoint? advanceCover = null;
+        Vector2 taskDest = default;
+        CoverPoint? taskCover = null;
 
         void Consider(Option o, float score, SoldierAction asAction)
         {
@@ -65,7 +67,7 @@ public sealed class SoldierBrain
             Consider(Option.HugCover, 95f, SoldierAction.HugCover);
             if (curProt < 0.3f)
             {
-                var c = FindCover(s, Ai.SuppressedCoverSearchRadius, curProt, holding);
+                var c = FindCover(s, s.Position, Ai.SuppressedCoverSearchRadius);
                 if (c != null && Protection(c.Position) - curProt > 0.3f)
                 {
                     bestCover = c;
@@ -75,73 +77,77 @@ public sealed class SoldierBrain
         }
 
         long ct = Core.Profile.Start();
-        // 2. Get into better cover.
-        if ((realThreats || holding) && best != Option.CrawlToCover)
+        // 2. Get into better cover: around where the squad wants him, or right here if he's under fire on the move.
+        if ((realThreats || holding) && best != Option.CrawlToCover && !(s.TaskAssault && !holding))
         {
-            float radius = s.Suppression >= Mr.SuppressionShaken ? Ai.SuppressedCoverSearchRadius * 1.5f : Ai.CoverSearchRadius;
-            var c = FindCover(s, radius, curProt, holding);
+            bool local = !holding || underFire && farFromTask;
+            var center = local ? s.Position : s.TaskPosition;
+            float radius = local
+                ? (s.Suppression >= Mr.SuppressionShaken ? Ai.SuppressedCoverSearchRadius * 1.5f : Ai.CoverSearchRadius * 0.6f)
+                : s.TaskRadius + 4f;
+            var c = FindCover(s, center, radius);
             if (c != null)
             {
                 float gain = Protection(c.Position) - curProt;
                 bool notInPosition = holding && !s.InCover;
-                if (gain > 0.25f || (notInPosition && gain > 0.05f))
+                bool worthIt = gain > 0.25f || (notInPosition && gain > 0.05f);
+                // Moving under orders and not being shot at: keep going rather than diving for every wall.
+                if (!holding && !underFire) worthIt = false;
+                if (worthIt && s.Suppression < Mr.SuppressionNoFire)
                 {
-                    float score = 60f + 40f * gain + (underFire ? 15f : 0f);
-                    if (s.Suppression >= Mr.SuppressionNoFire) score = 0f; // too scared to get up and run
-                    if (score > 0f)
-                    {
-                        bestCover = c;
-                        Consider(Option.TakeCover, score, SoldierAction.TakeCover);
-                    }
+                    bestCover = c;
+                    Consider(Option.TakeCover, 60f + 40f * gain + (underFire ? 15f : 0f), SoldierAction.TakeCover);
                 }
             }
         }
-
         Core.Profile.Lap("think.cover", ct);
-        // 3. Shoot back.
-        if (s.Target != null && (s.Magazine > 0 || s.SpareMagazines > 0) && s.Suppression < Mr.SuppressionNoFire)
-        {
-            float score = 55f + 15f * curProt + (s.Weapon.IsMachineGun ? 5f : 0f);
-            Consider(Option.Engage, score, SoldierAction.Engage);
-        }
 
-        // 4. Push on towards the objective.
-        if (s.Group.Order == GroupOrder.Advance && !AtObjective(s) &&
-            (s.MoraleState == MoraleState.Steady || s.MoraleState == MoraleState.Shaken) &&
-            s.Suppression < Mr.SuppressionPinned && _b.Time >= s.DwellUntil)
+        bool hasAmmo = s.Magazine > 0 || s.SpareMagazines > 0;
+        // 3. Shoot back.
+        if (s.Target != null && hasAmmo && s.Suppression < Mr.SuppressionNoFire)
+            Consider(Option.Engage, 55f + 15f * curProt + (s.Weapon.IsMachineGun ? 5f : 0f), SoldierAction.Engage);
+        // 3b. Nobody in sight, but the squad wants fire on a spot where the enemy was seen.
+        else if (s.FireAt is Vector2 area && hasAmmo && s.Suppression < Mr.SuppressionNoFire && AreaFireOk(s, area))
+            Consider(Option.AreaFire, 50f + 10f * curProt + (s.Weapon.IsMachineGun ? 8f : 0f), SoldierAction.Engage);
+
+        // 4. Go where the squad leader wants him.
+        if (farFromTask && CanFollowMove(s) && PickTaskSpot(s, out taskDest, out taskCover))
         {
-            if (TooFarAhead(s))
-            {
-                s.Thought = "Waiting for the others to catch up";
-            }
-            else if (TimedBound(s, out advanceDest, out advanceCover))
-            {
-                float score = realThreats ? 70f - (s.MoraleState == MoraleState.Shaken ? 15f : 0f) : 65f;
-                Consider(Option.Advance, score, SoldierAction.Advance);
-            }
+            float score = s.TaskAssault ? 88f
+                : s.Task == TaskMode.Move ? (realThreats ? 72f : 66f)
+                : (underFire ? 50f : 64f); // drifted away from a hold position
+            Consider(Option.FollowOrders, score, SoldierAction.Advance);
         }
 
         long et = Core.Profile.Start();
-        Execute(s, best, bestCover, advanceDest, advanceCover, curProt, realThreats);
+        Execute(s, best, bestCover, taskDest, taskCover, curProt, realThreats);
         Core.Profile.Lap("think.execute", et);
+    }
+
+    private bool CanFollowMove(Soldier s)
+    {
+        if (s.TaskAssault)
+            return s.MoraleState != MoraleState.Broken && s.Suppression < Mr.SuppressionNoFire;
+        return (s.MoraleState == MoraleState.Steady || s.MoraleState == MoraleState.Shaken) && s.Suppression < Mr.SuppressionPinned;
+    }
+
+    private bool AreaFireOk(Soldier s, Vector2 area)
+    {
+        float d = Vector2.Distance(s.Position, area);
+        if (d > s.Weapon.Range || d < 5f) return false;
+        if (_b.Map.SightBlocked(s.Position, area)) return false;
+        return !_b.FriendNear(s, area, _b.Rules.Squad.FriendlyFireSafety);
     }
 
     public void OnArrived(Soldier s)
     {
-        bool contact = _b.Knowledge(s.Side).Contacts.Any() || s.UnderFire(_b.Time, Ai.UnderFireWindow);
-        if (s.Action == SoldierAction.Advance)
-            s.DwellUntil = _b.Time + (contact
-                ? _b.Rng.Range(Ai.DwellUnderFireMin, Ai.DwellUnderFireMax)
-                : _b.Rng.Range(Ai.DwellQuietMin, Ai.DwellQuietMax));
-        else if (s.Action == SoldierAction.TakeCover && contact)
-            s.DwellUntil = MathF.Max(s.DwellUntil, _b.Time + _b.Rng.Range(Ai.DwellUnderFireMin, Ai.DwellUnderFireMax) * 0.5f);
         SetStationaryStance(s);
         s.NextThink = _b.Time; // decide what to do from here straight away
     }
 
     // ---------------------------------------------------------------- doing it
 
-    private void Execute(Soldier s, Option option, CoverPoint? cover, Vector2 advanceDest, CoverPoint? advanceCover,
+    private void Execute(Soldier s, Option option, CoverPoint? cover, Vector2 taskDest, CoverPoint? taskCover,
         float curProt, bool realThreats)
     {
         switch (option)
@@ -158,22 +164,36 @@ public sealed class SoldierBrain
                 }
                 break;
             }
-            case Option.Advance:
+            case Option.FollowOrders:
             {
-                if (advanceCover != null && !Claim(s, advanceCover)) break;
-                if (advanceCover == null) _b.ReleaseCover(s);
-                var mode = realThreats ? MoveMode.Run : MoveMode.Walk;
-                if (_b.SetMove(s, advanceDest, mode))
+                if (taskCover != null && !Claim(s, taskCover)) break;
+                if (taskCover == null) _b.ReleaseCover(s);
+                var mode = s.TaskRun || realThreats ? MoveMode.Run : MoveMode.Walk;
+                if (_b.SetMove(s, taskDest, mode))
                 {
-                    SetAction(s, SoldierAction.Advance,
-                        $"Advancing to {(advanceCover != null ? Describe(advanceCover) : "open ground")} {Vector2.Distance(s.Position, advanceDest):0} m ahead");
+                    string where = taskCover != null ? Describe(taskCover) : "open ground";
+                    SetAction(s, SoldierAction.Advance, s.TaskAssault
+                        ? $"Assaulting! Rushing the enemy position, {Vector2.Distance(s.Position, taskDest):0} m"
+                        : $"Moving with the {s.Team?.Name ?? "squad"} to {where}, {Vector2.Distance(s.Position, taskDest):0} m");
                     return;
                 }
                 break;
             }
+            case Option.AreaFire:
+            {
+                _b.StopMoving(s);
+                s.Target = null;
+                s.AreaTarget = s.FireAt;
+                s.Facing = Geo.SafeNormalize(s.AreaTarget!.Value - s.Position, s.Facing);
+                SetStationaryStance(s);
+                SetAction(s, SoldierAction.Engage,
+                    $"Firing at where the enemy was seen, {Vector2.Distance(s.Position, s.AreaTarget.Value):0} m (covering fire)");
+                return;
+            }
             case Option.Engage:
             {
                 _b.StopMoving(s);
+                s.AreaTarget = null;
                 var t = s.Target!;
                 s.Facing = Geo.SafeNormalize(t.Position - s.Position, s.Facing);
                 SetStationaryStance(s);
@@ -190,10 +210,10 @@ public sealed class SoldierBrain
 
         // Idle: stay put, face the threat.
         _b.StopMoving(s);
+        s.AreaTarget = null;
         if (_threats.Count > 0) s.Facing = Geo.SafeNormalize(_threats[0] - s.Position, s.Facing);
         SetStationaryStance(s);
-        string why = s.Thought.StartsWith("Waiting") ? s.Thought
-            : s.Magazine == 0 && s.SpareMagazines == 0 ? "Out of ammunition"
+        string why = s.Magazine == 0 && s.SpareMagazines == 0 ? "Out of ammunition"
             : !realThreats ? (IsHolding(s) ? "In position, watching" : "Waiting")
             : s.VisibleEnemies.Count == 0 ? "Can't see the enemy from here"
             : curProt > 0.5f ? "Keeping his head down" : "Holding";
@@ -226,7 +246,7 @@ public sealed class SoldierBrain
     private void SetStationaryStance(Soldier s)
     {
         if (s.IsMoving) return;
-        bool threat = _b.Knowledge(s.Side).Contacts.Any() || s.UnderFire(_b.Time, Ai.UnderFireWindow);
+        bool threat = s.Group.Knowledge.Contacts.Any() || s.UnderFire(_b.Time, Ai.UnderFireWindow);
         if (!threat) s.Stance = s.InCover ? Stance.Crouched : Stance.Standing;
         else if (s.Suppression >= Mr.SuppressionPinned) s.Stance = Stance.Prone;
         else s.Stance = s.InCover && s.Cover!.Kind != CoverKind.Crater ? Stance.Crouched : Stance.Prone;
@@ -262,7 +282,7 @@ public sealed class SoldierBrain
         {
             float range = _b.Rules.Perception.ViewRange * 1.2f;
             _nearest.Clear();
-            foreach (var c in _b.Knowledge(s.Side).Contacts)
+            foreach (var c in s.Group.Knowledge.Contacts)
             {
                 float d = Vector2.DistanceSquared(c.LastPosition, s.Position);
                 if (d > range * range) continue;
@@ -296,24 +316,8 @@ public sealed class SoldierBrain
         return sum / _threats.Count;
     }
 
-    private bool IsHolding(Soldier s) => s.Group.Order == GroupOrder.Hold || AtObjective(s);
-
-    private bool AtObjective(Soldier s) =>
-        Vector2.DistanceSquared(s.Position, s.Group.Objective) <= s.Group.ObjectiveRadius * s.Group.ObjectiveRadius;
-
-    private bool TooFarAhead(Soldier s)
-    {
-        float sum = 0f;
-        int n = 0;
-        foreach (var m in s.Group.Members)
-        {
-            if (m == s || !m.IsEffective) continue;
-            sum += Vector2.Distance(m.Position, s.Group.Objective);
-            n++;
-        }
-        if (n == 0) return false;
-        return Vector2.Distance(s.Position, s.Group.Objective) < sum / n - Ai.CohesionLead;
-    }
+    private static bool IsHolding(Soldier s) =>
+        s.Task == TaskMode.Hold || Vector2.DistanceSquared(s.Position, s.TaskPosition) <= (s.TaskRadius + 1.5f) * (s.TaskRadius + 1.5f);
 
     private Soldier? PickTarget(Soldier s)
     {
@@ -324,6 +328,7 @@ public sealed class SoldierBrain
             if (!e.IsActive) continue;
             float d = Vector2.Distance(s.Position, e.Position);
             if (d > s.Weapon.Range) continue;
+            if (_b.FriendNear(s, e.Position, 4f)) continue; // don't shoot into a melee with your mates
             float threat = e.Weapon.Threat * (e.IsLeader ? 1.5f : 1f) * (_b.Time - e.LastFiredTime < 3f ? 1.3f : 1f);
             if (e.MoraleState == MoraleState.Broken) threat *= 0.5f;
             float score = threat * (0.02f + _b.HitChance(s, e)) * (1f + 30f / MathF.Max(d, 10f));
@@ -333,71 +338,52 @@ public sealed class SoldierBrain
         return best;
     }
 
-    private CoverPoint? FindCover(Soldier s, float radius, float curProt, bool holding)
+    private CoverPoint? FindCover(Soldier s, Vector2 center, float radius)
     {
         CoverPoint? best = null;
         float bestScore = float.MinValue;
         float nearestThreat = _threats.Min(t => Vector2.Distance(t, s.Position));
-        float distToObj = Vector2.Distance(s.Position, s.Group.Objective);
-        float holdRadius = s.Group.ObjectiveRadius + 10f;
-        foreach (var c in _b.Map.CoverNear(s.Position, radius))
+        foreach (var c in _b.Map.CoverNear(center, radius))
         {
             if (c.ClaimedBy != -1 && c.ClaimedBy != s.Id) continue;
-            if (holding && Vector2.Distance(c.Position, s.Group.Objective) > holdRadius) continue;
             float prot = Protection(c.Position);
             float d = Vector2.Distance(s.Position, c.Position);
-            float score = prot - d / radius * 0.3f;
+            float score = prot - d / MathF.Max(radius, 10f) * 0.3f;
             if (c.CanFire) score += 0.15f; else score -= s.Suppression >= Mr.SuppressionShaken ? 0f : 0.25f;
             float closer = nearestThreat - _threats.Min(t => Vector2.Distance(t, c.Position));
-            if (closer > 0f) score -= closer * 0.02f; // don't run towards the enemy to hide
-            if (s.Group.Order == GroupOrder.Advance && !holding)
-            {
-                // An attacking man won't give up ground he has won unless he is badly frightened.
-                float back = Vector2.Distance(c.Position, s.Group.Objective) - distToObj;
-                if (back > 5f && s.MoraleState == MoraleState.Steady && s.Suppression < Mr.SuppressionPinned) continue;
-                if (back > 5f) score -= 0.3f;
-            }
+            if (closer > 0f && center == s.Position) score -= closer * 0.02f; // don't run towards the enemy to hide
             if (score > bestScore) { bestScore = score; best = c; }
         }
         return best;
     }
 
-    private bool TimedBound(Soldier s, out Vector2 dest, out CoverPoint? cover)
+    /// <summary>Where to go inside the area the squad gave him: the best cover there, or a spread-out spot if none.</summary>
+    private bool PickTaskSpot(Soldier s, out Vector2 dest, out CoverPoint? cover)
     {
-        long t = Core.Profile.Start();
-        bool r = ChooseBound(s, out dest, out cover);
-        Core.Profile.Lap("think.bound", t);
-        return r;
-    }
-
-    /// <summary>Pick the next bound forward: a cover point closer to the objective, or open ground if there is none.</summary>
-    private bool ChooseBound(Soldier s, out Vector2 dest, out CoverPoint? cover)
-    {
-        var obj = s.Group.Objective;
-        float distToObj = Vector2.Distance(s.Position, obj);
         cover = null;
         float bestScore = float.MinValue;
-        foreach (var c in _b.Map.CoverNear(s.Position, Ai.BoundMax))
+        if (!s.TaskAssault)
         {
-            if (c.ClaimedBy != -1 && c.ClaimedBy != s.Id) continue;
-            float d = Vector2.Distance(s.Position, c.Position);
-            float progress = distToObj - Vector2.Distance(c.Position, obj);
-            bool closeToObj = Vector2.Distance(c.Position, obj) <= s.Group.ObjectiveRadius;
-            if (d < Ai.BoundMin && !closeToObj) continue;
-            if (progress < Ai.BoundMinProgress) continue;
-            float score = 1.2f * Protection(c.Position) + progress / Ai.BoundMax * 0.8f - d / Ai.BoundMax * 0.3f
-                          + _b.Rng.Range(0f, 0.25f) + (c.CanFire ? 0.2f : -0.5f);
-            if (score > bestScore) { bestScore = score; cover = c; }
+            foreach (var c in _b.Map.CoverNear(s.TaskPosition, s.TaskRadius))
+            {
+                if (c.ClaimedBy != -1 && c.ClaimedBy != s.Id) continue;
+                float score = Protection(c.Position) + (c.CanFire ? 0.2f : -0.4f) - Vector2.Distance(s.Position, c.Position) / 150f
+                              + _b.Rng.Range(0f, 0.1f);
+                if (score > bestScore) { bestScore = score; cover = c; }
+            }
         }
-        if (cover != null)
+        if (cover != null && bestScore > 0.1f)
         {
             dest = cover.Position;
             return true;
         }
-        var dir = Geo.SafeNormalize(obj - s.Position, s.Group.Facing);
-        float step = MathF.Min(20f, distToObj);
-        dest = s.Position + dir * step + Geo.Perp(dir) * _b.Rng.Range(-4f, 4f);
+        cover = null;
+        // Open ground: spread out across the line of advance, a few metres apart.
+        var dir = Geo.SafeNormalize(s.TaskPosition - s.Position, s.Group.Facing);
+        int slot = s.Team != null ? s.Team.Members.IndexOf(s) : s.Id;
+        float offset = ((slot % 2 == 0) ? 1f : -1f) * (1 + slot / 2) * MathF.Min(3f, s.TaskRadius * 0.4f);
+        dest = s.TaskPosition + Geo.Perp(dir) * offset;
         dest = _b.Map.Nav.NearestWalkable(_b.Map.Clamp(dest, 1f));
-        return Vector2.Distance(dest, s.Position) > 2f;
+        return Vector2.Distance(dest, s.Position) > 1f;
     }
 }

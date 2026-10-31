@@ -28,6 +28,13 @@ public partial class BattleView : Node3D
     private Mesh _tracerMesh = null!, _puffMesh = null!;
 
     public bool ShowLines { get; set; }
+    public bool ShowPlans { get; set; } = true;
+    /// <summary>Strict fog of war: enemy soldiers are only drawn while your side can see them.</summary>
+    public bool Fog { get; set; } = true;
+    public Side PlayerSide { get; set; } = Side.Blue;
+    private readonly List<MeshInstance3D> _ghosts = new();
+    private StandardMaterial3D[] _ghostMats = System.Array.Empty<StandardMaterial3D>();
+    private Mesh _ghostMesh = null!;
     public bool ShowBars { get; set; } = true;
     public bool ShowAllLabels { get; set; }
     public Soldier? Selected { get; set; }
@@ -96,6 +103,47 @@ public partial class BattleView : Node3D
         _tracerMgMat = Draw.Glow(new Color(1f, 0.6f, 0.3f), 5f);
         _tracerMesh = new BoxMesh { Size = new Vector3(0.09f, 0.09f, 1f) };
         _puffMesh = new SphereMesh { Radius = 0.5f, Height = 1f, RadialSegments = 8, Rings = 4 };
+        _ghostMesh = new CylinderMesh { TopRadius = 0.7f, BottomRadius = 0.7f, Height = 0.1f, RadialSegments = 12 };
+        // Last-known enemy positions fade from solid to faint as the sighting gets older.
+        _ghostMats = new StandardMaterial3D[6];
+        for (int i = 0; i < _ghostMats.Length; i++)
+            _ghostMats[i] = Draw.Unlit(new Color(1f, 0.35f, 0.3f, 0.7f - i * 0.11f), transparent: true);
+    }
+
+    /// <summary>Is this soldier drawn, given the fog of war?</summary>
+    private bool KnownToPlayer(Soldier s)
+    {
+        if (!Fog || s.Side == PlayerSide) return true;
+        if (!s.IsActive) return s.Status != SoldierStatus.Routed; // bodies stay where they fell
+        var c = _battle.Knowledge(PlayerSide).Get(s.Id);
+        return c != null && c.Confidence >= 0.9f && _battle.Time - c.LastSeen <= 1.5f;
+    }
+
+    private void UpdateGhosts()
+    {
+        int used = 0;
+        if (Fog)
+        {
+            foreach (var c in _battle.Knowledge(PlayerSide).Contacts)
+            {
+                float age = _battle.Time - c.LastSeen;
+                if (age <= 1.5f && c.Confidence >= 0.9f) continue; // he's drawn for real
+                if (used >= _ghosts.Count)
+                {
+                    var n = new MeshInstance3D { Mesh = _ghostMesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
+                    AddChild(n);
+                    _ghosts.Add(n);
+                }
+                var g = _ghosts[used++];
+                g.Visible = true;
+                g.Position = Draw.To3(c.LastPosition, 0.06f);
+                g.MaterialOverride = _ghostMats[Mathf.Clamp((int)(age / 5f), 0, _ghostMats.Length - 1)];
+                // A guess from a muzzle flash is drawn bigger: "somewhere around here".
+                float size = c.Confidence < 0.9f ? 3f : 1f;
+                g.Scale = new Vector3(size, 1, size);
+            }
+        }
+        for (int i = used; i < _ghosts.Count; i++) _ghosts[i].Visible = false;
     }
 
     public SoldierView? ViewOf(Soldier s) => s.Id < _views.Count ? _views[s.Id] : null;
@@ -135,6 +183,9 @@ public partial class BattleView : Node3D
         {
             var p = System.Numerics.Vector2.Lerp(_prev[i], _curr[i], alpha);
             var v = _views[i];
+            bool known = KnownToPlayer(v.Soldier);
+            v.Visible = known && v.Soldier.Status != SoldierStatus.Routed;
+            if (!v.Visible) continue;
             v.SetLabelVisible(ShowAllLabels || v.Soldier == Selected);
             v.UpdateVisual(Draw.To3(p), ShowBars);
         }
@@ -143,6 +194,7 @@ public partial class BattleView : Node3D
         UpdateTracers(dt);
         UpdatePuffs(dt);
         UpdateSelection();
+        UpdateGhosts();
         DrawLines();
     }
 
@@ -244,11 +296,16 @@ public partial class BattleView : Node3D
         bool any = false;
         foreach (var s in _battle.Soldiers)
         {
-            if (!s.IsActive) continue;
+            if (!s.IsActive || !_views[s.Id].Visible) continue;
             bool show = ShowLines || s == Selected;
             if (!show) continue;
             var view = _views[s.Id];
             var from = view.Position + new Vector3(0, 0.6f, 0);
+            if (s.Target == null && s.AreaTarget != null && s.Action == SoldierAction.Engage)
+            {
+                if (!any) { _lineMesh.SurfaceBegin(Mesh.PrimitiveType.Lines, _lineMat); any = true; }
+                AddLine(from, Draw.To3(s.AreaTarget.Value, 0.6f), new Color(1f, 0.9f, 0.4f, 0.45f));
+            }
             if (s.Target != null && s.Action == SoldierAction.Engage)
             {
                 if (!any) { _lineMesh.SurfaceBegin(Mesh.PrimitiveType.Lines, _lineMat); any = true; }
@@ -274,7 +331,43 @@ public partial class BattleView : Node3D
                 }
             }
         }
+        if (ShowPlans)
+        {
+            foreach (var g in _battle.Groups)
+            {
+                if (Fog && g.Side != PlayerSide) continue;
+                if (g.CountEffective == 0) continue;
+                foreach (var t in g.Teams)
+                {
+                    if (t.CountEffective == 0) continue;
+                    if (!any) { _lineMesh.SurfaceBegin(Mesh.PrimitiveType.Lines, _lineMat); any = true; }
+                    var c = t.Role == TeamRole.Gun ? new Color(1f, 0.65f, 0.2f, 0.9f) : new Color(0.3f, 0.95f, 1f, 0.9f);
+                    var from = Draw.To3(t.Centroid, 0.3f);
+                    var to = Draw.To3(t.Destination, 0.3f);
+                    if (from.DistanceTo(to) > 2f) AddLine(from, to, c);
+                    // a small cross where the team is going
+                    AddLine(to + new Vector3(-1.5f, 0, -1.5f), to + new Vector3(1.5f, 0, 1.5f), c);
+                    AddLine(to + new Vector3(-1.5f, 0, 1.5f), to + new Vector3(1.5f, 0, -1.5f), c);
+                }
+                if (g.Tactic == Tactic.Flank)
+                {
+                    if (!any) { _lineMesh.SurfaceBegin(Mesh.PrimitiveType.Lines, _lineMat); any = true; }
+                    var c = new Color(0.8f, 0.5f, 1f, 0.8f);
+                    AddLine(Draw.To3(g.Rifles.Centroid, 0.4f), Draw.To3(g.FlankWaypoint, 0.4f), c);
+                    AddLine(Draw.To3(g.FlankWaypoint, 0.4f), Draw.To3(g.FlankPoint, 0.4f), c);
+                    AddLine(Draw.To3(g.FlankPoint, 0.4f), Draw.To3(g.EnemyEstimate, 0.4f), c);
+                }
+            }
+        }
         if (any) _lineMesh.SurfaceEnd();
+    }
+
+    private void AddLine(Vector3 a, Vector3 b, Color c)
+    {
+        _lineMesh.SurfaceSetColor(c);
+        _lineMesh.SurfaceAddVertex(a);
+        _lineMesh.SurfaceSetColor(c);
+        _lineMesh.SurfaceAddVertex(b);
     }
 
     /// <summary>The soldier nearest to a ground point, within reach metres.</summary>

@@ -12,7 +12,7 @@
       "groups": [
         {
           "name": "Blue 1st Squad",
-          "order": "Advance",
+          "order": "Attack",
           "objective": [206, 100],
           "objectiveRadius": 15,
           "facing": [1, 0],

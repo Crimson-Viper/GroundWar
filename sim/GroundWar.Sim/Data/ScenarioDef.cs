@@ -22,8 +22,10 @@ public sealed class SideDef
 public sealed class GroupDef
 {
     public string Name { get; set; } = "";
-    /// <summary>"Advance" (move to objective, fight through) or "Hold" (defend around objective).</summary>
+    /// <summary>"Hold", "Advance", "Attack" or "Suppress". See GroupOrder.</summary>
     public string Order { get; set; } = "Hold";
+    /// <summary>For "Suppress": where to set up and fire from.</summary>
+    public float[]? SupportPosition { get; set; }
     public float[] Objective { get; set; } = new float[2];
     public float ObjectiveRadius { get; set; } = 15f;
     /// <summary>Where the enemy is expected, used before anyone is spotted.</summary>

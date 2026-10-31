@@ -10,7 +10,7 @@ public sealed partial class Battle
     private void Perceive(Soldier s)
     {
         var pr = Rules.Perception;
-        var knowledge = _knowledge[(int)s.Side];
+        var knowledge = s.Group.Knowledge;
         s.VisibleEnemies.Clear();
         var enemySide = s.Side == Side.Blue ? Side.Red : Side.Blue;
         // Nearest first. A man can only keep track of so many enemies at once.
@@ -30,7 +30,7 @@ public sealed partial class Battle
             if (chance < 0.9f && Map.ProtectionAt(e.Position, s.Position) >= 0.5f && !Rng.Chance(pr.CoverMultiplier)) continue;
 
             s.VisibleEnemies.Add(e);
-            knowledge.Report(e, e.Position, Time, 1f);
+            Report(s.Group, e, e.Position, 1f);
         }
     }
 

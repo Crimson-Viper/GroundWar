@@ -17,6 +17,9 @@ public enum SoldierAction { Idle, TakeCover, Engage, Advance, HugCover, Flee }
 
 public enum MoveMode { None, Walk, Run, Crawl }
 
+/// <summary>What his squad leader wants from him: stay in an area, or get to one.</summary>
+public enum TaskMode { Hold, Move }
+
 public sealed class Soldier
 {
     public int Id { get; init; }
@@ -66,7 +69,18 @@ public sealed class Soldier
     public MoveMode MoveMode { get; set; }
     public Vector2? Destination { get; set; }
     public CoverPoint? Cover { get; set; }
-    public float DwellUntil { get; set; }
+
+    // Orders from the squad leader
+    public Team? Team { get; set; }
+    public TaskMode Task { get; set; } = TaskMode.Hold;
+    public Vector2 TaskPosition { get; set; }
+    public float TaskRadius { get; set; } = 10f;
+    public bool TaskRun { get; set; }
+    public bool TaskAssault { get; set; }
+    /// <summary>Where the squad wants fire put down, even if he can't see anyone there.</summary>
+    public Vector2? FireAt { get; set; }
+    /// <summary>The spot he is firing at when he has no man in his sights (area fire).</summary>
+    public Vector2? AreaTarget { get; set; }
 
     // Timers and memory
     public float NextThink { get; set; }

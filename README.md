@@ -13,9 +13,10 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
 |---|---|
 | 1. Test range: map, battlefield grid, cover points, free camera, overlays | done |
 | 2. Soldiers that fight: take cover, shoot, get suppressed, break and run | done |
-| 3. Squads with tactics and fog of war | next |
+| 3. Squads with tactics and fog of war | done |
+| 4. Messages and delay | next |
 
-![Close-up of the firefight](docs/screenshots/m2-close.png)
+![Two squads taking the wall](docs/screenshots/m3-squad-attack.png)
 
 ## One-time setup
 
@@ -27,7 +28,10 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
 
 1. Start Godot. In the Project Manager click **Import**, browse to the cloned folder and pick `project.godot`, then **Import & Edit**.
 2. Press **F5** (or the ▶ button top right). The first time, Godot builds the code, which takes a few seconds.
-3. Watch the battle. Blue's reinforced squad (12 men, 2 machine guns) attacks Red's squad (9 men, 1 machine gun) holding a stone wall.
+3. Watch the battle. **Tab** switches between the scenarios:
+   - **Squad attack** (starts first): Blue 1st Squad sets up in the middle and pins Red down while Blue 2nd Squad closes in, then its gun team fires and its rifle team goes round the side and assaults. Red has a hidden machine-gun post in the north-east ruin.
+   - **Firefight at the wall**: one Blue squad attacks alone. It usually fails, which is the point: compare it with the two-squad attack.
+   - **Meeting engagement**: both squads advance into the middle.
 
 To get a new version: in GitHub Desktop press **Fetch origin**, then **Pull**, then press F5 in Godot again.
 To try a pull request before it is merged: in GitHub Desktop pick its branch from **Current branch**.
@@ -39,11 +43,20 @@ To try a pull request before it is merged: in GitHub Desktop pick its branch fro
 | **Camera** | WASD or arrows pan · Q / E rotate · mouse wheel or + / − zoom · right-drag orbit · middle-drag pan · Shift faster |
 | **Battle** | Space pause · `.` step one tick · 1–6 speed (¼× to 8×) · R restart · N new battle (different dice) · Tab next scenario |
 | **Soldier** | Left-click a soldier to see what he's thinking · F follow him · Esc deselect |
-| **Overlays** | G battlefield grid (cover → visibility → control → off) · C cover points · L aim and path lines · T every soldier's thoughts · B morale bars · H hide help |
+| **Overlays** | G battlefield grid (cover → visibility → control → off) · C cover points · L aim and path lines · P squad plans · T every soldier's thoughts · B morale bars · V fog of war on/off · H hide help |
 
 **Reading a soldier.** Blue and red capsules are the two sides; the stick shows where he faces; a yellow cap marks
 the sergeant. The bar above him: top = morale (green steady, yellow shaken, orange pinned, red broken),
 bottom = suppression (yellow fills as bullets pass close). Dark lying shapes are wounded, grey are dead.
+
+**Squads.** Each squad splits into a gun team (around the machine gun) and a rifle team. The squad leader picks a tactic:
+travel, bounding overwatch (one team moves, the other covers), fire and movement, flank, assault, suppress, defend, or fall back.
+The top-left panel shows each Blue squad's tactic and what it is doing. With **P** on, orange lines show where the gun team is going,
+cyan lines the rifle team, and purple the flanking route.
+
+**Fog of war (V).** You see the battle as Blue does. Red soldiers only appear while Blue can see them; red discs mark where
+an enemy was last seen (fading as the sighting gets older; a big disc is a guess from a muzzle flash). Each squad only knows what its
+own men have seen, or what a squad close by tells it. Press V to see everything.
 
 **Cover points (C).** Green = low wall, yellow = crater, cyan = corner of a ruin you can shoot from,
 blue = hiding spot behind a ruin, orange = someone has claimed it. Bars point at the side they protect from.
@@ -73,4 +86,5 @@ For developers (no Godot needed):
 dotnet test sim/GroundWar.Sim.Tests
 dotnet run --project sim/GroundWar.Runner -- --battles 30                   # results table
 dotnet run --project sim/GroundWar.Runner -- --battles 1 --seed 4 --log     # every decision in one battle
+dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/stress_1000.json --battles 1 --profile   # 1,000 a side, timing
 ```

@@ -12,7 +12,7 @@ namespace GroundWar.Game;
 /// </summary>
 public partial class Main : Node3D
 {
-    private static readonly string[] Scenarios = { "scenarios/firefight.json", "scenarios/meeting.json" };
+    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json" };
     private static readonly float[] Speeds = { 0.25f, 0.5f, 1f, 2f, 4f, 8f };
 
     private int _scenario;
@@ -26,6 +26,7 @@ public partial class Main : Node3D
     private int _speedIndex = 2;
     private bool _paused;
     private bool _stepOnce;
+    private bool _fog = true;
 
     public override void _Ready()
     {
@@ -88,7 +89,7 @@ public partial class Main : Node3D
         _battle = Battle.Load(new GodotDataSource(), Scenarios[_scenario], _seed);
         _mapView = new MapView(_battle) { Name = "Map" };
         AddChild(_mapView);
-        _battleView = new BattleView(_battle) { Name = "Battle" };
+        _battleView = new BattleView(_battle) { Name = "Battle", Fog = _fog };
         AddChild(_battleView);
         _accumulator = 0;
         if (frameCamera) _camera.Frame(_battle.Map.Width, _battle.Map.Height);
@@ -115,7 +116,7 @@ public partial class Main : Node3D
             if (steps == 40) _accumulator = 0; // can't keep up; slow down rather than spiral
         }
         _battleView!.UpdateVisuals(_accumulator / Battle.Dt, (float)delta, speed, _paused);
-        _hud.UpdateHud(_battle, speed, _paused, _battleView.Selected, OverlayNames());
+        _hud.UpdateHud(_battle, speed, _paused, _battleView.Selected, OverlayNames(), _battleView.Fog, _battleView.PlayerSide);
         RunAutomation((float)delta);
     }
 
@@ -125,6 +126,7 @@ public partial class Main : Node3D
         if (_mapView!.Grid != MapView.GridMode.Off) parts.Add($"grid: {_mapView.Grid.ToString().ToLowerInvariant()}");
         if (_mapView.CoverVisible) parts.Add("cover points");
         if (_battleView!.ShowLines) parts.Add("lines");
+        if (_battleView.ShowPlans) parts.Add("plans");
         if (_battleView.ShowAllLabels) parts.Add("thoughts");
         return string.Join(", ", parts);
     }
@@ -144,6 +146,8 @@ public partial class Main : Node3D
                 case Key.G: _mapView!.CycleGrid(); break;
                 case Key.C: _mapView!.ToggleCover(); break;
                 case Key.L: _battleView!.ShowLines = !_battleView.ShowLines; break;
+                case Key.P: _battleView!.ShowPlans = !_battleView.ShowPlans; break;
+                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; break;
                 case Key.T: _battleView!.ShowAllLabels = !_battleView.ShowAllLabels; break;
                 case Key.B: _battleView!.ShowBars = !_battleView.ShowBars; break;
                 case Key.H: _hud.ToggleHelp(); break;
@@ -192,6 +196,7 @@ public partial class Main : Node3D
                 if (_autoOverlays.Contains('c')) _mapView!.ToggleCover();
                 if (_autoOverlays.Contains('l')) _battleView!.ShowLines = true;
                 if (_autoOverlays.Contains('t')) _battleView!.ShowAllLabels = true;
+                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; }
             }
             // --camera=x,y,distance,yaw,pitch
             if (_autoCamera != null)

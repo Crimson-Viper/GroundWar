@@ -69,7 +69,7 @@ public sealed partial class Battle
     internal float NearestKnownEnemy(Soldier s)
     {
         float best = float.MaxValue;
-        foreach (var c in _knowledge[(int)s.Side].Contacts)
+        foreach (var c in s.Group.Knowledge.Contacts)
             best = MathF.Min(best, Vector2.Distance(c.LastPosition, s.Position));
         return best;
     }

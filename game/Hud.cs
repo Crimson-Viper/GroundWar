@@ -21,7 +21,7 @@ public partial class Hud : CanvasLayer
         "CAMERA   WASD / arrows pan · Q E rotate · wheel or + - zoom · right-drag orbit · middle-drag pan · Shift faster\n" +
         "BATTLE   Space pause · . step · 1-6 speed · R restart · N new battle (new seed) · Tab next scenario\n" +
         "SOLDIER  left-click select · F follow · Esc deselect\n" +
-        "OVERLAYS G grid (cover / visibility / control) · C cover points · L aim and path lines · T all soldiers' thoughts · B morale bars · H hide help";
+        "OVERLAYS G grid (cover / visibility / control) · C cover points · L aim and path lines · P squad plans · T thoughts · B morale bars · V fog of war on/off · H hide help";
 
     public override void _Ready()
     {
@@ -76,7 +76,7 @@ public partial class Hud : CanvasLayer
 
     public void ToggleHelp() => _help.Visible = !_help.Visible;
 
-    public void UpdateHud(Battle battle, float speed, bool paused, Soldier? selected, string overlays)
+    public void UpdateHud(Battle battle, float speed, bool paused, Soldier? selected, string overlays, bool fog, Side playerSide)
     {
         var sb = new StringBuilder();
         int minutes = (int)(battle.Time / 60), seconds = (int)battle.Time % 60;
@@ -93,6 +93,14 @@ public partial class Hud : CanvasLayer
             int fled = men.Count(s => s.Status == SoldierStatus.Routed);
             sb.AppendLine($"{side,-4}  fighting {fighting,2}  pinned {pinned,2}  broken {broken,2}  down {down,2}  fled {fled,2}");
         }
+        sb.AppendLine();
+        foreach (var g in battle.Groups)
+        {
+            if (fog && g.Side != playerSide) continue;
+            sb.AppendLine($"{g.Name} ({g.CountEffective}/{g.Members.Count}) {g.Tactic}");
+            sb.AppendLine($"   {g.Status}");
+        }
+        if (fog) sb.AppendLine($"Fog of war: you see what {playerSide} has spotted");
         if (overlays.Length > 0) { sb.AppendLine(); sb.Append("Overlays: ").Append(overlays); }
         _status.Text = sb.ToString().TrimEnd();
 
@@ -103,6 +111,7 @@ public partial class Hud : CanvasLayer
             var t = new StringBuilder();
             t.AppendLine($"{s.Label}  {s.Role}, {s.Group.Name}");
             t.AppendLine($"Status: {s.Status}   Stance: {s.Stance}");
+            t.AppendLine($"Team: {s.Team?.Name ?? "-"}   Squad: {s.Group.Tactic}");
             if (s.IsActive)
             {
                 t.AppendLine($"Morale: {s.Morale:0} / {s.StartMorale:0}  ({s.MoraleState})");
