@@ -31,7 +31,8 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
 3. Watch the battle. **Tab** switches between the scenarios:
    - **Squad attack** (starts first): Blue 1st Squad sets up in the middle and pins Red down while Blue 2nd Squad closes in, then its gun team fires and its rifle team goes round the side and assaults. Red has a hidden machine-gun post in the north-east ruin.
    - **Firefight at the wall**: one Blue squad attacks alone. It usually fails, which is the point: compare it with the two-squad attack.
-   - **Meeting engagement**: both squads advance into the middle.
+   - **Meeting engagement**: two equal squads advance into the middle. The map is the same from both ends, so each side wins about as often as the other.
+   - **Stress test**: 1,000 soldiers a side on a big field, to check the game stays smooth at battalion size. Zoom out to see it all.
 
 To get a new version: in GitHub Desktop press **Fetch origin**, then **Pull**, then press F5 in Godot again.
 To try a pull request before it is merged: in GitHub Desktop pick its branch from **Current branch**.

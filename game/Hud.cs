@@ -94,11 +94,31 @@ public partial class Hud : CanvasLayer
             sb.AppendLine($"{side,-4}  fighting {fighting,2}  pinned {pinned,2}  broken {broken,2}  down {down,2}  fled {fled,2}");
         }
         sb.AppendLine();
-        foreach (var g in battle.Groups)
+        var groups = battle.Groups.Where(g => !fog || g.Side == playerSide).ToList();
+        if (groups.Count <= 6)
         {
-            if (fog && g.Side != playerSide) continue;
-            sb.AppendLine($"{g.Name} ({g.CountEffective}/{g.Members.Count}) {g.Tactic}");
-            sb.AppendLine($"   {g.Status}");
+            foreach (var g in groups)
+            {
+                sb.AppendLine($"{g.Name} ({g.CountEffective}/{g.Members.Count}) {g.Tactic}");
+                sb.AppendLine($"   {g.Status}");
+            }
+        }
+        else
+        {
+            // Too many squads to list one by one (the battalion test): count them by what they're doing.
+            foreach (var side in new[] { Side.Blue, Side.Red })
+            {
+                var mine = groups.Where(g => g.Side == side).ToList();
+                if (mine.Count == 0) continue;
+                var tactics = mine.GroupBy(g => g.Tactic).OrderByDescending(t => t.Count()).Select(t => $"{t.Key} {t.Count()}");
+                sb.AppendLine($"{side} squads ({mine.Count}): {string.Join(", ", tactics)}");
+            }
+            if (selected != null)
+            {
+                sb.AppendLine($"{selected.Group.Name} ({selected.Group.CountEffective}/{selected.Group.Members.Count}) {selected.Group.Tactic}");
+                sb.AppendLine($"   {selected.Group.Status}");
+            }
+            else sb.AppendLine("Click a soldier to see his squad");
         }
         if (fog) sb.AppendLine($"Fog of war: you see what {playerSide} has spotted");
         if (overlays.Length > 0) { sb.AppendLine(); sb.Append("Overlays: ").Append(overlays); }

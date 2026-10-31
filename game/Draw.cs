@@ -51,5 +51,18 @@ public static class Draw
     /// <summary>Yaw (rotation about Y) that makes a node's -Z face the given ground direction.</summary>
     public static float YawFor(SVec2 dir) => Mathf.Atan2(-dir.X, -dir.Y);
 
+    /// <summary>Many copies of one mesh drawn in a single call, for things that never move (walls, craters).</summary>
+    public static MultiMeshInstance3D Batch(Mesh mesh, Material mat, System.Collections.Generic.IReadOnlyList<Transform3D> transforms, bool shadows = true)
+    {
+        var mm = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D, Mesh = mesh, InstanceCount = transforms.Count };
+        for (int i = 0; i < transforms.Count; i++) mm.SetInstanceTransform(i, transforms[i]);
+        return new MultiMeshInstance3D
+        {
+            Multimesh = mm,
+            MaterialOverride = mat,
+            CastShadow = shadows ? GeometryInstance3D.ShadowCastingSetting.On : GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+    }
+
     public static Shader LoadShader(string path) => GD.Load<Shader>(path);
 }

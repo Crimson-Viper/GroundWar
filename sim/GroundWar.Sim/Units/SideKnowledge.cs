@@ -19,6 +19,7 @@ public sealed class SideKnowledge
     public Side Side { get; }
     private readonly Dictionary<int, Contact> _contacts = new();
     public IEnumerable<Contact> Contacts => _contacts.Values;
+    public int Count => _contacts.Count;
 
     public SideKnowledge(Side side) { Side = side; }
 

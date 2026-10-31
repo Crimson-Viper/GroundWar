@@ -11,7 +11,9 @@ namespace GroundWar.Game;
 public partial class BattleView : Node3D
 {
     private readonly Battle _battle;
-    private readonly List<SoldierView> _views = new();
+    private SoldierCrowd _crowd = null!;
+    /// <summary>Follows the selected soldier around, so the camera can follow him.</summary>
+    public Node3D SelectedAnchor { get; } = new() { Name = "SelectedAnchor" };
     private System.Numerics.Vector2[] _prev = System.Array.Empty<System.Numerics.Vector2>();
     private System.Numerics.Vector2[] _curr = System.Array.Empty<System.Numerics.Vector2>();
 
@@ -21,36 +23,33 @@ public partial class BattleView : Node3D
     private MeshInstance3D _selectRing = null!;
 
     private readonly List<Tracer> _tracers = new();
-    private readonly Stack<MeshInstance3D> _tracerPool = new();
     private readonly List<Puff> _puffs = new();
-    private readonly Stack<MeshInstance3D> _puffPool = new();
-    private Material _tracerMat = null!, _tracerMgMat = null!;
-    private Mesh _tracerMesh = null!, _puffMesh = null!;
+    // Tracers and dust puffs are drawn in batches too: one MultiMesh each, refilled every frame.
+    private MultiMesh _rifleTracers = null!, _mgTracers = null!, _puffMesh = null!;
+    private float[] _rifleTracerBuf = System.Array.Empty<float>(), _mgTracerBuf = System.Array.Empty<float>(), _puffBuf = System.Array.Empty<float>();
 
     public bool ShowLines { get; set; }
     public bool ShowPlans { get; set; } = true;
     /// <summary>Strict fog of war: enemy soldiers are only drawn while your side can see them.</summary>
     public bool Fog { get; set; } = true;
     public Side PlayerSide { get; set; } = Side.Blue;
-    private readonly List<MeshInstance3D> _ghosts = new();
-    private StandardMaterial3D[] _ghostMats = System.Array.Empty<StandardMaterial3D>();
-    private Mesh _ghostMesh = null!;
+    // Last-known enemy positions, all in one batch.
+    private MultiMesh _ghosts = null!;
+    private float[] _ghostBuf = System.Array.Empty<float>();
     public bool ShowBars { get; set; } = true;
     public bool ShowAllLabels { get; set; }
     public Soldier? Selected { get; set; }
 
     private sealed class Tracer
     {
-        public required MeshInstance3D Node;
         public Vector3 From, To;
         public float Age, Duration;
-        public bool Hit;
+        public bool Hit, MachineGun;
     }
 
     private sealed class Puff
     {
-        public required MeshInstance3D Node;
-        public required StandardMaterial3D Mat;
+        public Vector3 At;
         public float Age, Life, Size;
         public Color Color;
     }
@@ -59,27 +58,9 @@ public partial class BattleView : Node3D
 
     public override void _Ready()
     {
-        var mats = new SoldierView.Materials
-        {
-            Blue = Draw.Lit(new Color(0.25f, 0.42f, 0.85f)),
-            Red = Draw.Lit(new Color(0.82f, 0.25f, 0.22f)),
-            BlueDown = Draw.Lit(new Color(0.15f, 0.2f, 0.4f)),
-            RedDown = Draw.Lit(new Color(0.4f, 0.13f, 0.12f)),
-            Dead = Draw.Lit(new Color(0.18f, 0.18f, 0.18f)),
-            Rifle = Draw.Lit(new Color(0.2f, 0.15f, 0.1f)),
-            Cap = Draw.Lit(new Color(0.95f, 0.8f, 0.2f)),
-            BarShader = Draw.LoadShader("res://game/shaders/status_bar.gdshader"),
-            Body = new CapsuleMesh { Radius = 0.28f, Height = 1.75f, RadialSegments = 12, Rings = 4 },
-            RifleMesh = new BoxMesh { Size = new Vector3(0.07f, 0.07f, 1.1f) },
-            CapMesh = new BoxMesh { Size = new Vector3(0.42f, 0.14f, 0.42f) },
-            BarMesh = new QuadMesh { Size = new Vector2(1.3f, 0.26f) },
-        };
-        foreach (var s in _battle.Soldiers)
-        {
-            var v = new SoldierView(s, mats) { Name = s.Label };
-            AddChild(v);
-            _views.Add(v);
-        }
+        _crowd = new SoldierCrowd(_battle) { Name = "Soldiers" };
+        AddChild(_crowd);
+        AddChild(SelectedAnchor);
         _prev = new System.Numerics.Vector2[_battle.Soldiers.Count];
         _curr = new System.Numerics.Vector2[_battle.Soldiers.Count];
         for (int i = 0; i < _curr.Length; i++) _prev[i] = _curr[i] = _battle.Soldiers[i].Position;
@@ -99,15 +80,28 @@ public partial class BattleView : Node3D
         };
         AddChild(_selectRing);
 
-        _tracerMat = Draw.Glow(new Color(1f, 0.85f, 0.45f), 4f);
-        _tracerMgMat = Draw.Glow(new Color(1f, 0.6f, 0.3f), 5f);
-        _tracerMesh = new BoxMesh { Size = new Vector3(0.09f, 0.09f, 1f) };
-        _puffMesh = new SphereMesh { Radius = 0.5f, Height = 1f, RadialSegments = 8, Rings = 4 };
-        _ghostMesh = new CylinderMesh { TopRadius = 0.7f, BottomRadius = 0.7f, Height = 0.1f, RadialSegments = 12 };
-        // Last-known enemy positions fade from solid to faint as the sighting gets older.
-        _ghostMats = new StandardMaterial3D[6];
-        for (int i = 0; i < _ghostMats.Length; i++)
-            _ghostMats[i] = Draw.Unlit(new Color(1f, 0.35f, 0.3f, 0.7f - i * 0.11f), transparent: true);
+        var tracerMesh = new BoxMesh { Size = new Vector3(0.09f, 0.09f, 1f) };
+        _rifleTracers = Batch(tracerMesh, Draw.Glow(new Color(1f, 0.85f, 0.45f), 4f), colors: false);
+        _mgTracers = Batch(tracerMesh, Draw.Glow(new Color(1f, 0.6f, 0.3f), 5f), colors: false);
+        var puffMat = Draw.VertexColored(transparent: true);
+        puffMat.VertexColorIsSrgb = true;
+        _puffMesh = Batch(new SphereMesh { Radius = 0.5f, Height = 1f, RadialSegments = 8, Rings = 4 }, puffMat, colors: true);
+        var ghostMat = Draw.VertexColored(transparent: true);
+        ghostMat.VertexColorIsSrgb = true;
+        _ghosts = Batch(new CylinderMesh { TopRadius = 0.7f, BottomRadius = 0.7f, Height = 0.1f, RadialSegments = 12 }, ghostMat, colors: true);
+    }
+
+    private MultiMesh Batch(Mesh mesh, Material mat, bool colors)
+    {
+        var mm = new MultiMesh
+        {
+            TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+            UseColors = colors,
+            Mesh = mesh,
+            CustomAabb = new Aabb(new Vector3(-50, -10, -50), new Vector3(_battle.Map.Width + 100, 60, _battle.Map.Height + 100)),
+        };
+        AddChild(new MultiMeshInstance3D { Multimesh = mm, MaterialOverride = mat, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
+        return mm;
     }
 
     /// <summary>Is this soldier drawn, given the fog of war?</summary>
@@ -124,29 +118,23 @@ public partial class BattleView : Node3D
         int used = 0;
         if (Fog)
         {
-            foreach (var c in _battle.Knowledge(PlayerSide).Contacts)
+            var knowledge = _battle.Knowledge(PlayerSide);
+            Grow(_ghosts, ref _ghostBuf, knowledge.Count, 16);
+            foreach (var c in knowledge.Contacts)
             {
                 float age = _battle.Time - c.LastSeen;
                 if (age <= 1.5f && c.Confidence >= 0.9f) continue; // he's drawn for real
-                if (used >= _ghosts.Count)
-                {
-                    var n = new MeshInstance3D { Mesh = _ghostMesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
-                    AddChild(n);
-                    _ghosts.Add(n);
-                }
-                var g = _ghosts[used++];
-                g.Visible = true;
-                g.Position = Draw.To3(c.LastPosition, 0.06f);
-                g.MaterialOverride = _ghostMats[Mathf.Clamp((int)(age / 5f), 0, _ghostMats.Length - 1)];
                 // A guess from a muzzle flash is drawn bigger: "somewhere around here".
                 float size = c.Confidence < 0.9f ? 3f : 1f;
-                g.Scale = new Vector3(size, 1, size);
+                int o = 16 * used++;
+                Put(_ghostBuf, o, new Transform3D(Basis.FromScale(new Vector3(size, 1, size)), Draw.To3(c.LastPosition, 0.06f)));
+                // Fades from solid to faint as the sighting gets older.
+                _ghostBuf[o + 12] = 1f; _ghostBuf[o + 13] = 0.35f; _ghostBuf[o + 14] = 0.3f;
+                _ghostBuf[o + 15] = 0.7f - Mathf.Clamp((int)(age / 5f), 0, 5) * 0.11f;
             }
         }
-        for (int i = used; i < _ghosts.Count; i++) _ghosts[i].Visible = false;
+        Flush(_ghosts, _ghostBuf, used);
     }
-
-    public SoldierView? ViewOf(Soldier s) => s.Id < _views.Count ? _views[s.Id] : null;
 
     /// <summary>Call once before each sim step so soldiers can be drawn between the last two positions.</summary>
     public void BeforeStep()
@@ -179,16 +167,8 @@ public partial class BattleView : Node3D
 
     public void UpdateVisuals(float alpha, float realDelta, float gameSpeed, bool paused)
     {
-        for (int i = 0; i < _views.Count; i++)
-        {
-            var p = System.Numerics.Vector2.Lerp(_prev[i], _curr[i], alpha);
-            var v = _views[i];
-            bool known = KnownToPlayer(v.Soldier);
-            v.Visible = known && v.Soldier.Status != SoldierStatus.Routed;
-            if (!v.Visible) continue;
-            v.SetLabelVisible(ShowAllLabels || v.Soldier == Selected);
-            v.UpdateVisual(Draw.To3(p), ShowBars);
-        }
+        _crowd.UpdateAll(KnownToPlayer, _prev, _curr, alpha, ShowBars, ShowAllLabels, Selected);
+        if (Selected != null) SelectedAnchor.Position = _crowd.Positions[Selected.Id];
 
         float dt = paused ? 0f : realDelta * gameSpeed;
         UpdateTracers(dt);
@@ -202,62 +182,48 @@ public partial class BattleView : Node3D
 
     private void SpawnTracer(Vector3 from, Vector3 to, float duration, bool hit, bool mg)
     {
-        var node = _tracerPool.Count > 0 ? _tracerPool.Pop() : CreateTracerNode();
-        node.MaterialOverride = mg ? _tracerMgMat : _tracerMat;
-        node.Visible = true;
-        _tracers.Add(new Tracer { Node = node, From = from, To = to, Duration = Mathf.Max(duration, 0.05f), Hit = hit });
-    }
-
-    private MeshInstance3D CreateTracerNode()
-    {
-        var n = new MeshInstance3D { Mesh = _tracerMesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
-        AddChild(n);
-        return n;
+        _tracers.Add(new Tracer { From = from, To = to, Duration = Mathf.Max(duration, 0.05f), Hit = hit, MachineGun = mg });
     }
 
     private void UpdateTracers(float dt)
     {
+        int rifles = 0, mgs = 0;
         for (int i = _tracers.Count - 1; i >= 0; i--)
         {
             var t = _tracers[i];
             t.Age += dt;
-            float k = t.Age / t.Duration;
-            if (k >= 1f)
+            if (t.Age >= t.Duration)
             {
                 SpawnPuff(t.To, t.Hit ? new Color(0.6f, 0.1f, 0.08f, 0.9f) : new Color(0.55f, 0.5f, 0.42f, 0.8f),
                     t.Hit ? 0.5f : 0.7f, t.Hit ? 0.5f : 0.8f);
-                t.Node.Visible = false;
-                _tracerPool.Push(t.Node);
-                _tracers.RemoveAt(i);
+                _tracers[i] = _tracers[^1];
+                _tracers.RemoveAt(_tracers.Count - 1);
                 continue;
             }
+            if (t.MachineGun) mgs++; else rifles++;
+        }
+        Grow(_rifleTracers, ref _rifleTracerBuf, rifles, 12);
+        Grow(_mgTracers, ref _mgTracerBuf, mgs, 12);
+        int ri = 0, mi = 0;
+        foreach (var t in _tracers)
+        {
+            float k = t.Age / t.Duration;
             var dir = t.To - t.From;
             float len = dir.Length();
             float streak = Mathf.Min(9f, len);
             var head = t.From + dir * k;
             var mid = head - dir / len * streak * 0.5f;
-            t.Node.GlobalTransform = new Transform3D(Basis.LookingAt(dir / len, Vector3.Up).Scaled(new Vector3(1, 1, streak)), mid);
+            var xf = new Transform3D(Basis.LookingAt(dir / len, Vector3.Up) * Basis.FromScale(new Vector3(1, 1, streak)), mid);
+            if (t.MachineGun) Put(_mgTracerBuf, 12 * mi++, xf);
+            else Put(_rifleTracerBuf, 12 * ri++, xf);
         }
+        Flush(_rifleTracers, _rifleTracerBuf, rifles);
+        Flush(_mgTracers, _mgTracerBuf, mgs);
     }
 
     private void SpawnPuff(Vector3 at, Color color, float life, float size)
     {
-        MeshInstance3D node;
-        StandardMaterial3D mat;
-        if (_puffPool.Count > 0)
-        {
-            node = _puffPool.Pop();
-            mat = (StandardMaterial3D)node.MaterialOverride;
-        }
-        else
-        {
-            mat = Draw.Unlit(color, transparent: true);
-            node = new MeshInstance3D { Mesh = _puffMesh, MaterialOverride = mat, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
-            AddChild(node);
-        }
-        node.Visible = true;
-        node.Position = at;
-        _puffs.Add(new Puff { Node = node, Mat = mat, Life = life, Size = size, Color = color });
+        _puffs.Add(new Puff { At = at, Life = life, Size = size, Color = color });
     }
 
     private void UpdatePuffs(float dt)
@@ -266,18 +232,47 @@ public partial class BattleView : Node3D
         {
             var p = _puffs[i];
             p.Age += dt;
-            float k = p.Age / p.Life;
-            if (k >= 1f)
+            if (p.Age >= p.Life)
             {
-                p.Node.Visible = false;
-                _puffPool.Push(p.Node);
-                _puffs.RemoveAt(i);
-                continue;
+                _puffs[i] = _puffs[^1];
+                _puffs.RemoveAt(_puffs.Count - 1);
             }
-            float s = p.Size * (0.4f + 1.2f * k);
-            p.Node.Scale = new Vector3(s, s, s);
-            p.Mat.AlbedoColor = new Color(p.Color, p.Color.A * (1f - k));
         }
+        Grow(_puffMesh, ref _puffBuf, _puffs.Count, 16);
+        for (int i = 0; i < _puffs.Count; i++)
+        {
+            var p = _puffs[i];
+            float k = p.Age / p.Life;
+            float size = p.Size * (0.4f + 1.2f * k);
+            int o = 16 * i;
+            Put(_puffBuf, o, new Transform3D(Basis.FromScale(new Vector3(size, size, size)), p.At));
+            _puffBuf[o + 12] = p.Color.R; _puffBuf[o + 13] = p.Color.G; _puffBuf[o + 14] = p.Color.B;
+            _puffBuf[o + 15] = p.Color.A * (1f - k);
+        }
+        Flush(_puffMesh, _puffBuf, _puffs.Count);
+    }
+
+    /// <summary>Make sure a batch has room for at least <paramref name="needed"/> instances.</summary>
+    private static void Grow(MultiMesh mm, ref float[] buf, int needed, int stride)
+    {
+        if (mm.InstanceCount >= needed) return;
+        int size = (int)System.Numerics.BitOperations.RoundUpToPowerOf2((uint)System.Math.Max(64, needed));
+        mm.InstanceCount = size;
+        buf = new float[size * stride];
+    }
+
+    private static void Flush(MultiMesh mm, float[] buf, int used)
+    {
+        mm.VisibleInstanceCount = used;
+        if (used > 0) RenderingServer.MultimeshSetBuffer(mm.GetRid(), buf);
+    }
+
+    private static void Put(float[] buf, int o, in Transform3D t)
+    {
+        var bs = t.Basis;
+        buf[o + 0] = bs.X.X; buf[o + 1] = bs.Y.X; buf[o + 2] = bs.Z.X; buf[o + 3] = t.Origin.X;
+        buf[o + 4] = bs.X.Y; buf[o + 5] = bs.Y.Y; buf[o + 6] = bs.Z.Y; buf[o + 7] = t.Origin.Y;
+        buf[o + 8] = bs.X.Z; buf[o + 9] = bs.Y.Z; buf[o + 10] = bs.Z.Z; buf[o + 11] = t.Origin.Z;
     }
 
     // ---------------------------------------------------------------- debug drawing
@@ -285,9 +280,8 @@ public partial class BattleView : Node3D
     private void UpdateSelection()
     {
         if (Selected == null) { _selectRing.Visible = false; return; }
-        var v = ViewOf(Selected);
-        _selectRing.Visible = v != null && v.Visible;
-        if (v != null) _selectRing.Position = v.Position + new Vector3(0, 0.05f, 0);
+        _selectRing.Visible = _crowd.Shown[Selected.Id];
+        _selectRing.Position = _crowd.Positions[Selected.Id] + new Vector3(0, 0.05f, 0);
     }
 
     private void DrawLines()
@@ -296,11 +290,10 @@ public partial class BattleView : Node3D
         bool any = false;
         foreach (var s in _battle.Soldiers)
         {
-            if (!s.IsActive || !_views[s.Id].Visible) continue;
+            if (!s.IsActive || !_crowd.Shown[s.Id]) continue;
             bool show = ShowLines || s == Selected;
             if (!show) continue;
-            var view = _views[s.Id];
-            var from = view.Position + new Vector3(0, 0.6f, 0);
+            var from = _crowd.Positions[s.Id] + new Vector3(0, 0.6f, 0);
             if (s.Target == null && s.AreaTarget != null && s.Action == SoldierAction.Engage)
             {
                 if (!any) { _lineMesh.SurfaceBegin(Mesh.PrimitiveType.Lines, _lineMat); any = true; }
@@ -313,7 +306,7 @@ public partial class BattleView : Node3D
                 _lineMesh.SurfaceSetColor(c);
                 _lineMesh.SurfaceAddVertex(from);
                 _lineMesh.SurfaceSetColor(c);
-                _lineMesh.SurfaceAddVertex(_views[s.Target.Id].Position + new Vector3(0, 0.6f, 0));
+                _lineMesh.SurfaceAddVertex(_crowd.Positions[s.Target.Id] + new Vector3(0, 0.6f, 0));
             }
             if (s.Path != null)
             {
@@ -375,11 +368,12 @@ public partial class BattleView : Node3D
     {
         Soldier? best = null;
         float bestD = reach * reach;
-        foreach (var v in _views)
+        for (int i = 0; i < _battle.Soldiers.Count; i++)
         {
-            if (!v.Visible) continue;
-            float d = new Vector2(v.Position.X - ground.X, v.Position.Z - ground.Z).LengthSquared();
-            if (d < bestD) { bestD = d; best = v.Soldier; }
+            if (!_crowd.Shown[i]) continue;
+            var p = _crowd.Positions[i];
+            float d = new Vector2(p.X - ground.X, p.Z - ground.Z).LengthSquared();
+            if (d < bestD) { bestD = d; best = _battle.Soldiers[i]; }
         }
         return best;
     }

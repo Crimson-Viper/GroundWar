@@ -12,7 +12,7 @@ namespace GroundWar.Game;
 /// </summary>
 public partial class Main : Node3D
 {
-    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json" };
+    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/stress_1000.json" };
     private static readonly float[] Speeds = { 0.25f, 0.5f, 1f, 2f, 4f, 8f };
 
     private int _scenario;
@@ -115,7 +115,10 @@ public partial class Main : Node3D
             }
             if (steps == 40) _accumulator = 0; // can't keep up; slow down rather than spiral
         }
+        long drawStart = System.Diagnostics.Stopwatch.GetTimestamp();
         _battleView!.UpdateVisuals(_accumulator / Battle.Dt, (float)delta, speed, _paused);
+        _drawMs += System.Diagnostics.Stopwatch.GetElapsedTime(drawStart).TotalMilliseconds;
+        _drawFrames++;
         _hud.UpdateHud(_battle, speed, _paused, _battleView.Selected, OverlayNames(), _battleView.Fog, _battleView.PlayerSide);
         RunAutomation((float)delta);
     }
@@ -153,7 +156,7 @@ public partial class Main : Node3D
                 case Key.H: _hud.ToggleHelp(); break;
                 case Key.F:
                     if (_battleView!.Selected != null)
-                        _camera.FollowTarget = _camera.FollowTarget == null ? _battleView.ViewOf(_battleView.Selected) : null;
+                        _camera.FollowTarget = _camera.FollowTarget == null ? _battleView.SelectedAnchor : null;
                     break;
                 case Key.Escape: _battleView!.Selected = null; _camera.FollowTarget = null; break;
                 default: return;
@@ -166,8 +169,6 @@ public partial class Main : Node3D
             if (ground != null)
             {
                 _battleView!.Selected = _battleView.SoldierNear(ground.Value, 3f);
-                if (_camera.FollowTarget != null && _battleView.Selected != null)
-                    _camera.FollowTarget = _battleView.ViewOf(_battleView.Selected);
             }
         }
     }
@@ -181,6 +182,8 @@ public partial class Main : Node3D
     private int _autoSelect = -1;
     private bool _autoApplied;
     private float _autoClock;
+    private double _drawMs;
+    private int _drawFrames;
 
     private void RunAutomation(float delta)
     {
@@ -211,7 +214,10 @@ public partial class Main : Node3D
         _autoClock += delta;
         if (_autoClock < 0.6f) return; // let tracers and interpolation settle
         GetViewport().GetTexture().GetImage().SavePng(_screenshotPath);
-        GD.Print($"Saved screenshot {_screenshotPath} at battle time {_battle.Time:0.0}s");
+        GD.Print($"Saved screenshot {_screenshotPath} at battle time {_battle.Time:0.0}s; " +
+                 $"updating the soldiers took {_drawMs / System.Math.Max(_drawFrames, 1):0.00} ms a frame, " +
+                 $"{Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame)} draw calls, " +
+                 $"{Performance.GetMonitor(Performance.Monitor.ObjectNodeCount)} nodes");
         GetTree().Quit();
     }
 }

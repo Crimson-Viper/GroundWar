@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 using GroundWar.Sim;
 using GroundWar.Sim.Map;
@@ -72,72 +73,74 @@ public partial class MapView : Node3D
         AddChild(ground);
     }
 
+    // Walls, craters and objective rings are each drawn as one batch, so a big map with hundreds
+    // of them costs a few draw calls instead of hundreds.
+
     private void BuildWalls()
     {
-        var low = Draw.Lit(new Color(0.62f, 0.60f, 0.55f));
-        var high = Draw.Lit(new Color(0.48f, 0.45f, 0.42f));
+        var low = new List<Transform3D>();
+        var high = new List<Transform3D>();
         foreach (var w in _battle.Map.Walls)
         {
             var mid = (w.A + w.B) * 0.5f;
             float h = w.HeightMetres;
-            var box = Draw.Box(new Vector3(w.Thickness, h, w.Length + w.Thickness), w.High ? high : low);
-            box.Name = $"Wall{w.Id}";
-            box.Position = Draw.To3(mid, h * 0.5f);
-            box.Rotation = new Vector3(0, Draw.YawFor(w.Direction), 0);
-            AddChild(box);
+            var basis = new Basis(Vector3.Up, Draw.YawFor(w.Direction)) * Basis.FromScale(new Vector3(w.Thickness, h, w.Length + w.Thickness));
+            (w.High ? high : low).Add(new Transform3D(basis, Draw.To3(mid, h * 0.5f)));
         }
+        var box = new BoxMesh { Size = Vector3.One };
+        if (low.Count > 0) AddChild(Draw.Batch(box, Draw.Lit(new Color(0.62f, 0.60f, 0.55f)), low));
+        if (high.Count > 0) AddChild(Draw.Batch(box, Draw.Lit(new Color(0.48f, 0.45f, 0.42f)), high));
     }
 
     private void BuildCraters()
     {
-        var floor = Draw.Lit(new Color(0.28f, 0.26f, 0.23f));
-        var rim = Draw.Lit(new Color(0.36f, 0.34f, 0.30f));
+        var discs = new List<Transform3D>();
+        var rims = new List<Transform3D>();
         foreach (var c in _battle.Map.Craters)
         {
-            var disc = new MeshInstance3D
-            {
-                Mesh = new CylinderMesh { TopRadius = c.Radius, BottomRadius = c.Radius, Height = 0.04f, RadialSegments = 24 },
-                MaterialOverride = floor,
-                Position = Draw.To3(c.Center, 0.02f),
-            };
-            AddChild(disc);
-            var ring = new MeshInstance3D
-            {
-                Mesh = new TorusMesh { InnerRadius = c.Radius * 0.92f, OuterRadius = c.Radius * 1.3f, Rings = 24, RingSegments = 8 },
-                MaterialOverride = rim,
-                Position = Draw.To3(c.Center, 0f),
-                Scale = new Vector3(1, 0.35f, 1),
-            };
-            AddChild(ring);
+            discs.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius, 1, c.Radius)), Draw.To3(c.Center, 0.02f)));
+            rims.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius, 0.35f * c.Radius, c.Radius)), Draw.To3(c.Center, 0f)));
         }
+        if (discs.Count == 0) return;
+        AddChild(Draw.Batch(new CylinderMesh { TopRadius = 1f, BottomRadius = 1f, Height = 0.04f, RadialSegments = 24 },
+            Draw.Lit(new Color(0.28f, 0.26f, 0.23f)), discs));
+        // A unit ring: scaled by the crater radius sideways; its height is divided back out above.
+        AddChild(Draw.Batch(new TorusMesh { InnerRadius = 0.92f, OuterRadius = 1.3f, Rings = 24, RingSegments = 8 },
+            Draw.Lit(new Color(0.36f, 0.34f, 0.30f)), rims));
     }
 
     private void BuildObjectives()
     {
+        // Rings are grouped by side and size, so they share a mesh and a material.
+        var rings = new Dictionary<(Side, float), List<Transform3D>>();
+        var flags = new Dictionary<Side, List<Transform3D>>();
+        var poles = new List<Transform3D>();
         foreach (var g in _battle.Groups)
         {
-            var color = g.Side == Side.Blue ? new Color(0.35f, 0.55f, 1f, 0.35f) : new Color(1f, 0.35f, 0.3f, 0.35f);
-            var ring = new MeshInstance3D
-            {
-                Mesh = new TorusMesh { InnerRadius = g.ObjectiveRadius - 0.25f, OuterRadius = g.ObjectiveRadius + 0.25f, Rings = 64, RingSegments = 4 },
-                MaterialOverride = Draw.Unlit(color, transparent: true),
-                Position = Draw.To3(g.Objective, 0.05f + g.Id * 0.02f),
-                Scale = new Vector3(1, 0.1f, 1),
-                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-            };
-            AddChild(ring);
+            var key = (g.Side, g.ObjectiveRadius);
+            if (!rings.TryGetValue(key, out var list)) rings[key] = list = new List<Transform3D>();
+            list.Add(new Transform3D(Basis.FromScale(new Vector3(1, 0.1f, 1)), Draw.To3(g.Objective, 0.05f + g.Id * 0.02f)));
             // A flag for the attacker's objective.
             if (g.Order == GroupOrder.Advance)
             {
-                var pole = Draw.Box(new Vector3(0.1f, 5f, 0.1f), Draw.Lit(new Color(0.2f, 0.2f, 0.2f)));
-                pole.Position = Draw.To3(g.Objective, 2.5f);
-                AddChild(pole);
-                var flag = Draw.Box(new Vector3(0.05f, 1f, 1.6f), Draw.Unlit(new Color(color, 1f)));
-                flag.Position = Draw.To3(g.Objective, 4.5f) + new Vector3(0, 0, 0.8f);
-                AddChild(flag);
+                poles.Add(new Transform3D(Basis.Identity, Draw.To3(g.Objective, 2.5f)));
+                if (!flags.TryGetValue(g.Side, out var f)) flags[g.Side] = f = new List<Transform3D>();
+                f.Add(new Transform3D(Basis.Identity, Draw.To3(g.Objective, 4.5f) + new Vector3(0, 0, 0.8f)));
             }
         }
+        foreach (var ((side, radius), list) in rings)
+        {
+            var mesh = new TorusMesh { InnerRadius = radius - 0.25f, OuterRadius = radius + 0.25f, Rings = 64, RingSegments = 4 };
+            AddChild(Draw.Batch(mesh, Draw.Unlit(SideColor(side, 0.35f), transparent: true), list, shadows: false));
+        }
+        if (poles.Count > 0)
+            AddChild(Draw.Batch(new BoxMesh { Size = new Vector3(0.1f, 5f, 0.1f) }, Draw.Lit(new Color(0.2f, 0.2f, 0.2f)), poles));
+        foreach (var (side, list) in flags)
+            AddChild(Draw.Batch(new BoxMesh { Size = new Vector3(0.05f, 1f, 1.6f) }, Draw.Unlit(SideColor(side, 1f)), list));
     }
+
+    private static Color SideColor(Side side, float alpha) =>
+        side == Side.Blue ? new Color(0.35f, 0.55f, 1f, alpha) : new Color(1f, 0.35f, 0.3f, alpha);
 
     // ---------------------------------------------------------------- overlays
 
