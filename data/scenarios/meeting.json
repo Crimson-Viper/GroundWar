@@ -1,8 +1,8 @@
-// Both squads advance into the middle of the range and meet there.
+// Both squads advance into the middle and meet there. The map is mirror-symmetric so neither side has better ground.
 {
   "name": "Meeting engagement",
   "description": "Two squads advance towards the same craters and walls and fight it out.",
-  "map": "maps/test_range.json",
+  "map": "maps/meeting_field.json",
   "timeLimit": 600,
   "sides": [
     {
