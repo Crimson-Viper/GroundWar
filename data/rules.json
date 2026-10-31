@@ -10,6 +10,7 @@
     "interval": 0.5,             // seconds between looks around
     "viewRange": 400,
     "autoSpotRange": 25,         // closer than this, you always see him
+    "maxTracked": 12,            // enemies one man can keep track of at once
     "baseSpotChance": 0.5, "farSpotChance": 0.04,
     "firingMultiplier": 4, "firingWindow": 3,
     "movingMultiplier": 1.5, "proneMultiplier": 0.5, "coverMultiplier": 0.5,

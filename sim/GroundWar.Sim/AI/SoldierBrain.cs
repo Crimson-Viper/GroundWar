@@ -14,6 +14,8 @@ public sealed class SoldierBrain
 {
     private readonly Battle _b;
     private readonly List<Vector2> _threats = new();
+    private readonly List<(float d, Vector2 pos)> _nearest = new();
+    private const int MaxThreats = 4;
 
     public SoldierBrain(Battle battle) { _b = battle; }
 
@@ -30,7 +32,9 @@ public sealed class SoldierBrain
 
         if (s.MoraleState == MoraleState.Broken) { Flee(s); return; }
 
+        long pt = Core.Profile.Start();
         s.Target = PickTarget(s);
+        Core.Profile.Lap("think.target", pt);
         bool underFire = s.UnderFire(_b.Time, Ai.UnderFireWindow);
 
         // Already running somewhere? Keep going unless something makes that a bad idea.
@@ -70,6 +74,7 @@ public sealed class SoldierBrain
             }
         }
 
+        long ct = Core.Profile.Start();
         // 2. Get into better cover.
         if ((realThreats || holding) && best != Option.CrawlToCover)
         {
@@ -92,6 +97,7 @@ public sealed class SoldierBrain
             }
         }
 
+        Core.Profile.Lap("think.cover", ct);
         // 3. Shoot back.
         if (s.Target != null && (s.Magazine > 0 || s.SpareMagazines > 0) && s.Suppression < Mr.SuppressionNoFire)
         {
@@ -108,14 +114,16 @@ public sealed class SoldierBrain
             {
                 s.Thought = "Waiting for the others to catch up";
             }
-            else if (ChooseBound(s, out advanceDest, out advanceCover))
+            else if (TimedBound(s, out advanceDest, out advanceCover))
             {
                 float score = realThreats ? 70f - (s.MoraleState == MoraleState.Shaken ? 15f : 0f) : 65f;
                 Consider(Option.Advance, score, SoldierAction.Advance);
             }
         }
 
+        long et = Core.Profile.Start();
         Execute(s, best, bestCover, advanceDest, advanceCover, curProt, realThreats);
+        Core.Profile.Lap("think.execute", et);
     }
 
     public void OnArrived(Soldier s)
@@ -247,12 +255,33 @@ public sealed class SoldierBrain
     private bool GatherThreats(Soldier s)
     {
         _threats.Clear();
-        float range = _b.Rules.Perception.ViewRange * 1.2f;
-        foreach (var c in _b.Knowledge(s.Side).Contacts
-                     .Select(c => (c, d: Vector2.DistanceSquared(c.LastPosition, s.Position)))
-                     .Where(x => x.d < range * range)
-                     .OrderBy(x => x.d).Take(6))
-            _threats.Add(c.c.LastPosition);
+        // The men he can see right now come first (nearest first), then other reported contacts nearby.
+        for (int i = 0; i < s.VisibleEnemies.Count && _threats.Count < MaxThreats; i++)
+            _threats.Add(s.VisibleEnemies[i].Position);
+        if (_threats.Count < MaxThreats)
+        {
+            float range = _b.Rules.Perception.ViewRange * 1.2f;
+            _nearest.Clear();
+            foreach (var c in _b.Knowledge(s.Side).Contacts)
+            {
+                float d = Vector2.DistanceSquared(c.LastPosition, s.Position);
+                if (d > range * range) continue;
+                // keep the few nearest without sorting everything
+                if (_nearest.Count < MaxThreats) _nearest.Add((d, c.LastPosition));
+                else
+                {
+                    int worst = 0;
+                    for (int k = 1; k < _nearest.Count; k++) if (_nearest[k].d > _nearest[worst].d) worst = k;
+                    if (d < _nearest[worst].d) _nearest[worst] = (d, c.LastPosition);
+                }
+            }
+            _nearest.Sort((a, b) => a.d.CompareTo(b.d));
+            foreach (var (_, pos) in _nearest)
+            {
+                if (_threats.Count >= MaxThreats) break;
+                _threats.Add(pos);
+            }
+        }
         if (s.UnderFire(_b.Time, Ai.UnderFireWindow)) _threats.Add(s.LastShotFrom);
         if (_threats.Count > 0) return true;
         _threats.Add(s.Position + s.Group.Facing * 150f);
@@ -331,6 +360,14 @@ public sealed class SoldierBrain
             if (score > bestScore) { bestScore = score; best = c; }
         }
         return best;
+    }
+
+    private bool TimedBound(Soldier s, out Vector2 dest, out CoverPoint? cover)
+    {
+        long t = Core.Profile.Start();
+        bool r = ChooseBound(s, out dest, out cover);
+        Core.Profile.Lap("think.bound", t);
+        return r;
     }
 
     /// <summary>Pick the next bound forward: a cover point closer to the objective, or open ground if there is none.</summary>

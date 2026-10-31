@@ -100,19 +100,13 @@ public sealed partial class Battle
 
         // Near misses frighten everyone close to where the bullet went.
         float radius = w.SuppressionRadius;
-        foreach (var u in _soldiers)
+        if (!hit) SuppressOne(t, 1f, s);
+        foreach (var u in Hash.Near(t.Side, impact, radius))
         {
-            if (u.Side == s.Side || !u.IsActive || (hit && u == t)) continue;
-            float falloff;
-            if (u == t) falloff = 1f;
-            else
-            {
-                float dd = Vector2.Distance(u.Position, impact);
-                if (dd >= radius) continue;
-                falloff = 1f - dd / radius;
-            }
-            float shield = 1f - Rules.Combat.CoverSuppressionShield * Map.ProtectionAt(u.Position, s.Position);
-            AddSuppression(u, w.Suppression * falloff * shield, s);
+            if (u == t) continue;
+            float dd = Vector2.Distance(u.Position, impact);
+            if (dd >= radius) continue;
+            SuppressOne(u, 1f - dd / radius, s);
         }
 
         // A muzzle flash can give the shooter away.
@@ -123,6 +117,12 @@ public sealed partial class Battle
         }
 
         if (hit) ApplyHit(t, s);
+    }
+
+    private void SuppressOne(Soldier u, float falloff, Soldier shooter)
+    {
+        float shield = 1f - Rules.Combat.CoverSuppressionShield * Map.ProtectionAt(u.Position, shooter.Position);
+        AddSuppression(u, shooter.Weapon.Suppression * falloff * shield, shooter);
     }
 
     private void AddSuppression(Soldier u, float amount, Soldier shooter)
@@ -153,21 +153,18 @@ public sealed partial class Battle
         Note(t, $"{(killed ? "killed" : "wounded")} by {shooter.Label} at {Vector2.Distance(t.Position, shooter.Position):0} m");
         _knowledge[(int)shooter.Side].Forget(t.Id);
 
-        foreach (var f in _soldiers)
+        foreach (var f in Hash.Near(t.Side, t.Position, mr.FriendRadius))
         {
-            if (!f.IsActive) continue;
+            if (f == t || !f.IsActive) continue;
             float d = Vector2.Distance(f.Position, t.Position);
-            if (f.Side == t.Side)
-            {
-                if (d < mr.FriendRadius)
-                    f.Morale -= (killed ? mr.FriendKilled : mr.FriendWounded) * (1f - 0.5f * d / mr.FriendRadius);
-                if (t.IsLeader && f.Group == t.Group) f.Morale -= mr.LeaderKilled;
-            }
-            else if (f.Group == shooter.Group && d < 150f)
-            {
-                f.Morale = MathF.Min(f.StartMorale, f.Morale + mr.EnemyDownSeen);
-            }
+            f.Morale -= (killed ? mr.FriendKilled : mr.FriendWounded) * (1f - 0.5f * d / mr.FriendRadius);
         }
+        if (t.IsLeader)
+            foreach (var f in t.Group.Members)
+                if (f.IsActive && f != t) f.Morale -= mr.LeaderKilled;
+        foreach (var f in shooter.Group.Members)
+            if (f.IsActive && Vector2.DistanceSquared(f.Position, t.Position) < 150f * 150f)
+                f.Morale = MathF.Min(f.StartMorale, f.Morale + mr.EnemyDownSeen);
     }
 
     internal void ReleaseCover(Soldier s)

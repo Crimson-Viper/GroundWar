@@ -33,13 +33,7 @@ public sealed partial class Battle
         UpdateMoraleState(s);
     }
 
-    private bool HasFriendNear(Soldier s, float radius)
-    {
-        float r2 = radius * radius;
-        foreach (var f in _soldiers)
-            if (f != s && f.Side == s.Side && f.IsActive && Vector2.DistanceSquared(f.Position, s.Position) < r2) return true;
-        return false;
-    }
+    private bool HasFriendNear(Soldier s, float radius) => Hash.AnyNear(s.Side, s.Position, radius, s);
 
     private void UpdateMoraleState(Soldier s)
     {

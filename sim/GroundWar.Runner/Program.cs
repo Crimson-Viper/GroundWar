@@ -19,6 +19,7 @@ for (int i = 0; i < args.Length; i++)
         case "--battles": battles = int.Parse(args[++i]); break;
         case "--seed": seed = ulong.Parse(args[++i]); break;
         case "--log": log = true; break;
+        case "--profile": GroundWar.Sim.Core.Profile.Enabled = true; break;
     }
 }
 
@@ -64,3 +65,11 @@ sw.Stop();
 Console.WriteLine();
 Console.WriteLine($"Blue wins {blueWins}, Red wins {redWins}, draws {draws}.  Average length {totalTime / battles:0} s.");
 Console.WriteLine($"Simulated {ticks * Battle.Dt / 60f:0} battle-minutes in {sw.Elapsed.TotalSeconds:0.0} s ({ticks * Battle.Dt / sw.Elapsed.TotalSeconds:0}x real time).");
+if (GroundWar.Sim.Core.Profile.Enabled)
+{
+    Console.WriteLine();
+    Console.WriteLine("Time per part of the tick (ms per simulated second):");
+    double secs = ticks * Battle.Dt;
+    foreach (var (name, ms) in GroundWar.Sim.Core.Profile.Milliseconds.OrderByDescending(kv => kv.Value))
+        Console.WriteLine($"  {name,-10} {ms / secs,8:0.0}");
+}

@@ -31,6 +31,7 @@ public sealed class PerceptionRules
     public float Interval { get; set; } = 0.5f;
     public float ViewRange { get; set; } = 400f;
     public float AutoSpotRange { get; set; } = 25f;
+    public int MaxTracked { get; set; } = 12;
     public float BaseSpotChance { get; set; } = 0.5f;
     public float FarSpotChance { get; set; } = 0.04f;
     public float FiringMultiplier { get; set; } = 4f;

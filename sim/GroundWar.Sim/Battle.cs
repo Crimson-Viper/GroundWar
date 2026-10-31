@@ -43,6 +43,7 @@ public sealed partial class Battle
     private readonly List<ShotEvent> _shots = new();
     private readonly List<CasualtyEvent> _casualties = new();
     private readonly SoldierBrain _brain;
+    internal SoldierHash Hash { get; }
 
     public Battle(GameData data, ScenarioDef scenario, MapDef mapDef, ulong seed)
     {
@@ -53,7 +54,9 @@ public sealed partial class Battle
         Map = new BattleMap(mapDef, data.Rules.Combat);
         Grid = new BattleGrid(Map);
         _brain = new SoldierBrain(this);
+        Hash = new SoldierHash(Map.Width, Map.Height);
         Spawn();
+        Hash.Rebuild(_soldiers);
         UpdateGridControl();
     }
 
@@ -158,21 +161,30 @@ public sealed partial class Battle
 
         float perceptionInterval = Rules.Perception.Interval;
         float thinkInterval = Rules.Ai.ThinkInterval;
+        long t0 = Profile.Start();
+        Hash.Rebuild(_soldiers);
         foreach (var s in _soldiers)
         {
             if (!s.IsActive || Time < s.NextPerceive) continue;
             Perceive(s);
             s.NextPerceive = Time + perceptionInterval;
         }
+        t0 = Profile.Lap("perceive", t0);
         foreach (var s in _soldiers)
         {
             if (!s.IsActive || Time < s.NextThink) continue;
             _brain.Think(s);
-            s.NextThink = Time + thinkInterval * Rng.Range(0.8f, 1.2f);
+            // Men in a fight think often; men with nothing going on think less often.
+            bool busy = s.IsMoving || s.VisibleEnemies.Count > 0 || s.UnderFire(Time, Rules.Ai.UnderFireWindow);
+            s.NextThink = Time + thinkInterval * (busy ? 1f : 2.5f) * Rng.Range(0.8f, 1.2f);
         }
+        t0 = Profile.Lap("think", t0);
         foreach (var s in _soldiers) if (s.IsActive) UpdateWeapon(s);
+        t0 = Profile.Lap("weapons", t0);
         foreach (var s in _soldiers) if (s.IsActive) Move(s);
+        t0 = Profile.Lap("move", t0);
         foreach (var s in _soldiers) if (s.IsActive) UpdateMorale(s);
+        t0 = Profile.Lap("morale", t0);
         UpdateGroups();
 
         if (Tick % 10 == 0)
@@ -181,6 +193,7 @@ public sealed partial class Battle
             foreach (var k in _knowledge) k.Expire(Time, Rules.Perception.ContactMemory);
         }
         CheckEnd();
+        Profile.Lap("other", t0);
     }
 
     /// <summary>Run until a result or the time limit (used by tests and the headless runner).</summary>

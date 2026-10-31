@@ -1,0 +1,2528 @@
+{
+ "name": "Stress test: 1,000 per side",
+ "description": "Battalion-scale load test: 50 squads of 20 a side, starting in rifle range.",
+ "map": "maps/stress_field.json",
+ "timeLimit": 300,
+ "sides": [
+  {
+   "side": "Blue",
+   "name": "Blue",
+   "rear": [
+    -1,
+    0
+   ],
+   "groups": [
+    {
+     "name": "Blue Squad 1",
+     "order": "Advance",
+     "objective": [
+      700,
+      20.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      20.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 2",
+     "order": "Advance",
+     "objective": [
+      700,
+      35.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      35.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 3",
+     "order": "Advance",
+     "objective": [
+      700,
+      51.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      51.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 4",
+     "order": "Advance",
+     "objective": [
+      700,
+      66.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      66.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 5",
+     "order": "Advance",
+     "objective": [
+      700,
+      82.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      82.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 6",
+     "order": "Advance",
+     "objective": [
+      700,
+      98.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      98.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 7",
+     "order": "Advance",
+     "objective": [
+      700,
+      113.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      113.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 8",
+     "order": "Advance",
+     "objective": [
+      700,
+      129.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      129.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 9",
+     "order": "Advance",
+     "objective": [
+      700,
+      144.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      144.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 10",
+     "order": "Advance",
+     "objective": [
+      700,
+      160.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      160.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 11",
+     "order": "Advance",
+     "objective": [
+      700,
+      176.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      176.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 12",
+     "order": "Advance",
+     "objective": [
+      700,
+      191.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      191.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 13",
+     "order": "Advance",
+     "objective": [
+      700,
+      207.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      207.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 14",
+     "order": "Advance",
+     "objective": [
+      700,
+      222.79999999999998
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      222.79999999999998
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 15",
+     "order": "Advance",
+     "objective": [
+      700,
+      238.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      238.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 16",
+     "order": "Advance",
+     "objective": [
+      700,
+      254.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      254.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 17",
+     "order": "Advance",
+     "objective": [
+      700,
+      269.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      269.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 18",
+     "order": "Advance",
+     "objective": [
+      700,
+      285.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      285.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 19",
+     "order": "Advance",
+     "objective": [
+      700,
+      300.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      300.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 20",
+     "order": "Advance",
+     "objective": [
+      700,
+      316.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      316.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 21",
+     "order": "Advance",
+     "objective": [
+      700,
+      332.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      332.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 22",
+     "order": "Advance",
+     "objective": [
+      700,
+      347.59999999999997
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      347.59999999999997
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 23",
+     "order": "Advance",
+     "objective": [
+      700,
+      363.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      363.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 24",
+     "order": "Advance",
+     "objective": [
+      700,
+      378.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      378.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 25",
+     "order": "Advance",
+     "objective": [
+      700,
+      394.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      394.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 26",
+     "order": "Advance",
+     "objective": [
+      700,
+      410.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      410.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 27",
+     "order": "Advance",
+     "objective": [
+      700,
+      425.59999999999997
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      425.59999999999997
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 28",
+     "order": "Advance",
+     "objective": [
+      700,
+      441.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      441.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 29",
+     "order": "Advance",
+     "objective": [
+      700,
+      456.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      456.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 30",
+     "order": "Advance",
+     "objective": [
+      700,
+      472.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      472.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 31",
+     "order": "Advance",
+     "objective": [
+      700,
+      488.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      488.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 32",
+     "order": "Advance",
+     "objective": [
+      700,
+      503.59999999999997
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      503.59999999999997
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 33",
+     "order": "Advance",
+     "objective": [
+      700,
+      519.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      519.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 34",
+     "order": "Advance",
+     "objective": [
+      700,
+      534.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      534.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 35",
+     "order": "Advance",
+     "objective": [
+      700,
+      550.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      550.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 36",
+     "order": "Advance",
+     "objective": [
+      700,
+      566.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      566.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 37",
+     "order": "Advance",
+     "objective": [
+      700,
+      581.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      581.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 38",
+     "order": "Advance",
+     "objective": [
+      700,
+      597.1999999999999
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      597.1999999999999
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 39",
+     "order": "Advance",
+     "objective": [
+      700,
+      612.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      612.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 40",
+     "order": "Advance",
+     "objective": [
+      700,
+      628.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      628.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 41",
+     "order": "Advance",
+     "objective": [
+      700,
+      644.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      644.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 42",
+     "order": "Advance",
+     "objective": [
+      700,
+      659.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      659.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 43",
+     "order": "Advance",
+     "objective": [
+      700,
+      675.1999999999999
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      675.1999999999999
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 44",
+     "order": "Advance",
+     "objective": [
+      700,
+      690.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      690.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 45",
+     "order": "Advance",
+     "objective": [
+      700,
+      706.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      706.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 46",
+     "order": "Advance",
+     "objective": [
+      700,
+      722.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      722.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 47",
+     "order": "Advance",
+     "objective": [
+      700,
+      737.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      737.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 48",
+     "order": "Advance",
+     "objective": [
+      700,
+      753.1999999999999
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      753.1999999999999
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 49",
+     "order": "Advance",
+     "objective": [
+      700,
+      768.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      768.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Blue Squad 50",
+     "order": "Advance",
+     "objective": [
+      700,
+      784.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      420,
+      784.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    }
+   ]
+  },
+  {
+   "side": "Red",
+   "name": "Red",
+   "rear": [
+    1,
+    0
+   ],
+   "groups": [
+    {
+     "name": "Red Squad 1",
+     "order": "Advance",
+     "objective": [
+      500,
+      20.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      20.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 2",
+     "order": "Advance",
+     "objective": [
+      500,
+      35.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      35.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 3",
+     "order": "Advance",
+     "objective": [
+      500,
+      51.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      51.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 4",
+     "order": "Advance",
+     "objective": [
+      500,
+      66.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      66.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 5",
+     "order": "Advance",
+     "objective": [
+      500,
+      82.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      82.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 6",
+     "order": "Advance",
+     "objective": [
+      500,
+      98.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      98.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 7",
+     "order": "Advance",
+     "objective": [
+      500,
+      113.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      113.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 8",
+     "order": "Advance",
+     "objective": [
+      500,
+      129.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      129.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 9",
+     "order": "Advance",
+     "objective": [
+      500,
+      144.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      144.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 10",
+     "order": "Advance",
+     "objective": [
+      500,
+      160.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      160.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 11",
+     "order": "Advance",
+     "objective": [
+      500,
+      176.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      176.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 12",
+     "order": "Advance",
+     "objective": [
+      500,
+      191.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      191.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 13",
+     "order": "Advance",
+     "objective": [
+      500,
+      207.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      207.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 14",
+     "order": "Advance",
+     "objective": [
+      500,
+      222.79999999999998
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      222.79999999999998
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 15",
+     "order": "Advance",
+     "objective": [
+      500,
+      238.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      238.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 16",
+     "order": "Advance",
+     "objective": [
+      500,
+      254.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      254.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 17",
+     "order": "Advance",
+     "objective": [
+      500,
+      269.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      269.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 18",
+     "order": "Advance",
+     "objective": [
+      500,
+      285.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      285.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 19",
+     "order": "Advance",
+     "objective": [
+      500,
+      300.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      300.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 20",
+     "order": "Advance",
+     "objective": [
+      500,
+      316.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      316.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 21",
+     "order": "Advance",
+     "objective": [
+      500,
+      332.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      332.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 22",
+     "order": "Advance",
+     "objective": [
+      500,
+      347.59999999999997
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      347.59999999999997
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 23",
+     "order": "Advance",
+     "objective": [
+      500,
+      363.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      363.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 24",
+     "order": "Advance",
+     "objective": [
+      500,
+      378.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      378.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 25",
+     "order": "Advance",
+     "objective": [
+      500,
+      394.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      394.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 26",
+     "order": "Advance",
+     "objective": [
+      500,
+      410.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      410.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 27",
+     "order": "Advance",
+     "objective": [
+      500,
+      425.59999999999997
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      425.59999999999997
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 28",
+     "order": "Advance",
+     "objective": [
+      500,
+      441.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      441.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 29",
+     "order": "Advance",
+     "objective": [
+      500,
+      456.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      456.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 30",
+     "order": "Advance",
+     "objective": [
+      500,
+      472.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      472.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 31",
+     "order": "Advance",
+     "objective": [
+      500,
+      488.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      488.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 32",
+     "order": "Advance",
+     "objective": [
+      500,
+      503.59999999999997
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      503.59999999999997
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 33",
+     "order": "Advance",
+     "objective": [
+      500,
+      519.2
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      519.2
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 34",
+     "order": "Advance",
+     "objective": [
+      500,
+      534.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      534.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 35",
+     "order": "Advance",
+     "objective": [
+      500,
+      550.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      550.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 36",
+     "order": "Advance",
+     "objective": [
+      500,
+      566.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      566.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 37",
+     "order": "Advance",
+     "objective": [
+      500,
+      581.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      581.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 38",
+     "order": "Advance",
+     "objective": [
+      500,
+      597.1999999999999
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      597.1999999999999
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 39",
+     "order": "Advance",
+     "objective": [
+      500,
+      612.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      612.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 40",
+     "order": "Advance",
+     "objective": [
+      500,
+      628.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      628.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 41",
+     "order": "Advance",
+     "objective": [
+      500,
+      644.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      644.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 42",
+     "order": "Advance",
+     "objective": [
+      500,
+      659.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      659.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 43",
+     "order": "Advance",
+     "objective": [
+      500,
+      675.1999999999999
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      675.1999999999999
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 44",
+     "order": "Advance",
+     "objective": [
+      500,
+      690.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      690.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 45",
+     "order": "Advance",
+     "objective": [
+      500,
+      706.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      706.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 46",
+     "order": "Advance",
+     "objective": [
+      500,
+      722.0
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      722.0
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 47",
+     "order": "Advance",
+     "objective": [
+      500,
+      737.6
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      737.6
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 48",
+     "order": "Advance",
+     "objective": [
+      500,
+      753.1999999999999
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      753.1999999999999
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 49",
+     "order": "Advance",
+     "objective": [
+      500,
+      768.8
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      768.8
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "Red Squad 50",
+     "order": "Advance",
+     "objective": [
+      500,
+      784.4
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      780,
+      784.4
+     ],
+     "spawnSize": [
+      30,
+      14
+     ],
+     "weapons": {
+      "rifle": 18,
+      "lmg": 2
+     }
+    }
+   ]
+  }
+ ]
+}

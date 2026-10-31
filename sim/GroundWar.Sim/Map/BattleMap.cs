@@ -25,6 +25,9 @@ public sealed class BattleMap
     private readonly List<CoverPoint>[] _coverBuckets;
     private readonly List<Wall>[] _wallBuckets;
     private readonly List<Crater>[] _craterBuckets;
+    private readonly List<Wall>[] _highWallBuckets;
+    private readonly int[] _wallStamp;
+    private int _sightStamp;
     private readonly CombatRules _combat;
 
     public BattleMap(MapDef def, CombatRules combat)
@@ -49,6 +52,11 @@ public sealed class BattleMap
         _coverBuckets = NewBuckets<CoverPoint>();
         _wallBuckets = NewBuckets<Wall>();
         _craterBuckets = NewBuckets<Crater>();
+        _highWallBuckets = NewBuckets<Wall>();
+        _wallStamp = new int[_walls.Count];
+        foreach (var w in _highWalls)
+            AddToBuckets(_highWallBuckets, w, MathF.Min(w.A.X, w.B.X) - 1, MathF.Min(w.A.Y, w.B.Y) - 1,
+                MathF.Max(w.A.X, w.B.X) + 1, MathF.Max(w.A.Y, w.B.Y) + 1);
         foreach (var w in _walls)
         {
             float pad = w.Thickness + combat.CoverCheckDistance;
@@ -73,12 +81,44 @@ public sealed class BattleMap
     /// <summary>True if a high wall blocks the straight line between a and b.</summary>
     public bool SightBlocked(Vector2 a, Vector2 b)
     {
-        foreach (var w in _highWalls)
+        if (_highWalls.Count <= 8)
         {
-            float r = w.Thickness * 0.5f;
-            if (Geo.SegmentSegmentDistSq(a, b, w.A, w.B, out _, out _) < r * r) return true;
+            foreach (var w in _highWalls)
+                if (WallBlocks(w, a, b)) return true;
+            return false;
+        }
+        // Walk the 10 m squares the line passes through (Amanatides & Woo) and only test the high walls in them.
+        _sightStamp++;
+        int x = Math.Clamp((int)(a.X / BucketSize), 0, _bucketsX - 1), y = Math.Clamp((int)(a.Y / BucketSize), 0, _bucketsY - 1);
+        int ex = Math.Clamp((int)(b.X / BucketSize), 0, _bucketsX - 1), ey = Math.Clamp((int)(b.Y / BucketSize), 0, _bucketsY - 1);
+        Vector2 d = b - a;
+        int stepX = d.X > 0 ? 1 : -1, stepY = d.Y > 0 ? 1 : -1;
+        float tDeltaX = d.X != 0 ? MathF.Abs(BucketSize / d.X) : float.MaxValue;
+        float tDeltaY = d.Y != 0 ? MathF.Abs(BucketSize / d.Y) : float.MaxValue;
+        float nextX = (stepX > 0 ? (x + 1) * BucketSize : x * BucketSize);
+        float nextY = (stepY > 0 ? (y + 1) * BucketSize : y * BucketSize);
+        float tMaxX = d.X != 0 ? (nextX - a.X) / d.X : float.MaxValue;
+        float tMaxY = d.Y != 0 ? (nextY - a.Y) / d.Y : float.MaxValue;
+        for (int guard = 0; guard < 4 * (_bucketsX + _bucketsY); guard++)
+        {
+            foreach (var w in _highWallBuckets[y * _bucketsX + x])
+            {
+                if (_wallStamp[w.Id] == _sightStamp) continue;
+                _wallStamp[w.Id] = _sightStamp;
+                if (WallBlocks(w, a, b)) return true;
+            }
+            if (x == ex && y == ey) break;
+            if (tMaxX < tMaxY) { tMaxX += tDeltaX; x += stepX; }
+            else { tMaxY += tDeltaY; y += stepY; }
+            if (x < 0 || y < 0 || x >= _bucketsX || y >= _bucketsY) break;
         }
         return false;
+    }
+
+    private static bool WallBlocks(Wall w, Vector2 a, Vector2 b)
+    {
+        float r = w.Thickness * 0.5f;
+        return Geo.SegmentSegmentDistSq(a, b, w.A, w.B, out _, out _) < r * r;
     }
 
     public bool HasLineOfSight(Vector2 a, Vector2 b) => !SightBlocked(a, b);
