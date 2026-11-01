@@ -52,6 +52,7 @@ public partial class MapView : Node3D
         _refreshTimer -= (float)delta;
         if (_refreshTimer > 0) return;
         _refreshTimer = 0.25f;
+        if (_battle.Map.Craters.Count != _cratersDrawn) RebuildFoxholes();
         if (_gridMode == GridMode.Control) RefreshGrid();
         if (_coverMesh.Visible) RefreshCover();
     }
@@ -96,8 +97,10 @@ public partial class MapView : Node3D
     {
         var discs = new List<Transform3D>();
         var rims = new List<Transform3D>();
+        _cratersDrawn = _battle.Map.Craters.Count;
         foreach (var c in _battle.Map.Craters)
         {
+            if (c.Foxhole) continue;
             discs.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius, 1, c.Radius)), Draw.To3(c.Center, 0.02f)));
             rims.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius, 0.35f * c.Radius, c.Radius)), Draw.To3(c.Center, 0f)));
         }
@@ -107,6 +110,40 @@ public partial class MapView : Node3D
         // A unit ring: scaled by the crater radius sideways; its height is divided back out above.
         AddChild(Draw.Batch(new TorusMesh { InnerRadius = 0.92f, OuterRadius = 1.3f, Rings = 24, RingSegments = 8 },
             Draw.Lit(new Color(0.36f, 0.34f, 0.30f)), rims));
+    }
+
+    private int _cratersDrawn;
+    private Node3D? _foxholes;
+
+    /// <summary>Foxholes are dug during the battle, so they're redrawn (as one batch) whenever a new one appears.</summary>
+    private void RebuildFoxholes()
+    {
+        var map = _battle.Map;
+        _cratersDrawn = map.Craters.Count;
+        _foxholes?.QueueFree();
+        var holes = new List<Transform3D>();
+        var spoil = new List<Transform3D>();
+        foreach (var c in map.Craters)
+        {
+            if (!c.Foxhole) continue;
+            holes.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius, 1, c.Radius)), Draw.To3(c.Center, 0.03f)));
+            spoil.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius * 1.1f, 0.5f, c.Radius * 1.1f)), Draw.To3(c.Center, 0f)));
+        }
+        _foxholes = new Node3D { Name = "Foxholes" };
+        if (holes.Count > 0)
+        {
+            _foxholes.AddChild(Draw.Batch(new CylinderMesh { TopRadius = 1f, BottomRadius = 1f, Height = 0.04f, RadialSegments = 12 },
+                Draw.Lit(new Color(0.20f, 0.17f, 0.13f)), holes));
+            // The dug-out earth piled in a ring round the hole.
+            _foxholes.AddChild(Draw.Batch(new TorusMesh { InnerRadius = 0.95f, OuterRadius = 1.45f, Rings = 12, RingSegments = 6 },
+                Draw.Lit(new Color(0.42f, 0.34f, 0.24f)), spoil));
+        }
+        AddChild(_foxholes);
+        // The cover overlay has one marker per cover point, so it needs rebuilding too.
+        bool coverOn = _coverMesh.Visible;
+        _coverMesh.QueueFree();
+        BuildCoverOverlay();
+        _coverMesh.Visible = coverOn;
     }
 
     private void BuildObjectives()
@@ -233,6 +270,7 @@ public partial class MapView : Node3D
                 {
                     CoverKind.LowWall => new Color(0.2f, 0.9f, 0.3f),
                     CoverKind.Crater => new Color(0.8f, 0.9f, 0.2f),
+                    CoverKind.Foxhole => new Color(0.75f, 0.5f, 0.25f),
                     _ => cp.CanFire ? new Color(0.2f, 0.9f, 0.9f) : new Color(0.3f, 0.4f, 1f),
                 };
             mm.SetInstanceColor(i, c);

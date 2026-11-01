@@ -87,3 +87,33 @@ public class SquadTests
         Assert.True(now < start * 0.5f, $"support squad still {now:0} m from its position (started {start:0} m)");
     }
 }
+
+public class DiggingTests
+{
+    [Fact]
+    public void DefendersDigFoxholesAndAttackersDont()
+    {
+        var battle = Battle.Load(TestData.Source, "scenarios/squad_attack.json", 1);
+        for (int i = 0; i < 1200; i++) battle.Step(); // two minutes
+        var holes = battle.Map.Craters.Where(c => c.Foxhole).ToList();
+        Assert.NotEmpty(holes);
+        // Each hole is a cover point claimed by the man who dug it, and he's on the side told to hold.
+        foreach (var cp in battle.Map.CoverPoints.Where(c => c.Kind == Map.CoverKind.Foxhole && c.ClaimedBy >= 0))
+            Assert.Equal(Units.Side.Red, battle.Soldiers[cp.ClaimedBy].Side);
+    }
+
+    [Fact]
+    public void AFoxholeProtectsFromEveryDirection()
+    {
+        var battle = Battle.Load(TestData.Source, "scenarios/squad_attack.json", 1);
+        var dirs = new[] { (1f, 0f), (-1f, 0f), (0f, 1f), (0.7f, -0.7f) };
+        System.Numerics.Vector2 From(System.Numerics.Vector2 p, (float, float) d) => p + new System.Numerics.Vector2(d.Item1, d.Item2) * 60f;
+        // Find a patch of open ground: no protection from any direction yet.
+        var spot = Enumerable.Range(0, 400).Select(i => new System.Numerics.Vector2(80 + i % 20 * 7, 40 + i / 20 * 6))
+            .First(p => dirs.All(d => battle.Map.ProtectionAt(p, From(p, d)) == 0f));
+        battle.Map.AddFoxhole(spot);
+        foreach (var dir in dirs)
+            Assert.Equal(battle.Rules.Combat.FoxholeProtection,
+                battle.Map.ProtectionAt(spot, From(spot, dir)));
+    }
+}

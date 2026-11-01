@@ -7,7 +7,7 @@
     "turnRate": 35,           // hull, degrees per second
     "turretTurnRate": 30,     // degrees per second
     "length": 6.0, "width": 3.0,
-    "armourFront": 30, "armourSide": 20, "armourRear": 12,
+    "armourFront": 50, "armourSide": 35, "armourRear": 25,
     "mainGun": "tank_gun",
     "machineGun": "tank_mg",
     "knockOutChance": 0.45,   // when a hit goes through the armour

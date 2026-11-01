@@ -137,7 +137,7 @@ public sealed partial class Battle
             float spread = w.Spread * (t == null ? 1.5f : 1f);
             impact = aim + Geo.Perp(dir) * (Rng.Gaussian() * spread) + dir * (Rng.Gaussian() * spread * 1.5f);
         }
-        _shots.Add(new ShotEvent(s.Id, s.Position, impact, hit, w.IsMachineGun));
+        _shots.Add(new ShotEvent(s.Id, s.Position, impact, hit, w.IsMachineGun, Shell: w.Backblast));
 
         // Near misses frighten everyone close to where the bullet went.
         float radius = w.SuppressionRadius;
@@ -154,7 +154,12 @@ public sealed partial class Battle
 
         // A muzzle flash can give the shooter away to the men being shot at.
         var reveal = frightened ?? victim;
-        if (reveal != null && Rng.Chance(Rules.Perception.MuzzleFlashRevealChance))
+        if (w.Backblast)
+        {
+            // Nobody misses a bazooka going off: everyone near the target knows exactly where it came from.
+            foreach (var u in Hash.Near(enemySide, aim, 60f)) Report(u.Group, s, s.Position, 1f);
+        }
+        else if (reveal != null && Rng.Chance(Rules.Perception.MuzzleFlashRevealChance))
         {
             var guess = s.Position + new Vector2(Rng.Gaussian(), Rng.Gaussian()) * 3f;
             Report(reveal.Group, s, guess, 0.5f);

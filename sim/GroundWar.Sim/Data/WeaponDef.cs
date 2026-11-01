@@ -28,6 +28,12 @@ public sealed class WeaponDef
     public float BlastRadius { get; set; }
     public bool IsShell => BlastRadius > 0f;
     public bool CanHurtArmour => Penetration > 0f;
+    /// <summary>Only ever fired at tanks (a bazooka): the man carrying it ignores infantry.</summary>
+    public bool AntiTankOnly { get; set; }
+    /// <summary>Firing it throws out a cloud of smoke and flame behind: every enemy near the target sees where it came from.</summary>
+    public bool Backblast { get; set; }
+    /// <summary>Chance a round that doesn't get through the armour still breaks a track (0 = use the tank's own figure).</summary>
+    public float TrackBreakChance { get; set; }
     /// <summary>Penetration falls off with range: full at the muzzle, half at maximum range.</summary>
     public float PenetrationAt(float range) => Penetration * (1f - 0.5f * Math.Clamp(range / MathF.Max(Range, 1f), 0f, 1f));
 

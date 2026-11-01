@@ -19,7 +19,7 @@
     "muzzleFlashRevealChance": 0.35
   },
   "combat": {
-    "lowWallProtection": 0.7, "craterProtection": 0.6, "coverCheckDistance": 1.8,
+    "lowWallProtection": 0.7, "craterProtection": 0.6, "foxholeProtection": 0.75, "coverCheckDistance": 1.8,
     "standingHitFactor": 1.0, "crouchedHitFactor": 0.6, "proneHitFactor": 0.35,
     "movingTargetFactor": 0.5, "shakenAccuracy": 0.8,
     "suppressionAccuracyLoss": 0.75, "coverSuppressionShield": 0.3
@@ -39,7 +39,7 @@
   "ai": {
     "thinkInterval": 0.4,
     "coverSearchRadius": 25, "suppressedCoverSearchRadius": 8,
-    "stickinessBonus": 10, "underFireWindow": 5, "mapEdgeRoutDistance": 4
+    "stickinessBonus": 10, "underFireWindow": 5, "digTime": 90, "digQuietTime": 10, "mapEdgeRoutDistance": 4
   },
   "squad": {
     "thinkInterval": 1.5,        // seconds between squad leader decisions

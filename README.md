@@ -33,7 +33,7 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
    - **Firefight at the wall**: one Blue squad attacks alone. It usually fails, which is the point: compare it with the two-squad attack.
    - **Meeting engagement**: two equal squads advance into the middle. The map is the same from both ends, so each side wins about as often as the other.
    - **Town attack**: street fighting. Two Blue squads fight through houses, yards and rubble to take a crossroads held by a Red squad, with a Red machine gun further down the main street. Lots of cover, short ranges; the defender usually holds.
-   - **Tank support**: the first tank. The same attack as the firefight at the wall, but a Blue tank leads the squad in with its main gun and machine gun. Red has anti-tank rifles: one in the squad and a two-man team off to the north, placed to hit the tank's thinner side armour. Rifles and machine guns just ring off the armour. With the tank Blue usually wins; without it Blue usually loses. Click the tank to see its armour, shells and what its commander is thinking.
+   - **Tank support**: the first tank. The same attack as the firefight at the wall, but a Blue tank leads the squad in with its main gun and machine gun. Red has an anti-tank rifle in the squad (it can only break a track) and a two-man bazooka team off to the north, placed to hit the tank's side armour. Rifles and machine guns just ring off the armour. With the tank Blue usually wins; without it Blue usually loses. Click the tank to see its armour, shells and what its commander is thinking.
    - **Stress test**: 1,000 soldiers a side on a big field, to check the game stays smooth at battalion size. Zoom out to see it all.
 
 To get a new version: in GitHub Desktop press **Fetch origin**, then **Pull**, then press F5 in Godot again.
@@ -54,13 +54,9 @@ bottom = suppression (yellow fills as bullets pass close). Dark men lying down a
 
 **Reading a tank.** The tank is painted in its side's colour; its turret turns on its own to where the commander is aiming. A knocked-out tank goes dark with
 its turret twisted. Shells show as a bright tracer, a flash and a puff of smoke where they burst. The tank commander drives in
-short bounds, stops to fire the main gun, turns his front armour toward anti-tank rifles, and hangs back if his infantry falls
-too far behind. Anti-tank rifles get through the side and rear up close, and the front only at close range.
-
-**Reading a tank.** The tank is a grey box in its side's colour: hull, tracks, turret and gun. A knocked-out tank goes dark with
-its turret twisted. Shells show as a bright tracer, a flash and a puff of smoke where they burst. The tank commander drives in
-short bounds, stops to fire the main gun, turns his front armour toward anti-tank rifles, and hangs back if his infantry falls
-too far behind. Anti-tank rifles get through the side and rear up close, and the front only at close range.
+short bounds, stops to fire the main gun, turns his front armour toward anti-tank weapons, and hangs back if his infantry falls
+too far behind. Anti-tank rifles can't get through a medium tank's armour, only break a track; a bazooka gets through
+the side or rear inside about 100 m, and its backblast gives the gunner away. See [docs/systems/tanks.md](docs/systems/tanks.md).
 
 **Squads.** Each squad splits into a gun team (around the machine gun) and a rifle team. The squad leader picks a tactic:
 travel, bounding overwatch (one team moves, the other covers), fire and movement, flank, assault, suppress, defend, or fall back.
@@ -79,8 +75,16 @@ defender wins. If both sides attacked, the side with clearly more men still figh
 an enemy was last seen (fading as the sighting gets older; a big disc is a guess from a muzzle flash). Each squad only knows what its
 own men have seen, or what a squad close by tells it. Press V to see everything.
 
+**Foxholes.** A squad told to hold digs in when things are quiet: each man digs his own foxhole (about 90 seconds),
+shown as a dark hole with a ring of earth. A foxhole protects from every side, better than a crater.
+
 **Cover points (C).** Green = low wall, yellow = crater, cyan = corner of a ruin you can shoot from,
 blue = hiding spot behind a ruin, orange = someone has claimed it. Bars point at the side they protect from.
+
+## How it all works
+
+Every system (soldier AI, squads, morale, fog of war, maps, results, drawing, testing tools) is written up in plain
+words in [docs/](docs/README.md): what it does, how it works, why, where the code is, and how to tune and test it.
 
 ## Change how battles feel
 

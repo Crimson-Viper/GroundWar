@@ -47,7 +47,26 @@
     "suppression": 12,
     "suppressionRadius": 3,
     "threat": 1.5,
-    "penetration": 35           // mm at the muzzle, half that at full range: a tank's front only up close (under ~100 m)
+    "penetration": 22,          // mm at the muzzle, half that at full range: not enough for a medium tank's armour anywhere
+    "trackBreakChance": 0.15    // but a hit can still break a track and stop it
+  },
+  "bazooka": {
+    "name": "Bazooka",
+    "range": 150,
+    "accuracy": [[0, 0.60], [25, 0.45], [50, 0.30], [100, 0.15], [150, 0.06]],
+    "burstSize": 1,
+    "spread": 2.0,
+    "fireInterval": 12.0,       // loading a rocket takes the loader a while
+    "fireIntervalJitter": 3.0,
+    "magazineSize": 1,
+    "magazines": 5,
+    "reloadTime": 8.0,
+    "suppression": 30,
+    "suppressionRadius": 5,
+    "threat": 2.0,
+    "penetration": 100,         // goes through any side of a medium tank inside about 100 m
+    "antiTankOnly": true,       // never fired at infantry
+    "backblast": true           // everyone near the target sees where it came from
   },
   "tank_gun": {
     "name": "Tank gun (high explosive)",

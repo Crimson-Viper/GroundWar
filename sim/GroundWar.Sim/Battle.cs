@@ -247,6 +247,7 @@ public sealed partial class Battle
             UpdateWeapon(s);
             if (s.IsTank) UpdateMainGun(s);
         }
+        foreach (var s in _soldiers) if (s.IsActive && s.Action == SoldierAction.Dig) Dig(s);
         t0 = Profile.Lap("weapons", t0);
         foreach (var s in _soldiers)
         {
@@ -276,6 +277,21 @@ public sealed partial class Battle
         float until = Time + extraSeconds;
         while (Time < until) Step();
         return Result;
+    }
+
+    /// <summary>A man digging in: once he has dug long enough, there's a foxhole where he stands and he's in it.</summary>
+    private void Dig(Soldier s)
+    {
+        s.DigProgress += Dt;
+        if (s.DigProgress < Rules.Ai.DigTime) return;
+        s.DigProgress = 0f;
+        ReleaseCover(s);
+        var hole = Map.AddFoxhole(s.Position);
+        hole.ClaimedBy = s.Id;
+        s.Cover = hole;
+        s.Action = SoldierAction.Idle;
+        s.Thought = "Dug in";
+        Note(s, "dug a foxhole", LogKind.Thought);
     }
 
     private void UpdateGridControl() =>

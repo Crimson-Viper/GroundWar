@@ -1,10 +1,10 @@
 // First tank: the same attack as "Firefight at the wall" (which Blue usually loses), but with a tank.
 // The tank leads with its main gun and machine gun; the squad follows it in.
-// Red has an anti-tank rifle in the squad and an anti-tank team behind the north end of the wall, placed to hit
-// the tank's thinner side armour as it drives past. Anti-tank rifles only get through the front up close.
+// Red has an anti-tank rifle in the squad (it can only break a track) and a bazooka team behind the north end of the wall, placed to hit
+// the tank's side armour as it drives past.
 {
   "name": "Tank support",
-  "description": "Blue's squad and a tank attack the wall Red is holding. Red has anti-tank rifles.",
+  "description": "Blue's squad and a tank attack the wall Red is holding. Red has an anti-tank rifle and a bazooka team.",
   "map": "maps/test_range.json",
   "timeLimit": 600,
   "sides": [
@@ -23,7 +23,7 @@
         { "name": "Red 1st Squad", "order": "Hold", "objective": [206, 100], "objectiveRadius": 18, "facing": [-1, 0],
           "spawnCenter": [212, 100], "spawnSize": [10, 36], "weapons": { "rifle": 7, "lmg": 1, "atr": 1 } },
         { "name": "Red AT team", "order": "Hold", "objective": [203, 66], "objectiveRadius": 7, "facing": [-1, 0.6],
-          "spawnCenter": [203, 66], "spawnSize": [4, 8], "weapons": { "rifle": 1, "atr": 2 } }
+          "spawnCenter": [203, 66], "spawnSize": [4, 8], "weapons": { "rifle": 1, "bazooka": 2 } }
       ]
     }
   ]
