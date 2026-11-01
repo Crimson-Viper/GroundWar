@@ -12,6 +12,7 @@ public sealed class Rules
     public AiRules Ai { get; set; } = new();
     public SquadRules Squad { get; set; } = new();
     public CommsRules Comms { get; set; } = new();
+    public CompanyRules Company { get; set; } = new();
 }
 
 public sealed class SquadRules
@@ -173,4 +174,43 @@ public sealed class CommsRules
     public float HqContactMemory { get; set; } = 120f;
     /// <summary>True: the player sees the enemy only as reports reach HQ. False: as soon as any of their soldiers sees him.</summary>
     public bool PlayerSeesReportsOnly { get; set; } = true;
+
+    // Inside a company (milestone 5): the commander and his squads.
+    /// <summary>A squad sergeant this close to his company commander just shouts (or walks over).</summary>
+    public float VoiceRange { get; set; } = 60f;
+    public float VoiceDelay { get; set; } = 3f;
+    /// <summary>Seconds for a message on the company's own short-range radio net (plain speech, no coding).</summary>
+    public float CompanyRadioDelay { get; set; } = 10f;
+    public float CompanyRadioDelayJitter { get; set; } = 4f;
+    /// <summary>A company commander sends battalion a situation report this often.</summary>
+    public float CompanySitrepInterval { get; set; } = 60f;
+    /// <summary>A brief-back plan starts this long after HQ hears it, unless the player approves or rejects it first.</summary>
+    public float BriefBackWait { get; set; } = 10f;
+    /// <summary>Seconds for HQ's "approved" or "rejected" to reach a commander who is waiting on the radio for it.</summary>
+    public float BriefBackReplyDelay { get; set; } = 5f;
+}
+
+/// <summary>How company commanders weigh plans (milestone 5). See docs/systems/company-commander.md.</summary>
+public sealed class CompanyRules
+{
+    /// <summary>Base expected loss (fraction of the company) above which a plan is a death trap. Traits move it.</summary>
+    public float DeathTrapLoss { get; set; } = 0.35f;
+    /// <summary>A plan whose chance of success is below this is a death trap too.</summary>
+    public float DeathTrapSuccess { get; set; } = 0.3f;
+    /// <summary>Fire value of an enemy the commander assumes is on an objective he knows nothing about (plus 2 per point of caution).</summary>
+    public float AssumedEnemyFire { get; set; } = 6f;
+    /// <summary>How deadly a second of exposure to one point of enemy fire is (tunes expected losses).</summary>
+    public float ExposureLethality { get; set; } = 0.00045f;
+    /// <summary>Distance from the objective of the start line, the support position and the flank assembly area.</summary>
+    public float StartLineDistance { get; set; } = 170f;
+    public float SupportDistance { get; set; } = 130f;
+    public float FlankWidth { get; set; } = 70f;
+    /// <summary>Seconds the support squad fires before the flankers go in.</summary>
+    public float EstablishFireTime { get; set; } = 20f;
+    /// <summary>Distance the company HQ keeps behind its squads.</summary>
+    public float HqBehind { get; set; } = 60f;
+    /// <summary>Losing this fraction of the men he had when he made the plan makes the commander think again.</summary>
+    public float ReplanLoss { get; set; } = 0.35f;
+    /// <summary>After this many new plans for one order, he stops and holds.</summary>
+    public int MaxReplans { get; set; } = 2;
 }

@@ -4,9 +4,13 @@ using GroundWar.Sim.Units;
 namespace GroundWar.Sim.Comms;
 
 /// <summary>How a message travels. See docs/systems/messages-and-delay.md.</summary>
-public enum MessageMethod { Phone, Radio, Runner, Flare }
+public enum MessageMethod { Phone, Radio, Runner, Flare, Voice }
 
 public enum MessageStatus { InTransit, Delivered, Lost }
+
+/// <summary>What a message is about. Company commanders read reports by kind (a squad saying it is pinned, or has
+/// taken the objective), and battalion HQ answers a brief-back with Approve or Reject.</summary>
+public enum MessageKind { Order, Contact, Sitrep, Losses, Pinned, Broken, Taken, Failed, BriefBack, Refusal, Approve, Reject, Note }
 
 /// <summary>What an order tells a squad to do. Halt and FallBack need no place; the rest do.</summary>
 public enum OrderKind { Hold, Advance, Attack, Suppress, Halt, FallBack }
@@ -19,6 +23,9 @@ public sealed class Order
     public float Radius { get; init; } = 15f;
     /// <summary>For Suppress: where to fire from. Defaults to where the squad is when the order arrives.</summary>
     public Vector2? SupportPosition { get; init; }
+
+    /// <summary>For Advance: just a place to get to (a start line, a support position), not an objective to take.</summary>
+    public bool IsWaypoint { get; init; }
 
     public bool CanGoByFlare => Kind is OrderKind.Halt or OrderKind.FallBack;
 
@@ -44,9 +51,16 @@ public sealed class Message
     public Side Side { get; init; }
     public MessageMethod Method { get; init; }
     public Group Group { get; init; } = null!;
+    /// <summary>Set when the message is between a company HQ and one of its squads, not battalion HQ.</summary>
+    public Company? Company { get; init; }
+    /// <summary>A brief-back: the company commander's plan, sent up for HQ to see.</summary>
+    public CompanyPlan? Plan { get; init; }
     /// <summary>True for HQ to squad (an order), false for squad to HQ (a report).</summary>
     public bool Down { get; init; }
     public Order? Order { get; init; }
+    public MessageKind Kind { get; init; }
+    /// <summary>For a report: how many of the sender's men were still fit when it was written.</summary>
+    public int Strength { get; init; }
     public string Text { get; init; } = "";
     public List<ReportedContact> Contacts { get; init; } = new();
     public float SentTime { get; init; }
@@ -61,7 +75,9 @@ public sealed class Message
     public int RunnerPathIndex { get; set; }
     public float RunnerRepath { get; set; }
 
-    public string Describe() => Down ? $"Order to {Group.Name}: {Text}" : $"{Group.Name}: {Text}";
+    public string Describe() => Down
+        ? $"{(Company != null ? Company.CommanderName : "HQ")} to {(Group.IsCompanyHq ? Group.Company!.Name : Group.Name)}: {Text}"
+        : $"{(Group.IsCompanyHq ? Group.Company!.Name : Group.Name)}{(Company != null ? " to " + Company.CommanderName : "")}: {Text}";
 }
 
 /// <summary>A field telephone cable from HQ along a route. Shells can cut it.</summary>

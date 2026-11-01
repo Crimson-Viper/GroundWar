@@ -21,7 +21,11 @@ delayed: your view of your own men is not.
   works the old way: orders are instant and the player sees every sighting at once.
 - **Telephone lines**: `"phoneLines": [ { "points": [[x,y], ...] } ]` per side. Each runs from HQ along the points; the last
   point is the phone. A squad can use it if its sergeant is within 25 m of that end (`comms.phoneReach`).
-- **Squad radios**: `"radio": true` on a group. Rare for WW2 squads; company HQs will have them from milestone 5.
+- **Squad radios**: `"radio": true` on a group. Rare for WW2 squads; company HQs have them (milestone 5).
+
+**Companies (milestone 5):** squads in a company report to their company commander, and he gives them their orders,
+by voice (within 60 m, 3 s), the company radio (10 s) or runner. Battalion HQ orders the company HQ, and the commander
+reports up. See [Company commander](company-commander.md#messages-inside-the-company).
 
 ## How a message travels
 HQ picks the fastest way that works right now (`Battle.BestMethod`):
@@ -37,7 +41,7 @@ A runner's danger: once a second, each enemy within 250 m who can see him and is
 away), capped at 15% a second.
 
 ## Orders
-`Battle.SendOrder(group, order)`. On arrival (`Battle.ApplyOrder`) the squad leader takes it on at once:
+`Battle.SendOrder(group, order)` (or `SendOrder(company, order)` for a company). On arrival (`Battle.ApplyOrder`) the squad leader takes it on at once:
 
 | Order | Effect |
 |---|---|
@@ -52,7 +56,7 @@ Scenarios can schedule orders (`"orders": [ { "time", "group", "order", "objecti
 that time and travel like any other: this is how the enemy follows a plan until the enemy commander arrives (milestone 7).
 
 ## Reports
-Each squad sergeant reports to HQ (`Battle.WriteReports`), by the same routes:
+Each squad sergeant reports to HQ (or to his company commander, if he's in a company) (`Battle.WriteReports`), by the same routes:
 - **Contact**: the first time the squad sees the enemy.
 - **Situation report** every 30 s while in contact (`comms.sitrepInterval`): strength, how many enemy known, what it's doing.
 - **Heavy casualties** at each quarter of the squad lost, **pinned down**, **broken**, **objective taken**, **attack failed**.

@@ -23,6 +23,7 @@ public partial class Hud : CanvasLayer
         "CAMERA   WASD / arrows pan · Q E rotate · wheel or + - zoom · right-drag orbit · middle-drag pan · Shift faster\n" +
         "BATTLE   Space pause · . step · 1-6 speed · R restart · N new battle (new seed) · Tab next scenario\n" +
         "SOLDIER  left-click select · F follow · Esc deselect · order panel (bottom right): press an order, then click the map\n" +
+        "COMPANY  Enter approve the brief-back · Backspace reject it · selecting any man in a company orders the company\n" +
         "OVERLAYS G grid (cover / visibility / control) · C cover points · L aim and path lines · P squad plans · T thoughts · B morale bars · V fog of war on/off · H hide help";
 
     public override void _Ready()
@@ -54,6 +55,7 @@ public partial class Hud : CanvasLayer
         AddChild(_help);
 
         BuildOrderPanel();
+        BuildCompanyPanel();
         _messagesLabel = MakePanelLabel(Vector2.Zero, out _messagesPanel);
         _messagesLabel.AddThemeFontSizeOverride("font_size", 13);
         _messagesPanel.AnchorLeft = _messagesPanel.AnchorRight = 1f;
@@ -230,7 +232,8 @@ public partial class Hud : CanvasLayer
         AddChild(_orderPanel);
     }
 
-    /// <summary>The order panel (when one of your squads is selected) and the list of messages on their way.</summary>
+    /// <summary>The order panel (when one of your squads is selected) and the list of messages on their way.
+    /// A squad in a company is ordered through its company commander.</summary>
     public void UpdateOrders(Battle battle, Soldier? selected, Side playerSide, OrderKind? pending)
     {
         var hq = battle.Hq(playerSide);
@@ -238,13 +241,14 @@ public partial class Hud : CanvasLayer
         _orderPanel.Visible = mine;
         if (mine)
         {
-            var g = selected!.Group;
-            _orderTitle.Text = hq == null ? $"Orders for {g.Name} (no HQ in this scenario: orders arrive at once)" : $"Orders for {g.Name}, from {hq.Name}";
+            var g = selected!.Group.Company?.HqGroup ?? selected.Group;
+            string who = g.IsCompanyHq ? $"{g.Company!.Name} ({g.Company.CommanderName})" : g.Name;
+            _orderTitle.Text = hq == null ? $"Orders for {who} (no HQ in this scenario: orders arrive at once)" : $"Orders for {who}, from {hq.Name}";
             if (pending != null) _orderStatus.Text = $"Click the map: where to {pending.Value.ToString().ToLowerInvariant()}. Esc cancels.";
             else
             {
                 Message? last = null;
-                foreach (var m in battle.Messages) if (m.Down && m.Group == g) last = m;
+                foreach (var m in battle.Messages) if (m.Down && m.Group == g && m.Company == null) last = m;
                 _orderStatus.Text = last == null ? "Advance, Attack, Suppress and Hold need a place: press, then click the map."
                     : last.Status switch
                     {
@@ -262,7 +266,8 @@ public partial class Hud : CanvasLayer
         int shown = 0;
         foreach (var m in battle.Messages)
         {
-            if (m.Side != playerSide || m.Status != MessageStatus.InTransit) continue;
+            // Only battalion's own traffic: what goes on inside a company is the company commander's business.
+            if (m.Side != playerSide || m.Status != MessageStatus.InTransit || m.Company != null) continue;
             if (shown++ >= 5) break;
             sb.AppendLine($"  → {Short(m)}  ({m.Method.ToString().ToLowerInvariant()}, {Mathf.Max(0f, m.ArriveTime - battle.Time):0} s)");
         }
@@ -271,12 +276,101 @@ public partial class Hud : CanvasLayer
         for (int i = battle.Messages.Count - 1; i >= 0 && done < 4; i--)
         {
             var m = battle.Messages[i];
-            if (m.Side != playerSide || m.Status == MessageStatus.InTransit) continue;
+            if (m.Side != playerSide || m.Status == MessageStatus.InTransit || m.Company != null) continue;
             done++;
             sb.AppendLine($"  {(m.Status == MessageStatus.Lost ? "✗ lost" : "✓")} {Short(m)}  ({m.DoneTime - m.SentTime:0} s, {m.Method.ToString().ToLowerInvariant()})");
         }
         _messagesLabel.Text = sb.ToString().TrimEnd();
     }
+
+    // ---------------------------------------------------------------- company commander (milestone 5)
+
+    /// <summary>Main listens to these: the player approved or rejected a brief-back.</summary>
+    public System.Action<Company>? ApproveRequested { get; set; }
+    public System.Action<Company>? RejectRequested { get; set; }
+    private PanelContainer _companyPanel = null!;
+    private Label _companyLabel = null!;
+    private HBoxContainer _briefBackRow = null!;
+    private Label _countdown = null!;
+    private Company? _shownCompany;
+
+    private void BuildCompanyPanel()
+    {
+        _companyPanel = new PanelContainer();
+        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.06f, 0.05f, 0.82f) };
+        style.SetContentMarginAll(10);
+        style.SetCornerRadiusAll(6);
+        _companyPanel.AddThemeStyleboxOverride("panel", style);
+        _companyPanel.AnchorLeft = _companyPanel.AnchorRight = 0.5f;
+        _companyPanel.OffsetLeft = -280; _companyPanel.OffsetRight = 280;
+        _companyPanel.OffsetTop = 12;
+        var box = new VBoxContainer();
+        _companyLabel = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(540, 0) };
+        _companyLabel.AddThemeFontSizeOverride("font_size", 14);
+        box.AddChild(_companyLabel);
+        _briefBackRow = new HBoxContainer();
+        var approve = new Button { Text = "Approve plan (Enter)", FocusMode = Control.FocusModeEnum.None };
+        approve.Pressed += () => { if (_shownCompany != null) ApproveRequested?.Invoke(_shownCompany); };
+        var reject = new Button { Text = "Reject (Backspace)", FocusMode = Control.FocusModeEnum.None };
+        reject.Pressed += () => { if (_shownCompany != null) RejectRequested?.Invoke(_shownCompany); };
+        _countdown = new Label();
+        _countdown.AddThemeFontSizeOverride("font_size", 13);
+        _briefBackRow.AddChild(approve);
+        _briefBackRow.AddChild(reject);
+        _briefBackRow.AddChild(_countdown);
+        box.AddChild(_briefBackRow);
+        _companyPanel.AddChild(box);
+        _companyPanel.Visible = false;
+        AddChild(_companyPanel);
+    }
+
+    /// <summary>The company the panel is about: one waiting for your answer first, then the selected man's,
+    /// then your only company if you have just one.</summary>
+    public static Company? CompanyToShow(Battle battle, Soldier? selected, Side playerSide)
+    {
+        foreach (var c in battle.Companies) if (c.Side == playerSide && battle.AwaitingApproval(c)) return c;
+        if (selected?.Group.Company is { } sc && (sc.Side == playerSide)) return sc;
+        Company? only = null;
+        foreach (var c in battle.Companies)
+        {
+            if (c.Side != playerSide) continue;
+            if (only != null) return null;
+            only = c;
+        }
+        return only;
+    }
+
+    public void UpdateCompany(Battle battle, Soldier? selected, Side playerSide)
+    {
+        var c = CompanyToShow(battle, selected, playerSide);
+        _shownCompany = c;
+        _companyPanel.Visible = c != null;
+        if (c == null) return;
+        var t = c.Traits;
+        var sb = new StringBuilder();
+        sb.AppendLine($"{c.Name}, {c.CommanderName}   ({c.Effective}/{c.StartStrength} fit)   aggression {t.Aggression} · caution {t.Caution} · initiative {t.Initiative} · competence {t.Competence} · composure {t.Composure}");
+        sb.AppendLine(c.Status);
+        if (c.Plan != null && c.State is CompanyState.BriefBack or CompanyState.Executing)
+        {
+            sb.AppendLine($"Plan: {c.Plan.Summary}");
+            sb.AppendLine($"He expects to lose {c.Plan.ExpectedLoss * 100:0}% of the company, with a {c.Plan.Success * 100:0}% chance of success.");
+            for (int i = 0; i < c.Plan.Phases.Count; i++)
+            {
+                string mark = c.State == CompanyState.Executing ? (i < c.PhaseIndex ? "✓" : i == c.PhaseIndex ? "▶" : "·") : "·";
+                sb.AppendLine($"  {mark} {i + 1}. {c.Plan.Phases[i].Name}");
+            }
+            if (c.Options.Count > 1)
+                sb.Append("Also weighed: " + string.Join("; ", c.Options.Skip(1).Select(o => $"{GroundWar.Sim.AI.CompanyCommander.PlanName(o.Kind)} (lose {o.ExpectedLoss * 100:0}%, {o.Success * 100:0}% chance)")));
+        }
+        else if (c.State == CompanyState.Refused)
+            sb.Append("He won't do it as things stand. Send the same order again to insist, or give him another.");
+        _companyLabel.Text = sb.ToString().TrimEnd();
+        bool waiting = battle.AwaitingApproval(c);
+        _briefBackRow.Visible = waiting;
+        if (waiting) _countdown.Text = $"  goes ahead in {battle.BriefBackCountdown(c):0} s unless you step in";
+    }
+
+    public Company? ShownCompany => _shownCompany;
 
     private static string Short(Message m)
     {

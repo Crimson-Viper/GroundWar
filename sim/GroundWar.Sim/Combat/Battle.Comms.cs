@@ -17,7 +17,7 @@ public sealed partial class Battle
     private readonly Headquarters?[] _hq = new Headquarters?[2];
     private readonly List<PhoneLine> _lines = new();
     private readonly List<Message> _messages = new();
-    private readonly List<(float time, Side side, Group group, Order order)> _scheduled = new();
+    private readonly List<(float time, Group group, Order order, Company? company)> _scheduled = new();
     private int _nextMessageId;
 
     public Headquarters? Hq(Side side) => _hq[(int)side];
@@ -48,7 +48,7 @@ public sealed partial class Battle
         }
         foreach (var od in Scenario.Orders)
         {
-            var g = _groups.FirstOrDefault(x => x.Name == od.Group)
+            var g = _groups.FirstOrDefault(x => x.Name == od.Group) ?? FindCompany(od.Group)?.HqGroup
                 ?? throw new InvalidDataException($"Scenario order for unknown group '{od.Group}'");
             var kind = Enum.Parse<OrderKind>(od.Order, ignoreCase: true);
             var order = new Order
@@ -56,7 +56,7 @@ public sealed partial class Battle
                 Kind = kind, Objective = od.Objective != null ? BattleMap.V(od.Objective) : g.Objective, Radius = od.ObjectiveRadius,
                 SupportPosition = od.SupportPosition != null ? BattleMap.V(od.SupportPosition) : null,
             };
-            _scheduled.Add((od.Time, g.Side, g, order));
+            _scheduled.Add((od.Time, g, order, null));
         }
         _scheduled.Sort((a, b) => a.time.CompareTo(b.time));
     }
@@ -68,38 +68,63 @@ public sealed partial class Battle
     public Message? SendOrder(Group g, Order order)
     {
         var hq = _hq[(int)g.Side];
-        if (hq == null) { ApplyOrder(g, order); return null; }
+        if (hq == null)
+        {
+            if (g.IsCompanyHq) _commander.ReceiveOrder(g.Company!, order);
+            else ApplyOrder(g, order);
+            return null;
+        }
         var method = BestMethod(g, hq, down: true, order);
         var m = NewMessage(g, method, down: true, order.ToString(), order);
-        Note(g, $"HQ sends {g.Name} \"{order}\" by {MethodName(method)}{EtaText(m)}");
+        Note(g, $"HQ sends {Addressee(g)} \"{order}\" by {MethodName(method)}{EtaText(m)}");
         return m;
     }
 
-    private void SendReport(Group g, string text, bool withContacts)
+    /// <summary>Battalion HQ orders a company: the order goes to the commander, who makes his own plan.</summary>
+    public Message? SendOrder(Company c, Order order) => SendOrder(c.HqGroup, order);
+
+    private static string Addressee(Group g) => g.IsCompanyHq ? g.Company!.Name : g.Name;
+
+    /// <summary>The top end of a message's journey: battalion HQ, or for messages inside a company, the company commander.</summary>
+    public Vector2 UpperEnd(Message m) => m.Company != null ? SquadPost(m.Company.HqGroup) : _hq[(int)m.Side]!.Position;
+
+    /// <summary>A squad reports up: to its company commander if it has one (and he's still in the fight), else to HQ.</summary>
+    private void SendReport(Group g, string text, bool withContacts, MessageKind kind)
     {
-        var hq = _hq[(int)g.Side];
-        if (hq == null) return;
-        var method = BestMethod(g, hq, down: false, null);
-        var m = NewMessage(g, method, down: false, text, null);
+        Message m;
+        if (g.Company is { CommanderDown: false } co && !g.IsCompanyHq)
+            m = NewMessage(g, CompanyMethod(co, g), down: false, text, null, co, kind);
+        else
+        {
+            var hq = _hq[(int)g.Side];
+            if (hq == null) return;
+            m = NewMessage(g, BestMethod(g, hq, down: false, null), down: false, text, null, null, kind);
+        }
         if (withContacts)
             foreach (var c in g.Knowledge.Contacts)
                 m.Contacts.Add(new ReportedContact(c.EnemyId, c.LastPosition, c.LastSeen, c.Confidence));
     }
 
-    private Message NewMessage(Group g, MessageMethod method, bool down, string text, Order? order)
+    private Message NewMessage(Group g, MessageMethod method, bool down, string text, Order? order,
+        Company? company = null, MessageKind kind = MessageKind.Order, CompanyPlan? plan = null)
     {
-        var hq = _hq[(int)g.Side]!;
         var m = new Message
         {
             Id = _nextMessageId++, Side = g.Side, Method = method, Group = g, Down = down, Order = order, Text = text, SentTime = Time,
+            Company = company, Kind = order != null ? MessageKind.Order : kind, Plan = plan, Strength = g.CountEffective,
         };
         switch (method)
         {
             case MessageMethod.Phone:
                 m.ArriveTime = Time + Cr.PhoneDelay + Cr.PhoneDelayJitter * Rng.Range(-1f, 1f);
                 break;
+            case MessageMethod.Voice:
+                m.ArriveTime = Time + Cr.VoiceDelay;
+                break;
             case MessageMethod.Radio:
-                float delay = Cr.RadioDelay + Cr.RadioDelayJitter * Rng.Range(-1f, 1f);
+                float delay = company != null
+                    ? Cr.CompanyRadioDelay + Cr.CompanyRadioDelayJitter * Rng.Range(-1f, 1f)
+                    : Cr.RadioDelay + Cr.RadioDelayJitter * Rng.Range(-1f, 1f);
                 if (Rng.Chance(Cr.RadioRepeatChance)) delay *= 2f; // didn't get through: send it again
                 m.ArriveTime = Time + delay;
                 break;
@@ -107,8 +132,9 @@ public sealed partial class Battle
                 m.ArriveTime = Time + Cr.FlareDelay;
                 break;
             case MessageMethod.Runner:
-                m.RunnerPosition = down ? hq.Position : SquadPost(g);
-                m.ArriveTime = Time + Vector2.Distance(hq.Position, SquadPost(g)) / Cr.RunnerSpeed; // first guess, for display
+                var top = UpperEnd(m);
+                m.RunnerPosition = down ? top : SquadPost(g);
+                m.ArriveTime = Time + Vector2.Distance(top, SquadPost(g)) / Cr.RunnerSpeed; // first guess, for display
                 break;
         }
         _messages.Add(m);
@@ -147,6 +173,7 @@ public sealed partial class Battle
         MessageMethod.Phone => "telephone",
         MessageMethod.Radio => "radio",
         MessageMethod.Flare => "flare",
+        MessageMethod.Voice => "voice",
         _ => "runner",
     };
 
@@ -159,11 +186,12 @@ public sealed partial class Battle
     {
         while (_scheduled.Count > 0 && _scheduled[0].time <= Time)
         {
-            var (_, _, g, order) = _scheduled[0];
+            var (_, g, order, company) = _scheduled[0];
             _scheduled.RemoveAt(0);
-            SendOrder(g, order);
+            if (company != null) { if (!company.CommanderDown) SendCompanyOrder(company, g, order); }
+            else SendOrder(g, order);
         }
-        if (_hq[0] == null && _hq[1] == null) return;
+        if (_hq[0] == null && _hq[1] == null && _companies.Count == 0) return;
 
         // Count first: a failed message may send a new one, which starts next tick.
         for (int i = 0, n = _messages.Count; i < n; i++)
@@ -191,16 +219,14 @@ public sealed partial class Battle
         m.Status = MessageStatus.Lost;
         m.DoneTime = Time;
         Note(m.Group, $"{(m.Down ? "Order to " + m.Group.Name : m.Group.Name + "'s report")} lost: {why}");
-        var hq = _hq[(int)m.Side]!;
-        var method = BestMethod(m.Group, hq, m.Down, m.Order);
-        var again = NewMessage(m.Group, method, m.Down, m.Text, m.Order);
+        var method = m.Company != null ? CompanyMethod(m.Company, m.Group) : BestMethod(m.Group, _hq[(int)m.Side]!, m.Down, m.Order);
+        var again = NewMessage(m.Group, method, m.Down, m.Text, m.Order, m.Company, m.Kind, m.Plan);
         again.Contacts.AddRange(m.Contacts);
     }
 
     private void MoveRunner(Message m)
     {
-        var hq = _hq[(int)m.Side]!;
-        var goal = m.Down ? SquadPost(m.Group) : hq.Position;
+        var goal = m.Down ? SquadPost(m.Group) : UpperEnd(m);
         // Re-plan the route now and then: the squad he's looking for keeps moving.
         if (m.RunnerPath == null || Time >= m.RunnerRepath)
         {
@@ -235,7 +261,7 @@ public sealed partial class Battle
             m.DoneTime = Time;
             Note(m.Group, $"Runner {(m.Down ? "carrying an order to " + m.Group.Name : "from " + m.Group.Name)} was shot down; the message is lost");
             // HQ doesn't know at once. When the runner hasn't come back after a minute, it sends the order again.
-            if (m.Down) _scheduled.Add((Time + Cr.RunnerLostResend, m.Side, m.Group, m.Order!));
+            if (m.Down && m.Order != null) _scheduled.Add((Time + Cr.RunnerLostResend, m.Group, m.Order, m.Company));
             _scheduled.Sort((a, b) => a.time.CompareTo(b.time));
         }
     }
@@ -247,13 +273,30 @@ public sealed partial class Battle
         if (m.Down)
         {
             if (m.Group.CountEffective == 0) return;
-            Note(m.Group, $"{m.Group.Name} receives \"{m.Text}\" by {MethodName(m.Method)}, {Time - m.SentTime:0} s after it was sent");
-            ApplyOrder(m.Group, m.Order!);
+            if (m.Kind is MessageKind.Approve or MessageKind.Reject)
+            {
+                if (m.Group.Company is { } cc)
+                {
+                    if (m.Kind == MessageKind.Approve) _commander.Approved(cc); else _commander.Rejected(cc);
+                }
+                return;
+            }
+            // Orders inside a company are too many to log one by one; battalion's orders are logged.
+            if (m.Company == null)
+                Note(m.Group, $"{Addressee(m.Group)} receives \"{m.Text}\" by {MethodName(m.Method)}, {Time - m.SentTime:0} s after it was sent");
+            if (m.Company == null && m.Group.IsCompanyHq) _commander.ReceiveOrder(m.Group.Company!, m.Order!);
+            else ApplyOrder(m.Group, m.Order!);
+        }
+        else if (m.Company != null)
+        {
+            DeliverToCompany(m);
         }
         else
         {
             var hq = _hq[(int)m.Side]!;
-            Note(m.Group, $"HQ hears from {m.Group.Name} ({Time - m.SentTime:0} s old): {m.Text}");
+            Note(m.Group, $"HQ hears from {Addressee(m.Group)} ({Time - m.SentTime:0} s old): {m.Text}");
+            if (m.Kind == MessageKind.BriefBack && m.Group.Company is { State: CompanyState.BriefBack } bc && bc.Plan == m.Plan)
+                bc.BriefBackHeardAt = Time;
             foreach (var c in m.Contacts)
             {
                 var enemy = GetSoldier(c.EnemyId);
@@ -303,6 +346,9 @@ public sealed partial class Battle
                 break;
         }
         g.OriginalOrder = g.Order;
+        g.LastOrderReceived = o;
+        g.MoveOnly = o.IsWaypoint;
+        if (o.Kind is OrderKind.Advance or OrderKind.Attack or OrderKind.Suppress) g.EverAttacked = true;
         g.ReportedTaken = false;
         g.ReportedFailed = false;
         g.Tactic = Tactic.Travel;
@@ -315,11 +361,12 @@ public sealed partial class Battle
     /// heavy losses, being pinned or broken, taking the objective, or the attack failing.</summary>
     private void WriteReports(Group g)
     {
-        if (_hq[(int)g.Side] == null || g.IsVehicles) return;
+        if (g.IsVehicles || g.IsCompanyHq) return;
+        if (_hq[(int)g.Side] == null && g.Company is not { CommanderDown: false }) return;
         int effective = g.CountEffective;
         if (effective == 0)
         {
-            if (!g.ReportedBroken && g.CountActive > 0) { g.ReportedBroken = true; SendReport(g, "squad has broken and is running", false); }
+            if (!g.ReportedBroken && g.CountActive > 0) { g.ReportedBroken = true; SendReport(g, "squad has broken and is running", false, MessageKind.Broken); }
             return;
         }
         int known = g.Knowledge.Count;
@@ -327,12 +374,12 @@ public sealed partial class Battle
         {
             g.ReportedContact = true;
             g.LastSitrep = Time;
-            SendReport(g, $"contact! {known} enemy seen", true);
+            SendReport(g, $"contact! {known} enemy seen", true, MessageKind.Contact);
         }
         else if (known > 0 && Time - g.LastSitrep >= Cr.SitrepInterval)
         {
             g.LastSitrep = Time;
-            SendReport(g, $"situation report: {effective}/{g.StartStrength} fit, {known} enemy known, {g.Status.ToLowerInvariant()}", true);
+            SendReport(g, $"situation report: {effective}/{g.StartStrength} fit, {known} enemy known, {g.Status.ToLowerInvariant()}", true, MessageKind.Sitrep);
         }
         else if (known == 0 && g.ReportedContact && Time - g.LastSitrep >= Cr.SitrepInterval * 2f)
         {
@@ -343,13 +390,13 @@ public sealed partial class Battle
         if (quarter > g.ReportedLossQuarter)
         {
             g.ReportedLossQuarter = quarter;
-            SendReport(g, $"heavy casualties: {g.StartStrength - effective} of {g.StartStrength} down or broken", false);
+            SendReport(g, $"heavy casualties: {g.StartStrength - effective} of {g.StartStrength} down or broken", false, MessageKind.Losses);
         }
         bool pinned = g.Members.Count(m => m.IsEffective && m.MoraleState == MoraleState.Pinned) * 2 >= effective;
-        if (pinned && !g.ReportedPinned) { g.ReportedPinned = true; SendReport(g, "pinned down", true); }
+        if (pinned && !g.ReportedPinned) { g.ReportedPinned = true; SendReport(g, "pinned down", true, MessageKind.Pinned); }
         else if (!pinned) g.ReportedPinned = false;
-        if (g.TookObjective && !g.ReportedTaken) { g.ReportedTaken = true; SendReport(g, "objective taken", true); }
-        if (g.AttackFailed && !g.ReportedFailed) { g.ReportedFailed = true; SendReport(g, "attack failed, holding where we are", true); }
+        if (g.TookObjective && !g.ReportedTaken) { g.ReportedTaken = true; SendReport(g, "objective taken", true, MessageKind.Taken); }
+        if (g.AttackFailed && !g.ReportedFailed) { g.ReportedFailed = true; SendReport(g, "attack failed, holding where we are", true, MessageKind.Failed); }
     }
 
     // ---------------------------------------------------------------- damage to lines

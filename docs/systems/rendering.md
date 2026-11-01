@@ -13,7 +13,9 @@ frame and draws it.
 | `ModelViewer.cs` | A separate scene (F6) to look at the models |
 | `MapView.cs` | Ground, walls, craters, foxholes, objectives, grid and cover overlays |
 | `CameraRig.cs` | The free camera and follow mode |
-| `Hud.cs` | Status panel, selected soldier panel, log, help, end banner |
+| `Hud.cs` | Status panel, selected soldier panel, log, help, end banner, order and message panels, company panel with the brief-back buttons |
+| `CommsView.cs` | HQ tents, telephone cables, runners, phone pulses, radio rings, flares |
+| `CompanyView.cs` | Company commanders' plans as arrows on the ground, a flag over each company HQ |
 | `Draw.cs` | Small helpers: sim-to-Godot positions, materials, batching |
 | `shaders/` | Ground pattern; morale/suppression bar |
 

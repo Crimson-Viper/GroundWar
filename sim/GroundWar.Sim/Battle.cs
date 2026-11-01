@@ -63,6 +63,7 @@ public sealed partial class Battle
         _tankBrain = new TankBrain(this, _squadBrain);
         Hash = new SoldierHash(Map.Width, Map.Height);
         Spawn();
+        SetUpCompanies();
         SetUpComms();
         Hash.Rebuild(_soldiers);
         UpdateGridControl();
@@ -228,6 +229,7 @@ public sealed partial class Battle
             _squadBrain.Think(g);
             g.NextThink = Time + Rules.Squad.ThinkInterval * Rng.Range(0.85f, 1.15f);
         }
+        UpdateCompanies();
         t0 = Profile.Lap("squads", t0);
         foreach (var s in _soldiers)
         {
@@ -375,8 +377,8 @@ public sealed partial class Battle
     {
         if (Holder() is Side holder)
             return new BattleResult { Winner = holder, Time = Time, Reason = $"Time up: {holder} holds the objective" };
-        bool blueAttacked = _groups.Any(g => g.Side == Side.Blue && g.OriginalOrder != GroupOrder.Hold);
-        bool redAttacked = _groups.Any(g => g.Side == Side.Red && g.OriginalOrder != GroupOrder.Hold);
+        bool blueAttacked = _groups.Any(g => g.Side == Side.Blue && (g.OriginalOrder != GroupOrder.Hold || g.EverAttacked));
+        bool redAttacked = _groups.Any(g => g.Side == Side.Red && (g.OriginalOrder != GroupOrder.Hold || g.EverAttacked));
         if (blueAttacked != redAttacked)
         {
             var defender = blueAttacked ? Side.Red : Side.Blue;
@@ -415,7 +417,7 @@ public sealed partial class Battle
         if (blue == 0 && red == 0) Result = new BattleResult { Winner = null, Time = Time, Reason = "Both sides broke" };
         else if (blue == 0) Result = new BattleResult { Winner = Side.Red, Time = Time, Reason = "Blue can no longer fight" };
         else if (red == 0) Result = new BattleResult { Winner = Side.Blue, Time = Time, Reason = "Red can no longer fight" };
-        else if (!_groups.Any(g => g.IsAttacking && g.CountEffective > 0) && Time - LastShotTime() > Rules.Squad.QuietEndTime)
+        else if (!_groups.Any(g => g.IsAttacking && g.CountEffective > 0) && Time - LastShotTime() > Rules.Squad.QuietEndTime && !CommandBusy())
             Result = QuietResult();
         else if (Time >= Scenario.TimeLimit) Result = TimeLimitResult();
         if (Result != null) Log.Add(Time, -1, $"Battle over: {Result.Reason}");

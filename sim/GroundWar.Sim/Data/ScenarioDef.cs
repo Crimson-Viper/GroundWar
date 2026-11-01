@@ -10,12 +10,36 @@ public sealed class ScenarioDef
     public List<SideDef> Sides { get; set; } = new();
     /// <summary>Orders HQ sends during the battle (the enemy's plan, or a scripted test). They travel like any message.</summary>
     public List<ScheduledOrderDef> Orders { get; set; } = new();
+    /// <summary>Companies: a commander, his HQ group and the squads under him (milestone 5).</summary>
+    public List<CompanyDef> Companies { get; set; } = new();
+}
+
+/// <summary>A company: its commander's personality, his HQ group, and his squads (by group name).</summary>
+public sealed class CompanyDef
+{
+    public string Name { get; set; } = "";
+    public string Commander { get; set; } = "Captain";
+    /// <summary>The group that is the company HQ (the commander and his radio operator).</summary>
+    public string Hq { get; set; } = "";
+    public List<string> Squads { get; set; } = new();
+    public TraitsDef Traits { get; set; } = new();
+}
+
+/// <summary>A commander's personality, each 1 (low) to 5 (high). See docs/systems/company-commander.md.</summary>
+public sealed class TraitsDef
+{
+    public int Aggression { get; set; } = 3;
+    public int Caution { get; set; } = 3;
+    public int Initiative { get; set; } = 3;
+    public int Competence { get; set; } = 3;
+    public int Composure { get; set; } = 3;
 }
 
 /// <summary>An order a side's HQ sends at a set time.</summary>
 public sealed class ScheduledOrderDef
 {
     public float Time { get; set; }
+    /// <summary>The squad, or the company, the order is for.</summary>
     public string Group { get; set; } = "";
     /// <summary>"Hold", "Advance", "Attack", "Suppress", "Halt" or "FallBack".</summary>
     public string Order { get; set; } = "Hold";
