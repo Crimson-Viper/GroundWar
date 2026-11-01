@@ -345,6 +345,7 @@ public sealed class SoldierBrain
         {
             if (!e.IsActive) continue;
             if (e.IsTank && !s.Weapon.CanHurtArmour) continue; // no point shooting a rifle at a tank
+            if (!e.IsTank && s.Weapon.AntiTankOnly) continue;  // a bazooka is saved for tanks
             float d = Vector2.Distance(s.Position, e.Position);
             if (d > s.Weapon.Range) continue;
             if (_b.FriendNear(s, e.Position, 4f)) continue; // don't shoot into a melee with your mates

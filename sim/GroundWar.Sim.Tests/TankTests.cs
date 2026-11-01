@@ -14,11 +14,14 @@ public class TankTests
         var tank = data.Vehicles["tank"];
         foreach (var name in new[] { "rifle", "lmg" })
             Assert.False(data.Weapons[name].CanHurtArmour, $"{name} should not hurt a tank");
+        // Per the Tanks design doc: an anti-tank rifle can't get through a medium tank anywhere, only break a track.
         var atr = data.Weapons["atr"];
-        // Up close an anti-tank rifle gets through the side and rear, but never the front at range.
-        Assert.True(atr.PenetrationAt(50) > tank.ArmourSide);
-        Assert.True(atr.PenetrationAt(50) > tank.ArmourRear);
-        Assert.True(atr.PenetrationAt(atr.Range) < tank.ArmourFront);
+        Assert.True(atr.PenetrationAt(0) < tank.ArmourRear);
+        Assert.True(atr.TrackBreakChance > 0f);
+        // A bazooka gets through the side and rear inside about 100 m, and is never fired at infantry.
+        var bazooka = data.Weapons["bazooka"];
+        Assert.True(bazooka.PenetrationAt(100) > tank.ArmourSide);
+        Assert.True(bazooka.AntiTankOnly);
     }
 
     [Fact]

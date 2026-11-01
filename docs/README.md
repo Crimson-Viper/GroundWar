@@ -19,6 +19,8 @@ The design (what the game should become) lives in the design docs. These pages d
 | [Fog of war](systems/fog-of-war.md) | What each side knows, sightings, sharing between squads, what the player sees |
 | [Who wins](systems/battle-results.md) | How a battle ends and who is given the win |
 | [Drawing the battle](systems/rendering.md) | The Godot side: batched drawing, overlays, the HUD and log |
+| [Tanks](systems/tanks.md) | Armour, guns, anti-tank weapons, the tank commander AI |
+| [Models](models.md) | The soldier and tank models, and how to swap in your own from Blender |
 
 ## Tools
 

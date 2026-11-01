@@ -233,7 +233,7 @@ public sealed partial class Battle
                 tank.MainGunTimer += 6f;
             }
         }
-        else if (Rng.Chance(v.TrackHitChance) && !tank.Immobilised)
+        else if (Rng.Chance(weapon.TrackBreakChance > 0f ? weapon.TrackBreakChance : v.TrackHitChance) && !tank.Immobilised)
         {
             Note(tank, $"track broken by {shooter.Label}", LogKind.Casualty);
             tank.Immobilised = true;

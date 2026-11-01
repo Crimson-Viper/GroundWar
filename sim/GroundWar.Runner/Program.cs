@@ -35,6 +35,7 @@ Console.WriteLine();
 Console.WriteLine(" seed  winner  time   blue lost  red lost  blue broke  red broke  shots   hits  in-cover%");
 
 int blueWins = 0, redWins = 0, draws = 0;
+int tanks = 0, tanksKnockedOut = 0, tanksImmobilised = 0;
 float totalTime = 0;
 var sw = Stopwatch.StartNew();
 long ticks = 0;
@@ -47,6 +48,13 @@ for (int b = 0; b < battles; b++)
     if (result.Winner == Side.Blue) blueWins++;
     else if (result.Winner == Side.Red) redWins++;
     else draws++;
+
+    foreach (var t in battle.Soldiers.Where(s => s.IsTank))
+    {
+        tanks++;
+        if (t.Status == SoldierStatus.Dead) tanksKnockedOut++;
+        else if (t.Immobilised) tanksImmobilised++;
+    }
 
     string Lost(Side side) => $"{battle.Soldiers.Count(s => s.Side == side && (s.Status == SoldierStatus.Dead || s.Status == SoldierStatus.Wounded))}/{battle.Soldiers.Count(s => s.Side == side)}";
     int Broke(Side side) => battle.Soldiers.Count(s => s.Side == side && (s.Status == SoldierStatus.Routed || (s.IsActive && s.MoraleState == MoraleState.Broken)));
@@ -67,6 +75,8 @@ for (int b = 0; b < battles; b++)
 sw.Stop();
 Console.WriteLine();
 Console.WriteLine($"Blue wins {blueWins}, Red wins {redWins}, draws {draws}.  Average length {totalTime / battles:0} s.");
+if (tanks > 0)
+    Console.WriteLine($"Tanks: {tanks} fought, {tanksKnockedOut} knocked out, {tanksImmobilised} more immobilised (stuck but still fighting).");
 Console.WriteLine($"Simulated {ticks * Battle.Dt / 60f:0} battle-minutes in {sw.Elapsed.TotalSeconds:0.0} s ({ticks * Battle.Dt / sw.Elapsed.TotalSeconds:0}x real time).");
 if (GroundWar.Sim.Core.Profile.Enabled)
 {

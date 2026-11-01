@@ -32,7 +32,7 @@ public sealed class Soldier
 
     public string Label => $"{(Side == Side.Blue ? 'B' : 'R')}{Id}";
     public string Role => Vehicle != null ? Vehicle.Name
-        : IsLeader ? "Sergeant" : Weapon.CanHurtArmour ? "Anti-tank rifleman" : Weapon.IsMachineGun ? "MG gunner" : "Rifleman";
+        : IsLeader ? "Sergeant" : Weapon.AntiTankOnly ? "Bazooka gunner" : Weapon.CanHurtArmour ? "Anti-tank rifleman" : Weapon.IsMachineGun ? "MG gunner" : "Rifleman";
 
     // Vehicle. A tank is one "soldier" standing for the whole crew: Weapon is its machine gun,
     // MainGun its cannon. Facing is the hull; the turret turns on its own.

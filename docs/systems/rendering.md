@@ -8,7 +8,9 @@ frame and draws it.
 |---|---|
 | `Main.cs` / `Main.tscn` | Starts a battle, runs the simulation at the chosen speed, handles keys, screenshot mode |
 | `BattleView.cs` | Soldiers (through `SoldierCrowd`), tracers, impact puffs, last-known enemy markers, plan lines, selection |
-| `SoldierCrowd.cs` | Draws every soldier: body, rifle, sergeant's cap, morale bar, name labels |
+| `SoldierCrowd.cs` | Draws every soldier from the low-poly models (one batch per pose), with sergeant's cap, morale bar, name labels |
+| `TankView.cs` | Draws each tank from its model, turning the turret; dark wreck when knocked out |
+| `ModelViewer.cs` | A separate scene (F6) to look at the models |
 | `MapView.cs` | Ground, walls, craters, foxholes, objectives, grid and cover overlays |
 | `CameraRig.cs` | The free camera and follow mode |
 | `Hud.cs` | Status panel, selected soldier panel, log, help, end banner |
@@ -20,6 +22,10 @@ At 1,000 soldiers a side, one Godot node per soldier part was far too slow. Ever
 one **MultiMesh** (one draw call for all bodies, one for all rifles, one for all tracers, and so on). A part that
 shouldn't show this frame gets a zero-size transform. The stress test (1,000 a side) draws in about 85 draw calls,
 41 nodes and about 4 ms a frame. Name labels are real nodes, but only for the soldiers that need one.
+
+## Models
+Soldiers and tanks use simple low-poly models made by `tools/make_models.py` (`.glb` files). If a model is missing
+the game falls back to grey boxes. See [Models](../models.md).
 
 ## Smooth movement
 The simulation moves in 0.1 s steps. Godot draws each soldier part-way between his last two positions, so movement is
