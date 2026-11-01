@@ -57,6 +57,11 @@ its turret twisted. Shells show as a bright tracer, a flash and a puff of smoke 
 short bounds, stops to fire the main gun, turns his front armour toward anti-tank rifles, and hangs back if his infantry falls
 too far behind. Anti-tank rifles get through the side and rear up close, and the front only at close range.
 
+**Reading a tank.** The tank is a grey box in its side's colour: hull, tracks, turret and gun. A knocked-out tank goes dark with
+its turret twisted. Shells show as a bright tracer, a flash and a puff of smoke where they burst. The tank commander drives in
+short bounds, stops to fire the main gun, turns his front armour toward anti-tank rifles, and hangs back if his infantry falls
+too far behind. Anti-tank rifles get through the side and rear up close, and the front only at close range.
+
 **Squads.** Each squad splits into a gun team (around the machine gun) and a rifle team. The squad leader picks a tactic:
 travel, bounding overwatch (one team moves, the other covers), fire and movement, flank, assault, suppress, defend, or fall back.
 The top-left panel shows each Blue squad's tactic and what it is doing. With **P** on, orange lines show where the gun team is going,
