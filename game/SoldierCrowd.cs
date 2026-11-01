@@ -7,8 +7,10 @@ using Side = GroundWar.Sim.Units.Side;
 namespace GroundWar.Game;
 
 /// <summary>
-/// Draws every soldier in the battle. Each soldier is a capsule body, a rifle stick showing where he faces,
-/// a cap for sergeants and a floating bar (morale on top, suppression below).
+/// Draws every soldier in the battle: his model in the pose that matches his stance (standing, crouched,
+/// prone, or fallen), a yellow helmet top for sergeants and a floating bar (morale on top, suppression below).
+/// The model comes from models/soldier.glb (see docs/models.md and UnitModels). Without it, each soldier is a
+/// grey-box capsule with a rifle stick showing where he faces.
 ///
 /// All the bodies are one MultiMesh, all the rifles another, and so on, so the graphics card draws a whole
 /// battalion in a handful of calls instead of several nodes per man. A part that should not show this frame
@@ -25,6 +27,12 @@ public partial class SoldierCrowd : Node3D
     public bool[] Shown { get; }
 
     private MultiMesh _bodies = null!, _rifles = null!, _caps = null!, _bars = null!;
+    // With a soldier model: one batch per pose. Each soldier is in exactly one of them; the others hide him.
+    private Dictionary<string, UnitModels.Part>? _model;
+    private static readonly string[] PoseNames = { "Standing", "Crouched", "Prone", "Dead" };
+    private readonly MultiMesh[] _poses = new MultiMesh[4];
+    private readonly float[][] _poseBuf = new float[4][];
+    private const int PoseStride = 16; // transform, then the team colour as custom data
     private MultiMeshInstance3D _barNode = null!;
     private float[] _bodyBuf = null!, _rifleBuf = null!, _capBuf = null!, _barBuf = null!;
     private readonly Dictionary<int, Label3D> _labels = new();
@@ -32,9 +40,9 @@ public partial class SoldierCrowd : Node3D
     // Floats per instance in each buffer: 12 for the transform, then 4 for colour, then 4 for custom data.
     private const int BodyStride = 16, PartStride = 12, BarStride = 20;
 
-    private static readonly Color BlueColor = new(0.25f, 0.42f, 0.85f), RedColor = new(0.82f, 0.25f, 0.22f);
-    private static readonly Color BlueDown = new(0.15f, 0.2f, 0.4f), RedDown = new(0.4f, 0.13f, 0.12f);
-    private static readonly Color DeadColor = new(0.18f, 0.18f, 0.18f);
+    public static readonly Color BlueColor = new(0.25f, 0.42f, 0.85f), RedColor = new(0.82f, 0.25f, 0.22f);
+    public static readonly Color BlueDown = new(0.15f, 0.2f, 0.4f), RedDown = new(0.4f, 0.13f, 0.12f);
+    public static readonly Color DeadColor = new(0.18f, 0.18f, 0.18f);
 
     /// <summary>Where each part sits relative to the soldier's feet, for each stance.</summary>
     private readonly struct Pose
@@ -65,8 +73,14 @@ public partial class SoldierCrowd : Node3D
         Shown = new bool[_count];
     }
 
+    // Where the sergeant's yellow helmet top sits on the model, for each pose (game axes: -Z is forward).
+    private static readonly Vector3[] ModelCap = { new(0, 1.83f, -0.04f), new(0, 1.40f, -0.14f), new(0, 0.5f, -0.52f) };
+    private static readonly float[] ModelBarHeight = { 2.4f, 1.9f, 1.2f };
+
     public override void _Ready()
     {
+        _model = UnitModels.LoadSoldier();
+        if (_model != null) { ReadyModel(); return; }
         var bodyMat = new StandardMaterial3D { VertexColorUseAsAlbedo = true, VertexColorIsSrgb = true, Roughness = 0.9f };
         _bodies = Add(new CapsuleMesh { Radius = 0.28f, Height = 1.75f, RadialSegments = 12, Rings = 4 }, bodyMat, colors: true, custom: false, shadows: true, out _);
         _rifles = Add(new BoxMesh { Size = new Vector3(0.07f, 0.07f, 1.1f) }, Draw.Lit(new Color(0.2f, 0.15f, 0.1f)), false, false, true, out _);
@@ -80,7 +94,23 @@ public partial class SoldierCrowd : Node3D
         _barBuf = new float[_count * BarStride];
     }
 
-    private MultiMesh Add(Mesh mesh, Material mat, bool colors, bool custom, bool shadows, out MultiMeshInstance3D node)
+    private void ReadyModel()
+    {
+        for (int k = 0; k < 4; k++)
+        {
+            _poses[k] = Add(_model![PoseNames[k]].Mesh, null, colors: false, custom: true, shadows: true, out _);
+            _poseBuf[k] = new float[_count * PoseStride];
+        }
+        // A flat yellow disc on top of the helmet marks the sergeant.
+        _caps = Add(new CylinderMesh { TopRadius = 0.15f, BottomRadius = 0.17f, Height = 0.05f, RadialSegments = 10, Rings = 1 },
+            Draw.Lit(new Color(0.95f, 0.8f, 0.2f)), false, false, true, out _);
+        var barMat = new ShaderMaterial { Shader = Draw.LoadShader("res://game/shaders/status_bar.gdshader") };
+        _bars = Add(new QuadMesh { Size = new Vector2(1.3f, 0.26f) }, barMat, true, true, false, out _barNode);
+        _capBuf = new float[_count * PartStride];
+        _barBuf = new float[_count * BarStride];
+    }
+
+    private MultiMesh Add(Mesh mesh, Material? mat, bool colors, bool custom, bool shadows, out MultiMeshInstance3D node)
     {
         var mm = new MultiMesh
         {
@@ -107,6 +137,7 @@ public partial class SoldierCrowd : Node3D
     public void UpdateAll(System.Func<Soldier, bool> visible, System.Numerics.Vector2[] prev, System.Numerics.Vector2[] curr,
         float alpha, bool showBars, bool showAllLabels, Soldier? selected)
     {
+        if (_model != null) { UpdateModels(visible, prev, curr, alpha, showBars); UpdateLabels(showAllLabels, selected); return; }
         var soldiers = _battle.Soldiers;
         for (int i = 0; i < _count; i++)
         {
@@ -165,6 +196,65 @@ public partial class SoldierCrowd : Node3D
         _barNode.Visible = showBars;
 
         UpdateLabels(showAllLabels, selected);
+    }
+
+    private void UpdateModels(System.Func<Soldier, bool> visible, System.Numerics.Vector2[] prev, System.Numerics.Vector2[] curr,
+        float alpha, bool showBars)
+    {
+        var soldiers = _battle.Soldiers;
+        for (int i = 0; i < _count; i++)
+        {
+            var s = soldiers[i];
+            var pos = Draw.To3(System.Numerics.Vector2.Lerp(prev[i], curr[i], alpha));
+            Positions[i] = pos;
+            bool shown = s.Status != SoldierStatus.Routed && visible(s);
+            Shown[i] = shown;
+            int pose = !shown || s.IsTank ? -1 // tanks are drawn by TankView
+                : s.Status == SoldierStatus.Dead ? 3
+                : !s.IsActive ? 2 // wounded men lie down
+                : s.Stance switch { Stance.Standing => 0, Stance.Crouched => 1, _ => 2 };
+            for (int k = 0; k < 4; k++)
+                if (k != pose) Hide(_poseBuf[k], i * PoseStride);
+            if (pose < 0)
+            {
+                Hide(_capBuf, i * PartStride);
+                Hide(_barBuf, i * BarStride);
+                continue;
+            }
+
+            var root = new Transform3D(new Basis(Vector3.Up, Draw.YawFor(s.Facing)), pos);
+            int o = i * PoseStride;
+            var buf = _poseBuf[pose];
+            Put(buf, o, root * _model![PoseNames[pose]].Transform);
+            var c = s.Status switch
+            {
+                SoldierStatus.Dead => DeadColor,
+                SoldierStatus.Wounded => s.Side == Side.Blue ? BlueDown : RedDown,
+                _ => s.Side == Side.Blue ? BlueColor : RedColor,
+            };
+            c = c.SrgbToLinear(); // the team shader multiplies in linear colour
+            buf[o + 12] = c.R; buf[o + 13] = c.G; buf[o + 14] = c.B; buf[o + 15] = 1f;
+
+            if (s.IsLeader && s.IsActive) Put(_capBuf, i * PartStride, root.TranslatedLocal(ModelCap[pose]));
+            else Hide(_capBuf, i * PartStride);
+
+            int r = i * BarStride;
+            if (showBars && s.IsActive)
+            {
+                Put(_barBuf, r, new Transform3D(Basis.Identity, pos + new Vector3(0, ModelBarHeight[pose], 0)));
+                var mc = MoraleColor(s.MoraleState);
+                _barBuf[r + 12] = mc.R; _barBuf[r + 13] = mc.G; _barBuf[r + 14] = mc.B; _barBuf[r + 15] = 1f;
+                _barBuf[r + 16] = s.Morale / 100f;
+                _barBuf[r + 17] = s.Suppression / 100f;
+                _barBuf[r + 18] = 0f;
+                _barBuf[r + 19] = 0f;
+            }
+            else Hide(_barBuf, r);
+        }
+        for (int k = 0; k < 4; k++) RenderingServer.MultimeshSetBuffer(_poses[k].GetRid(), _poseBuf[k]);
+        RenderingServer.MultimeshSetBuffer(_caps.GetRid(), _capBuf);
+        RenderingServer.MultimeshSetBuffer(_bars.GetRid(), _barBuf);
+        _barNode.Visible = showBars;
     }
 
     private void UpdateLabels(bool all, Soldier? selected)

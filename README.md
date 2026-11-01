@@ -1,7 +1,7 @@
 # Ground War
 
 An RTS where you never control soldiers directly. You give orders; AI commanders plan, and AI soldiers fight.
-This repository is the **prototype**: grey boxes and simple shapes until the AI is fun to watch.
+This repository is the **prototype**: simple shapes and placeholder models until the AI is fun to watch.
 
 Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs) ·
 [How the AI works](https://claude.ai/artifact/HHYXkduRrMJMCjKFVfnkoz) ·
@@ -48,11 +48,11 @@ To try a pull request before it is merged: in GitHub Desktop pick its branch fro
 | **Soldier** | Left-click a soldier to see what he's thinking · F follow him · Esc deselect |
 | **Overlays** | G battlefield grid (cover → visibility → control → off) · C cover points · L aim and path lines · P squad plans · T every soldier's thoughts · B morale bars · V fog of war on/off · H hide help |
 
-**Reading a soldier.** Blue and red capsules are the two sides; the stick shows where he faces; a yellow cap marks
-the sergeant. The bar above him: top = morale (green steady, yellow shaken, orange pinned, red broken),
-bottom = suppression (yellow fills as bullets pass close). Dark lying shapes are wounded, grey are dead.
+**Reading a soldier.** Blue and red uniforms are the two sides; he stands, kneels or lies down to match his stance; a yellow
+disc on the helmet marks the sergeant. The bar above him: top = morale (green steady, yellow shaken, orange pinned, red broken),
+bottom = suppression (yellow fills as bullets pass close). Dark men lying down are wounded; dark grey men on their backs are dead.
 
-**Reading a tank.** The tank is a grey box in its side's colour: hull, tracks, turret and gun. A knocked-out tank goes dark with
+**Reading a tank.** The tank is painted in its side's colour; its turret turns on its own to where the commander is aiming. A knocked-out tank goes dark with
 its turret twisted. Shells show as a bright tracer, a flash and a puff of smoke where they burst. The tank commander drives in
 short bounds, stops to fire the main gun, turns his front armour toward anti-tank rifles, and hangs back if his infantry falls
 too far behind. Anti-tank rifles get through the side and rear up close, and the front only at close range.
@@ -87,6 +87,13 @@ All tuning numbers live in plain text files in `data/`. Edit one in any text edi
 - `data/maps/test_range.json`: walls and craters (positions in metres).
 - `data/scenarios/*.json`: who fights, how many, with what orders.
 
+## Change how units look
+
+Soldiers and tanks are 3D models in `models/` (`soldier.glb`, `tank.glb`). To look at them on their own, open
+`game/ModelViewer.tscn` in Godot and press **F6**. To use your own models, follow [docs/models.md](docs/models.md):
+export from Blender as `.glb` over the old file, name team-coloured materials "Team", and name the soldier's poses
+Standing, Crouched, Prone and Dead and the tank's turret "Turret".
+
 ## How the code is laid out
 
 | Folder | What it is |
@@ -96,6 +103,8 @@ All tuning numbers live in plain text files in `data/`. Edit one in any text edi
 | `sim/GroundWar.Runner` | Plays battles with no screen and prints results, for checking the AI quickly. |
 | `game/` | The Godot side: drawing, camera, input, overlays. |
 | `data/` | Tuning, maps and scenarios. |
+| `models/` | 3D models for soldiers and tanks (`.glb`). Replace them with your own: see [docs/models.md](docs/models.md). |
+| `tools/` | Scripts that generate content: the town map, the placeholder models. |
 
 For developers (no Godot needed):
 
