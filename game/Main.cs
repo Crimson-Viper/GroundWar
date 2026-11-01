@@ -55,6 +55,9 @@ public partial class Main : Node3D
             if (arg.StartsWith("--scenario=")) { _scenario = int.Parse(arg.Substring(11)); StartBattle(true); }
             if (arg.StartsWith("--camera=")) _autoCamera = arg.Substring(9);
             if (arg.StartsWith("--select=")) _autoSelect = int.Parse(arg.Substring(9));
+            if (arg == "--details") _hud.Details = true;
+            if (arg == "--help") _hud.HelpVisible = true;
+            if (arg == "--clear") _hud.Visible = false;
             if (arg == "--handover") _battle.PlayerHandOver(true); // your second in command runs the battle (put it after --seed / --scenario)
         }
     }
@@ -256,6 +259,8 @@ public partial class Main : Node3D
                 case Key.T: _battleView!.ShowAllLabels = !_battleView.ShowAllLabels; break;
                 case Key.B: _battleView!.ShowBars = !_battleView.ShowBars; break;
                 case Key.H: _hud.ToggleHelp(); break;
+                case Key.I: _hud.Details = !_hud.Details; break;
+                case Key.F1: _hud.Visible = !_hud.Visible; break; // clear view: nothing on screen but the battle
                 case Key.F:
                     if (_battleView!.Selected != null)
                         _camera.FollowTarget = _camera.FollowTarget == null ? _battleView.SelectedAnchor : null;

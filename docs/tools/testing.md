@@ -76,7 +76,8 @@ godot --path . --rendering-driver vulkan -- --screenshot=out.png --scenario=0 --
 
 `--camera=x,y,distance,yaw,pitch`; `--overlays=` letters are the overlay keys (g grid, c cover, l lines, p plans, t thoughts,
 b bars, f = fog off, j = battle cam, r = show the after-action report); `--select=` a soldier id; `--handover` (after
-`--seed` and `--scenario`) hands your battalion to your second in command, as the runner does. It prints draw calls, node count and soldier-update time.
+`--seed` and `--scenario`) hands your battalion to your second in command, as the runner does; `--details` turns details on (I), `--help` shows the key
+list (H), `--clear` hides the whole HUD (F1). It prints draw calls, node count and soldier-update time.
 On a headless Linux machine wrap it in `xvfb-run`.
 
 ## Scenarios

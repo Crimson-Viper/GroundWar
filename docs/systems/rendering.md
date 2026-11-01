@@ -13,7 +13,7 @@ frame and draws it.
 | `ModelViewer.cs` | A separate scene (F6) to look at the models |
 | `MapView.cs` | Ground, walls, craters, foxholes, objectives, grid and cover overlays |
 | `CameraRig.cs` | The free camera and follow mode |
-| `Hud.cs` | Status panel, selected soldier panel, log, help, end banner, order and message panels, company panel with the brief-back buttons |
+| `Hud.cs` | Status strip, selected soldier panel, log, key list, end banner, order and message panels, company panel with the brief-back buttons, battalion panel (see **The HUD** below) |
 | `CommsView.cs` | HQ tents, telephone cables, runners, phone pulses, radio rings, flares |
 | `CompanyView.cs` | Company commanders' plans as arrows on the ground, a flag over each company HQ |
 | `SupportView.cs` | Mortar tubes, and a ring over each target your mortars (or artillery) have been told to fire on |
@@ -44,6 +44,34 @@ Sim (x, y) in metres becomes Godot (x, 0, y). Use `Draw.To3`. For scaling a mesh
 `basis * Basis.FromScale(...)` (Godot's `Scaled` scales in world space, which skews rotated objects).
 
 More on the sounds, smoke, map table and battle cam in [Spectacle](spectacle.md).
+
+## The HUD (`Hud.cs`)
+The screen is for watching the battle, so the HUD starts small and opens up only when something needs you.
+
+| Where | Normally | With details (I) |
+|---|---|---|
+| Top left | Status strip: scenario, time, speed; each side's fighting, pinned and down; fog and overlays | Adds the seed, the full count (broken, fled) and every squad with what it's doing |
+| Top middle | The company: one line (who, how many fit, what it's doing). Opens in full for a brief-back (with the Approve / Reject buttons), a refusal, or for 10 s after his plan or its phase changes | The whole plan, his personality, the phases, the plans he weighed, his mortar requests |
+| Top right | The selected man or tank (only when you have one selected) | Same |
+| Bottom right | Stacked from the bottom: the order panel (only with one of your men selected), messages (only while some are on their way or have arrived in the last 20 s of battle), the battalion panel (who runs it, artillery left, buttons) | Messages: the last four even when quiet. Battalion: each key point and the enemy commander's intent (fog off) |
+| Bottom left | The last 4 log lines and a hint line ("H keys · I details · F1 clear view") | 8 log lines |
+
+**H** shows the key list in a panel in the middle of the screen (hidden at the start). **F1** hides the whole HUD
+for a clear view of the battle; brief-backs still go ahead by themselves after 10 s.
+
+Long lines in the messages panel end in "…" rather than running off the screen.
+
+**Line endings.** Text built with `StringBuilder.AppendLine` ends lines with `\r\n` on Windows, and a Godot label
+shows that as two line breaks, which made every panel twice as tall on Windows (not on Linux, where the screenshots
+are taken). Every label's text goes through `Hud.Clean`, which strips the `\r`.
+
+![The HUD as it starts](../screenshots/ui-clean.png)
+
+*Normally: a status strip, the company in one line, the selected man, the order panel, four log lines.*
+
+![The HUD with details on](../screenshots/ui-details.png)
+
+*The same moment with details on (I).*
 
 ## Overlays and keys
 See the controls table in the main README. Overlays are toggled in `Main.cs` and drawn by `MapView` and `BattleView`.
