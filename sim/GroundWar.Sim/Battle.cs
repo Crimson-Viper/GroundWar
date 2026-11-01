@@ -44,6 +44,7 @@ public sealed partial class Battle
     private readonly List<CasualtyEvent> _casualties = new();
     private readonly SoldierBrain _brain;
     private readonly SquadBrain _squadBrain;
+    private readonly TankBrain _tankBrain;
     internal SoldierHash Hash { get; }
 
     public Battle(GameData data, ScenarioDef scenario, MapDef mapDef, ulong seed)
@@ -56,6 +57,7 @@ public sealed partial class Battle
         Grid = new BattleGrid(Map);
         _brain = new SoldierBrain(this);
         _squadBrain = new SquadBrain(this);
+        _tankBrain = new TankBrain(this, _squadBrain);
         Hash = new SoldierHash(Map.Width, Map.Height);
         Spawn();
         Hash.Rebuild(_soldiers);
@@ -116,6 +118,12 @@ public sealed partial class Battle
                     if (!Data.Weapons.TryGetValue(weaponId, out var weapon))
                         throw new InvalidDataException($"Scenario uses unknown weapon '{weaponId}'");
                     for (int i = 0; i < count; i++) AddSoldier(group, weapon, center, size, gd.MoraleBonus);
+                }
+                foreach (var (vehicleId, count) in gd.Vehicles.OrderBy(kv => kv.Key))
+                {
+                    if (!Data.Vehicles.TryGetValue(vehicleId, out var vehicle))
+                        throw new InvalidDataException($"Scenario uses unknown vehicle '{vehicleId}'");
+                    for (int i = 0; i < count; i++) AddVehicle(group, vehicle, center, size);
                 }
                 var leader = group.Members.FirstOrDefault(m => !m.Weapon.IsMachineGun) ?? group.Members.FirstOrDefault();
                 if (leader != null) MakeLeader(group, leader, initial: true);
@@ -211,6 +219,7 @@ public sealed partial class Battle
         foreach (var g in _groups)
         {
             if (Time < g.NextThink) continue;
+            if (g.IsVehicles) { g.NextThink = float.MaxValue; continue; } // each tank thinks for itself
             _squadBrain.Think(g);
             g.NextThink = Time + Rules.Squad.ThinkInterval * Rng.Range(0.85f, 1.15f);
         }
@@ -225,17 +234,28 @@ public sealed partial class Battle
         foreach (var s in _soldiers)
         {
             if (!s.IsActive || Time < s.NextThink) continue;
-            _brain.Think(s);
+            if (s.IsTank) _tankBrain.Think(s);
+            else _brain.Think(s);
             // Men in a fight think often; men with nothing going on think less often.
             bool busy = s.IsMoving || s.VisibleEnemies.Count > 0 || s.UnderFire(Time, Rules.Ai.UnderFireWindow);
             s.NextThink = Time + thinkInterval * (busy ? 1f : 2.5f) * Rng.Range(0.8f, 1.2f);
         }
         t0 = Profile.Lap("think", t0);
-        foreach (var s in _soldiers) if (s.IsActive) UpdateWeapon(s);
+        foreach (var s in _soldiers)
+        {
+            if (!s.IsActive) continue;
+            UpdateWeapon(s);
+            if (s.IsTank) UpdateMainGun(s);
+        }
         t0 = Profile.Lap("weapons", t0);
-        foreach (var s in _soldiers) if (s.IsActive) Move(s);
+        foreach (var s in _soldiers)
+        {
+            if (!s.IsActive) continue;
+            if (s.IsTank) MoveTank(s);
+            else Move(s);
+        }
         t0 = Profile.Lap("move", t0);
-        foreach (var s in _soldiers) if (s.IsActive) UpdateMorale(s);
+        foreach (var s in _soldiers) if (s.IsActive && !s.IsTank) UpdateMorale(s);
         t0 = Profile.Lap("morale", t0);
         UpdateGroups();
 

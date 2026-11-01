@@ -32,5 +32,56 @@
     "suppressionRadius": 4,
     "threat": 2.5,
     "isMachineGun": true
+  },
+  "atr": {
+    "name": "Anti-tank rifle",
+    "range": 400,
+    "accuracy": [[0, 0.40], [25, 0.25], [50, 0.15], [100, 0.08], [200, 0.035], [300, 0.015], [400, 0.008]],
+    "burstSize": 1,
+    "spread": 1.5,
+    "fireInterval": 6.0,
+    "fireIntervalJitter": 1.5,
+    "magazineSize": 5,
+    "magazines": 6,
+    "reloadTime": 5.0,
+    "suppression": 12,
+    "suppressionRadius": 3,
+    "threat": 1.5,
+    "penetration": 35           // mm at the muzzle, half that at full range: a tank's front only up close (under ~100 m)
+  },
+  "tank_gun": {
+    "name": "Tank gun (high explosive)",
+    "range": 800,
+    // chance the shell lands on the spot aimed at; misses land around it (see spread) and still blast
+    "accuracy": [[0, 0.9], [100, 0.6], [200, 0.4], [400, 0.2], [800, 0.08]],
+    "burstSize": 1,
+    "spread": 6,                // metres, at 100 m; grows with range
+    "fireInterval": 7.0,
+    "fireIntervalJitter": 1.5,
+    "magazineSize": 1,
+    "magazines": 60,
+    "reloadTime": 0.1,
+    "suppression": 40,          // fear for men near the burst
+    "suppressionRadius": 14,
+    "threat": 3,
+    "penetration": 50,          // a direct hit on another tank (mm at the muzzle, half that at full range)
+    "blastRadius": 6            // men inside this can be killed or wounded; cover helps
+  },
+  "tank_mg": {
+    "name": "Tank machine gun",
+    "range": 600,
+    "accuracy": [[0, 0.30], [25, 0.18], [50, 0.10], [100, 0.05], [200, 0.022], [300, 0.01], [600, 0.003]],
+    "burstSize": 8,
+    "burstInterval": 0.11,
+    "spread": 2.5,
+    "fireInterval": 2.5,
+    "fireIntervalJitter": 1.0,
+    "magazineSize": 50,
+    "magazines": 30,
+    "reloadTime": 5.0,
+    "suppression": 9,
+    "suppressionRadius": 4,
+    "threat": 2.5,
+    "isMachineGun": true
   }
 }
