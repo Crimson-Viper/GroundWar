@@ -95,6 +95,9 @@ public sealed class Group
     public GroupOrder OriginalOrder { get; set; }
     public bool TookObjective { get; set; }
     public bool AttackFailed { get; set; }
+    /// <summary>When the squad last lost its leader (-999 = never). Losing one replacement after another
+    /// in quick succession is one shock to the men, not several.</summary>
+    public float LeaderLostTime { get; set; } = -999f;
     public bool IsAttacking => Order is GroupOrder.Attack or GroupOrder.Advance or GroupOrder.Suppress;
 
     public Group(Side side)

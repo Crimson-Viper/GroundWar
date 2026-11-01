@@ -104,6 +104,8 @@ public sealed class MoraleRules
     public float FriendWounded { get; set; } = 7f;
     public float FriendRadius { get; set; } = 25f;
     public float LeaderKilled { get; set; } = 15f;
+    /// <summary>Seconds after losing a leader during which losing his replacement too adds no further shock.</summary>
+    public float LeaderShockWindow { get; set; } = 30f;
     public float EnemyDownSeen { get; set; } = 3f;
     public float GroupBrokenFraction { get; set; } = 0.5f;
     public float GroupBrokenShock { get; set; } = 12f;

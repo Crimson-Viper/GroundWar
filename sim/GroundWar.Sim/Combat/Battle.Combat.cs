@@ -194,9 +194,12 @@ public sealed partial class Battle
             float d = Vector2.Distance(f.Position, t.Position);
             f.Morale -= (killed ? mr.FriendKilled : mr.FriendWounded) * (1f - 0.5f * d / mr.FriendRadius);
         }
-        if (t.IsLeader)
+        if (t.IsLeader && Time - t.Group.LeaderLostTime > mr.LeaderShockWindow)
+        {
+            t.Group.LeaderLostTime = Time;
             foreach (var f in t.Group.Members)
                 if (f.IsActive && f != t) f.Morale -= mr.LeaderKilled;
+        }
         foreach (var f in shooter.Group.Members)
             if (f.IsActive && Vector2.DistanceSquared(f.Position, t.Position) < 150f * 150f)
                 f.Morale = MathF.Min(f.StartMorale, f.Morale + mr.EnemyDownSeen);
