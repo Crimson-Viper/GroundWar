@@ -86,6 +86,23 @@
     "penetration": 50,          // a direct hit on another tank (mm at the muzzle, half that at full range)
     "blastRadius": 6            // men inside this can be killed or wounded; cover helps
   },
+  "tank_gun_ap": {
+    "name": "Tank gun (armour-piercing)",
+    "range": 1000,
+    // a solid shot fired at another tank (milestone 8); flatter and more accurate than high explosive
+    "accuracy": [[0, 0.95], [200, 0.75], [500, 0.45], [1000, 0.2]],
+    "burstSize": 1,
+    "spread": 3,
+    "fireInterval": 7.0,
+    "fireIntervalJitter": 1.5,
+    "magazineSize": 1,
+    "magazines": 20,
+    "reloadTime": 0.1,
+    "suppression": 10,
+    "suppressionRadius": 3,
+    "threat": 3,
+    "penetration": 85           // through a medium tank's front (50 mm) out to about 450 m, its side anywhere in range
+  },
   "hmg": {
     "name": "Heavy machine gun (tripod)",
     "range": 900,

@@ -65,6 +65,8 @@ public sealed class CompanyPlan
     public Group? Support { get; init; }
     /// <summary>Mortar fire he will ask battalion for, and in which phase.</summary>
     public List<PlannedFire> Fires { get; } = new();
+    /// <summary>Tank platoons attached to the company that have a part in this plan (milestone 8).</summary>
+    public List<Group> Tanks { get; } = new();
     /// <summary>Arrows for the brief-back on the player's map: (from, to, phase index).</summary>
     public List<(Vector2 From, Vector2 To, int Phase)> Arrows { get; } = new();
 }

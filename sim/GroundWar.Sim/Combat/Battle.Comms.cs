@@ -379,7 +379,8 @@ public sealed partial class Battle
     /// heavy losses, being pinned or broken, taking the objective, or the attack failing.</summary>
     private void WriteReports(Group g)
     {
-        if (g.IsVehicles || g.IsCompanyHq) return;
+        // Tank crews who have bailed out are making their own way back: they don't report.
+        if (g.IsVehicles || g.IsCompanyHq || g.IsCrew) return;
         if (_hq[(int)g.Side] == null && g.Company is not { CommanderDown: false }) return;
         int effective = g.CountEffective;
         if (effective == 0)

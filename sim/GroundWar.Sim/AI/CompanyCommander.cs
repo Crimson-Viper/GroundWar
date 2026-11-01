@@ -371,6 +371,7 @@ public sealed class CompanyCommander
     {
         var g = t.Squad;
         if (g.LastOrderReceived != t.Order) return false;
+        if (g.IsVehicles) return true; // the tanks keep up as best they can; the plan doesn't wait for them
         return t.Order.Kind switch
         {
             OrderKind.Advance => g.Order == GroupOrder.Hold || Vector2.Distance(g.Centroid, t.Order.Objective) <= t.Order.Radius + 15f,
@@ -659,9 +660,90 @@ public sealed class CompanyCommander
                 }
                 break;
         }
+        var tanks = c.Squads.Where(g => g.IsVehicles && g.Members.Any(m => m.IsActive)).ToList();
+        if (tanks.Count > 0) foreach (var p in plans) AddTanks(c, p, tanks, o, dir);
         var threats = Threats(c, o, out float enemyFire);
         foreach (var p in plans) Evaluate(c, p, threats, enemyFire, squads);
         return plans;
+    }
+
+    /// <summary>Tanks have joined the company after he made his plan. If he had refused the attack as a death trap,
+    /// the tanks are the support he asked for, so he thinks again. Otherwise he gives them their part in the plan he
+    /// is running (or about to run) and, if it's under way, sends them their orders for the phase it's in.</summary>
+    public void TanksJoined(Company c, Group tanks)
+    {
+        if (c.State == CompanyState.Refused && c.RefusedOrder != null)
+        {
+            _b.Note(c.HqGroup, $"{c.CommanderName}: {tanks.Name} has come up, thinking again", LogKind.Key);
+            Reconsider(c);
+            return;
+        }
+        if (c.Plan == null || c.CurrentOrder == null || c.Plan.Phases.Count == 0 || c.Plan.Tanks.Contains(tanks)) return;
+        var start = c.Centroid;
+        var dir = Geo.SafeNormalize(c.CurrentOrder.Objective - start, -c.HqGroup.Rear);
+        string summary = c.Plan.Summary;
+        AddTanks(c, c.Plan, new List<Group> { tanks }, c.CurrentOrder, dir);
+        string part = c.Plan.Summary[summary.Length..].Trim();
+        c.Plan.Summary = summary + " " + part;
+        _b.Note(c.HqGroup, $"{c.CommanderName}: {tanks.Name} has joined. {part}", LogKind.Key);
+        if (c.State is CompanyState.Executing or CompanyState.Holding && c.Phase is { } ph)
+            foreach (var t in ph.Tasks)
+                if (t.Squad == tanks) _b.SendCompanyOrder(c, tanks, t.Order);
+    }
+
+    /// <summary>Attached tanks (milestone 8) go with the infantry: in an attack they move up behind the squads,
+    /// give covering fire with the support squad in a pin-and-flank, and go in with the assault; in a defence they
+    /// sit behind the line, ready to fire on anything that gets close.</summary>
+    private void AddTanks(Company c, CompanyPlan plan, List<Group> tanks, Order o, Vector2 dir)
+    {
+        PlanPhase? Phase(PhaseKind k) => plan.Phases.FirstOrDefault(p => p.Kind == k);
+        string names = JoinNames(tanks);
+        foreach (var t in tanks)
+        {
+            plan.Tanks.Add(t);
+            var from = t.Centroid;
+            switch (plan.Kind)
+            {
+                case PlanKind.Defend:
+                    var back = Spot(o.Objective - c.HqGroup.Facing * 40f);
+                    Task(plan.Phases[0], t, Make(OrderKind.Hold, back, 20f));
+                    plan.Arrows.Add((from, back, 0));
+                    break;
+                case PlanKind.Advance:
+                    Task(plan.Phases[0], t, Make(OrderKind.Advance, o.Objective, 20f));
+                    if (Phase(PhaseKind.Hold) is { } hold) Task(hold, t, Make(OrderKind.Hold, Spot(o.Objective - dir * 20f), 20f));
+                    break;
+                case PlanKind.Suppress:
+                    Task(plan.Phases[0], t, Make(OrderKind.Suppress, o.Objective, o.Radius, o.SupportPosition ?? from));
+                    break;
+                case PlanKind.FrontalAssault:
+                case PlanKind.PinAndFlankLeft:
+                case PlanKind.PinAndFlankRight:
+                    var support = plan.Support != null ? plan.Phases[0].Tasks.FirstOrDefault(x => x.Squad == plan.Support)?.Order.Objective : null;
+                    if (Phase(PhaseKind.MoveUp) is { } move)
+                    {
+                        var at = support ?? Spot(o.Objective - dir * (R.StartLineDistance + 15f));
+                        Task(move, t, MoveTo(at, 20f));
+                        plan.Arrows.Add((from, at, 0));
+                        from = at;
+                    }
+                    if (Phase(PhaseKind.EstablishFire) is { } fire) Task(fire, t, Make(OrderKind.Suppress, o.Objective, o.Radius + 5f, from));
+                    if (Phase(PhaseKind.Assault) is { } assault)
+                    {
+                        Task(assault, t, Make(OrderKind.Attack, o.Objective, o.Radius));
+                        plan.Arrows.Add((from, o.Objective, plan.Phases.IndexOf(assault)));
+                    }
+                    if (Phase(PhaseKind.Consolidate) is { } cons) Task(cons, t, Make(OrderKind.Hold, Spot(o.Objective - dir * 20f), 20f));
+                    break;
+            }
+        }
+        plan.Summary += plan.Kind switch
+        {
+            PlanKind.Defend => $" {names} behind the line.",
+            PlanKind.FrontalAssault => $" {names} leads the assault.",
+            PlanKind.PinAndFlankLeft or PlanKind.PinAndFlankRight => $" {names} gives covering fire with the support squad, then goes in with the assault.",
+            _ => $" {names} goes with them.",
+        };
     }
 
     private static float Offset(int i, int n, float spacing) => (i - (n - 1) * 0.5f) * spacing;
@@ -850,6 +932,8 @@ public sealed class CompanyCommander
         float supportFire = support == null ? 0f : support.Members.Where(m => m.IsEffective).Sum(m => m.Weapon.IsMachineGun ? 3f : 1f);
         // Covering fire keeps the defenders' heads down during the assault; a frontal rush only has its own fire.
         float suppression = support != null ? 1f - 0.5f * MathF.Min(1f, supportFire / MathF.Max(enemyFire, 1f)) : 0.85f;
+        // Tanks with the assault draw fire and shoot the defenders' heads down (milestone 8).
+        if (plan.Tanks.Count > 0) suppression *= MathF.Max(0.5f, 1f - 0.3f * plan.Tanks.Count);
         // Mortar fire before the assault: high explosive knocks out or pins some of the defenders near where it
         // lands; smoke hides the assault from everyone on the objective.
         bool he = plan.Fires.Any(f => f.Kind == FireKind.He), smoked = plan.Fires.Any(f => f.Kind == FireKind.Smoke);

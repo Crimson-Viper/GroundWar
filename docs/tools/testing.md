@@ -51,7 +51,7 @@ There is no player in the runner, so in a scenario with battalion commanders the
 his second in command at the start, and both sides are run by the computer. A battalion battle takes about a
 minute of computer time each (an hour of battle with some 250 men); run several runners at once for big batches.
 
-**Current results** (200 battles each, 1 Nov 2026, after the company commander):
+**Current results** (200 battles each, 1 Nov 2026, after milestone 8):
 
 | Scenario | Blue | Red | Draws |
 |---|---|---|---|
@@ -59,11 +59,12 @@ minute of computer time each (an hour of battle with some 250 men); run several 
 | Firefight at the wall | 31 | 169 | 0 |
 | Meeting engagement | 94 | 95 | 11 |
 | Town attack | 27 | 153 | 20 |
-| Tank support | 171 | 29 | 0 |
+| Tank support | 168 | 32 | 0 |
 | Orders under fire | 117 | 83 | 0 |
 | Farmhouse with support (mortars, smoke, MG section) | 99 | 77 | 24 |
 | Battalion battle (100 battles, both battalions run by the computer) | 51 | 49 | 0 |
-| Farmhouse (company attack) | 94 | 89 | 17 |
+| Farmhouse (company attack) | 94 | 99 | 7 |
+| Tank platoons (milestone 8) | 124 | 74 | 2 |
 
 ## Screenshot mode
 The game can render a frame with no window and save it, which is how screenshots for pull requests are made:
@@ -93,6 +94,7 @@ facing and weapons. Tab in the game cycles through them in the order listed in `
 | `farmhouse` | A Company (Capt. Hale, four squads) attacks a farmhouse held by a Red company; brief-back and phased plans |
 | `battalion` | Milestone 7, part 2: three companies a side on the 1 km valley map (`tools/make_valley_map.py`). Red holds a village and a farm with a reserve at the churchyard; Blue attacks; won by overrunning the enemy HQ. Both battalions have a commander (in the runner both are run by the computer) |
 | `farmhouse_support` | The farmhouse with battalion support: Blue mortars (HE and smoke) and an MG section attached to A Company; Red mortars |
+| `tank_platoons` | Milestone 8: the farmhouse with a Blue platoon of four tanks attached to A Company. Red has an anti-tank rifle, a bazooka team and two tanks of its own |
 | `stress_1000` | 1,000 a side, to check speed |
 
 ## Maps

@@ -10,8 +10,11 @@
     "armourFront": 50, "armourSide": 35, "armourRear": 25,
     "mainGun": "tank_gun",
     "machineGun": "tank_mg",
+    "mainGunAp": "tank_gun_ap",   // armour-piercing rounds, for enemy tanks
+    "apRounds": 20,               // carried as well as the high-explosive rounds (tank_gun "magazines")
+    "crew": 5,                    // commander, gunner, loader, driver, bow gunner
     "knockOutChance": 0.45,   // when a hit goes through the armour
-    "immobiliseChance": 0.3,  // when a hit goes through the armour (the rest hurt the crew)
+    "immobiliseChance": 0.3,  // when a hit goes through the armour (the rest hit the crew inside)
     "trackHitChance": 0.1,    // when a hit bounces off: a broken track
     "spotMultiplier": 4,      // easier to spot than a man in the open
     "sizeHitMultiplier": 3,   // easier to hit

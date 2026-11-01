@@ -124,6 +124,12 @@ public sealed class Group
     public MortarSection? Mortars { get; set; }
     /// <summary>A battalion asset (an MG section or mortars) that the player can attach to a company.</summary>
     public bool IsAsset { get; set; }
+    /// <summary>The crews of a tank platoon (milestone 8): they ride inside until they bail out.</summary>
+    public bool IsCrew { get; set; }
+    /// <summary>A tank platoon: which half is bounding forward (the other watches over it), and since when.</summary>
+    public int BoundingSection { get; set; }
+    public float BoundStarted { get; set; }
+    public bool PulledBack { get; set; }
     public bool IsAttacking => Order is GroupOrder.Attack or GroupOrder.Advance or GroupOrder.Suppress;
 
     public Group(Side side)

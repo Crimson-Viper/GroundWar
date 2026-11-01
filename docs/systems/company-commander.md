@@ -157,6 +157,12 @@ far; the farmhouse battle is repeatable.
 draw. Captain Hale always chose to pin and flank by the covered left at first, and re-planned after heavy losses in
 about half the battles. See the runner table in [Testing and tuning](../tools/testing.md) for the 200-battle figures.
 
+## Tanks in the plan (milestone 8)
+When battalion attaches a tank platoon to the company, he gives it a part in every plan he weighs: covering fire with
+the support squad and then the assault (pin and flank), leading the assault (frontal), behind the line (defend), and
+so on, and counts it in the odds. Tanks that arrive after he has planned are fitted into the plan he is running; if he
+had refused the attack, he thinks again. See [Tanks](tanks.md#tanks-in-the-company-plan-companycommanderaddtanks).
+
 ## Not done yet
 - When the commander is down, nobody takes over the company (the senior sergeant should).
 - Mortars and MG sections arrived in milestone 7 part 1 ([Battalion support](support-fire.md)); artillery comes with the battalion battle.

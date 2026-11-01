@@ -6,7 +6,11 @@ namespace GroundWar.Sim.Units;
 
 public enum Side { Blue = 0, Red = 1 }
 
-public enum SoldierStatus { Active, Wounded, Dead, Routed }
+/// <summary>Mounted: a tank crewman inside his tank (milestone 8). He takes no part until he bails out.</summary>
+public enum SoldierStatus { Active, Wounded, Dead, Routed, Mounted }
+
+/// <summary>A tank crewman's job (milestone 8). See docs/systems/tanks.md.</summary>
+public enum CrewRole { None, Commander, Gunner, Loader, Driver, BowGunner }
 
 public enum Stance { Standing, Crouched, Prone }
 
@@ -32,6 +36,7 @@ public sealed class Soldier
 
     public string Label => $"{(Side == Side.Blue ? 'B' : 'R')}{Id}";
     public string Role => Vehicle != null ? Vehicle.Name
+        : CrewRole != CrewRole.None ? CrewRole switch { CrewRole.BowGunner => "Tank bow gunner", var r => $"Tank {r.ToString().ToLowerInvariant()}" }
         : IsLeader ? "Sergeant" : Weapon.AntiTankOnly ? "Bazooka gunner" : Weapon.CanHurtArmour ? "Anti-tank rifleman" : Weapon.IsMachineGun ? "MG gunner" : "Rifleman";
 
     // Vehicle. A tank is one "soldier" standing for the whole crew: Weapon is its machine gun,
@@ -49,6 +54,23 @@ public sealed class Soldier
     public bool Immobilised { get; set; }
     /// <summary>The tank stops to fire its main gun (a "short halt") and doesn't move off before this time.</summary>
     public float HaltUntil { get; set; }
+    /// <summary>Armour-piercing rounds (for enemy tanks); MainGunAmmo is the high-explosive rounds.</summary>
+    public int ApAmmo { get; set; }
+    /// <summary>The five men inside (milestone 8): commander, gunner, loader, driver, bow gunner.</summary>
+    public List<Soldier> Crew { get; } = new();
+    /// <summary>For a crewman: his job and his tank.</summary>
+    public CrewRole CrewRole { get; init; }
+    public Soldier? CrewOf { get; init; }
+    /// <summary>A crewman who got out of his tank (when it was knocked out or abandoned).</summary>
+    public bool GotOut { get; set; }
+    /// <summary>A crewman still inside his tank: at his post, or killed or wounded in it. Not drawn on the ground.</summary>
+    public bool InTank => CrewOf != null && !GotOut;
+    /// <summary>Platoon (milestone 8): where the platoon leader wants this tank, and whether it is halted to watch
+    /// over the tanks that are moving.</summary>
+    public Vector2? PlatoonGoal { get; set; }
+    public bool Overwatch { get; set; }
+    /// <summary>The crew have got out (knocked out, or abandoned).</summary>
+    public bool BailedOut { get; set; }
 
     // Body
     public Vector2 Position { get; set; }

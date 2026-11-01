@@ -25,7 +25,7 @@ The design (what the game should become) lives in the design docs. These pages d
 | [Spectacle](systems/spectacle.md) | Sounds, lingering smoke and burning wrecks, the map table, the battle cam and slow motion |
 | [Replays and reports](systems/replays-and-reports.md) | Replays from the seed and your orders, rewinding, the after-action report |
 | [Drawing the battle](systems/rendering.md) | The Godot side: batched drawing, overlays, the HUD and log |
-| [Tanks](systems/tanks.md) | Armour, guns, anti-tank weapons, the tank commander AI |
+| [Tanks](systems/tanks.md) | Armour, guns (HE and AP), anti-tank weapons, crews and bailing out, the tank commander AI, platoons, tanks in company plans |
 | [Models](models.md) | The soldier and tank models, and how to swap in your own from Blender |
 
 ## Tools

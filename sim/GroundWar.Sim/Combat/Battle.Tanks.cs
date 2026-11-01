@@ -37,15 +37,20 @@ public sealed partial class Battle
             NextPerceive = Rng.Range(0f, Rules.Perception.Interval),
             FireTimer = Rng.Range(0f, mg.FireInterval),
             MainGunTimer = Rng.Range(1f, gun.FireInterval),
+            ApAmmo = v.MainGunAp != "" ? v.ApRounds : 0,
         };
         _soldiers.Add(s);
         group.Members.Add(s);
+        AddCrew(s, v);
     }
+
+    /// <summary>The armour-piercing round for a tank's main gun, if it carries any.</summary>
+    private WeaponDef? ApGun(Soldier t) => t.Vehicle!.MainGunAp != "" && Data.Weapons.TryGetValue(t.Vehicle.MainGunAp, out var w) ? w : null;
 
     /// <summary>Send a tank along a path it fits through.</summary>
     internal bool SetTankMove(Soldier t, Vector2 destination)
     {
-        if (t.Immobilised) return false;
+        if (t.Immobilised || DriveFactor(t) <= 0f) return false;
         var path = Map.TankNav.FindPath(t.Position, Map.TankNav.NearestWalkable(destination, 15f));
         if (path == null || path.Count == 0) return false;
         t.Path = path;
@@ -74,7 +79,9 @@ public sealed partial class Battle
         t.Facing = TurnTowards(t.Facing, want, v.TurnRate * Dt);
         float align = Vector2.Dot(t.Facing, want);
         if (align < 0.85f) return; // turning on the spot
-        float speed = v.Speed * (Map.InCrater(t.Position) ? 0.6f : 1f);
+        float drive = DriveFactor(t); // the driver, or the bow gunner in his seat
+        if (drive <= 0f) return;
+        float speed = v.Speed * drive * (Map.InCrater(t.Position) ? 0.6f : 1f);
         float step = MathF.Min(speed * Dt, dist);
         t.Position += t.Facing * step;
     }
@@ -106,8 +113,13 @@ public sealed partial class Battle
         if (aim == null) { t.TurretFacing = TurnTowards(t.TurretFacing, t.Facing, t.Vehicle!.TurretTurnRate * Dt); return; }
         var dir = Geo.SafeNormalize(aim.Value - t.Position, t.TurretFacing);
         t.TurretFacing = TurnTowards(t.TurretFacing, dir, t.Vehicle!.TurretTurnRate * Dt);
-        if (Vector2.Dot(t.TurretFacing, dir) < 0.995f || t.MainGunTimer > 0f || t.MainGunAmmo <= 0) return;
-        if (Vector2.Distance(t.Position, aim.Value) > gun.Range) return;
+        // Armour-piercing for an enemy tank (while it lasts), high explosive for everything else.
+        var ap = t.GunTarget?.IsTank == true && t.ApAmmo > 0 ? ApGun(t) : null;
+        var round = ap ?? gun;
+        var (crewAim, crewLoad) = GunCrew(t);
+        if (crewAim <= 0f) return; // nobody left to work the gun
+        if (Vector2.Dot(t.TurretFacing, dir) < 0.995f || t.MainGunTimer > 0f || (ap == null && t.MainGunAmmo <= 0)) return;
+        if (Vector2.Distance(t.Position, aim.Value) > round.Range) return;
         if (t.GunTarget == null && FriendNear(t, aim.Value, gun.BlastRadius + 4f)) return;
         if (t.IsMoving && !t.Immobilised && Time >= t.HaltUntil)
         {
@@ -116,21 +128,21 @@ public sealed partial class Battle
             if (t.MainGunTimer < 1f) t.MainGunTimer = 1f;
             return;
         }
-        FireShell(t, t.GunTarget, aim.Value);
-        t.MainGunAmmo--;
-        t.MainGunTimer = gun.FireInterval + gun.FireIntervalJitter * Rng.Range(-1f, 1f);
+        FireShell(t, t.GunTarget, aim.Value, round, crewAim);
+        if (ap != null) t.ApAmmo--; else t.MainGunAmmo--;
+        // A gun short of its loader (or gunner) is slower to load.
+        t.MainGunTimer = (round.FireInterval + round.FireIntervalJitter * Rng.Range(-1f, 1f)) * crewLoad;
         t.HaltUntil = MathF.Max(t.HaltUntil, Time + 1.5f);
     }
 
     /// <summary>A high-explosive shell. It lands on the aim point or somewhere around it, then blasts
     /// everyone close by (cover between the burst and a man protects him). A direct hit on a tank tests its armour.</summary>
-    private void FireShell(Soldier t, Soldier? target, Vector2 aim)
+    private void FireShell(Soldier t, Soldier? target, Vector2 aim, WeaponDef gun, float crewAim)
     {
-        var gun = t.MainGun!;
         t.ShotsFired++;
         t.LastFiredTime = Time;
         float d = Vector2.Distance(t.Position, aim);
-        float p = gun.HitChanceAt(d) * t.Skill;
+        float p = gun.HitChanceAt(d) * t.Skill * crewAim;
         if (target?.IsTank == true) p *= target.Vehicle!.SizeHitMultiplier * 0.5f;
         bool onTarget = Rng.Chance(MathF.Min(p, 0.95f));
         var dir = Geo.SafeNormalize(aim - t.Position, Vector2.UnitX);
@@ -147,7 +159,7 @@ public sealed partial class Battle
         if (FirstShotTime < 0f) FirstShot(t);
 
         if (directTankHit) ArmourHit(target!, t, gun);
-        Blast(t, impact, gun);
+        if (gun.IsShell) Blast(t, impact, gun); // an armour-piercing shot has no burst
 
         // The flash and bang give the tank away to everyone near the burst.
         foreach (var u in Hash.Near(Enemy(t.Side), impact, gun.SuppressionRadius))
@@ -221,12 +233,20 @@ public sealed partial class Battle
                 // Seeing your tank brew up is a blow; seeing theirs is a lift.
                 foreach (var f in Hash.Near(tank.Side, tank.Position, 60f)) if (f.IsActive) f.Morale -= Rules.Morale.FriendKilled;
                 foreach (var f in Hash.Near(shooter.Side, tank.Position, 150f)) if (f.IsActive) f.Morale = MathF.Min(f.StartMorale, f.Morale + 10f);
+                BailOut(tank, brewedUp: true);
             }
             else if (roll < v.KnockOutChance + v.ImmobiliseChance && !tank.Immobilised)
             {
                 Note(tank, $"immobilised by {shooter.Label} (hit in the {side})", LogKind.Casualty);
                 tank.Immobilised = true;
                 StopMoving(tank);
+                if (Rng.Chance(0.5f)) HitCrew(tank, shooter, 1);
+            }
+            else if (tank.Crew.Count > 0)
+            {
+                Note(tank, $"hit by {shooter.Label}, through the armour into the crew (hit in the {side})", LogKind.Casualty);
+                tank.MainGunTimer += 4f; // the shock of it
+                HitCrew(tank, shooter, Rng.Chance(0.35f) ? 2 : 1);
             }
             else
             {

@@ -21,6 +21,10 @@ In this order:
    first (Advance). Getting to a waypoint (a start line or support position a company commander sent it to) doesn't count.
 2. **Only one side was attacking** (was ever ordered to attack, advance or suppress): if the attack was called off (too many casualties), the defender wins. When time
    runs out, the defender wins ("held on").
+   Also (since milestone 8): if a company commander called the attack a death trap and was never sent in again, the
+   fighting dies down with the defender still there, so the defender wins ("Blue's attack stalled (called a death
+   trap)"). Before, these battles were draws. In the game you can always send the order again (or give the company
+   support) before the fighting dies down.
 3. **Both sides were attacking** (a meeting engagement) and time runs out: the side with at least 20 percentage points
    more of its men still fighting wins ("came off better"). Otherwise it's a draw.
 

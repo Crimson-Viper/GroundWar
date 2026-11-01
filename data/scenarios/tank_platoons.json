@@ -1,0 +1,409 @@
+// Milestone 8: tank platoons with crew AI. The farmhouse attack again, with a platoon of four tanks that battalion
+// attaches to A Company. Captain Hale's plan gives the tanks a part (covering fire with the support squad, then the
+// assault). The platoon leader drives his tanks in a wedge, then bounds them half at a time. Red has an anti-tank
+// rifle in the yard, a bazooka team in the hedge north-west of the farm, and two tanks behind the farm.
+{
+ "name": "Armoured attack",
+ "description": "A Company attacks the farmhouse with a platoon of four tanks. Red has bazookas, an anti-tank rifle and two tanks of its own.",
+ "map": "maps/farmhouse.json",
+ "timeLimit": 1500,
+ "sides": [
+  {
+   "side": "Blue",
+   "name": "Blue",
+   "rear": [
+    -1,
+    0
+   ],
+   "hq": {
+    "name": "Blue Battalion HQ",
+    "position": [
+     8,
+     150
+    ],
+    "radio": true
+   },
+   "groups": [
+    {
+     "name": "A Coy HQ",
+     "order": "Hold",
+     "objective": [
+      22,
+      150
+     ],
+     "objectiveRadius": 6,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      22,
+      150
+     ],
+     "spawnSize": [
+      4,
+      4
+     ],
+     "weapons": {
+      "rifle": 2
+     },
+     "radio": true,
+     "moraleBonus": 15
+    },
+    {
+     "name": "1st Squad",
+     "order": "Hold",
+     "objective": [
+      40,
+      96
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      40,
+      96
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "2nd Squad",
+     "order": "Hold",
+     "objective": [
+      40,
+      132
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      40,
+      132
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "3rd Squad",
+     "order": "Hold",
+     "objective": [
+      40,
+      168
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      40,
+      168
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 8,
+      "lmg": 2
+     }
+    },
+    {
+     "name": "4th Squad",
+     "order": "Hold",
+     "objective": [
+      40,
+      204
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      40,
+      204
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "1st Tank Platoon",
+     "order": "Hold",
+     "objective": [
+      20,
+      150
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      1,
+      0
+     ],
+     "asset": true,
+     "radio": true,
+     "spawnCenter": [
+      20,
+      150
+     ],
+     "spawnSize": [
+      6,
+      60
+     ],
+     "vehicles": {
+      "tank": 4
+     }
+    }
+   ]
+  },
+  {
+   "side": "Red",
+   "name": "Red",
+   "rear": [
+    1,
+    0
+   ],
+   "hq": {
+    "name": "Red Battalion HQ",
+    "position": [
+     392,
+     150
+    ],
+    "radio": true
+   },
+   "groups": [
+    {
+     "name": "Red Coy HQ",
+     "order": "Hold",
+     "objective": [
+      334,
+      150
+     ],
+     "objectiveRadius": 6,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      334,
+      150
+     ],
+     "spawnSize": [
+      4,
+      4
+     ],
+     "weapons": {
+      "rifle": 2
+     },
+     "radio": true,
+     "moraleBonus": 15
+    },
+    {
+     "name": "Farmhouse Squad",
+     "order": "Hold",
+     "objective": [
+      298,
+      145
+     ],
+     "objectiveRadius": 9,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      298,
+      145
+     ],
+     "spawnSize": [
+      9,
+      10
+     ],
+     "weapons": {
+      "rifle": 6,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Yard Squad",
+     "order": "Hold",
+     "objective": [
+      285,
+      176
+     ],
+     "objectiveRadius": 10,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      287,
+      176
+     ],
+     "spawnSize": [
+      6,
+      16
+     ],
+     "weapons": {
+      "rifle": 5,
+      "lmg": 1,
+      "atr": 1
+     }
+    },
+    {
+     "name": "Barn MG",
+     "order": "Hold",
+     "objective": [
+      299,
+      171
+     ],
+     "objectiveRadius": 4,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      300,
+      171
+     ],
+     "spawnSize": [
+      3,
+      4
+     ],
+     "weapons": {
+      "rifle": 2,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Red AT Team",
+     "order": "Hold",
+     "objective": [
+      262,
+      120
+     ],
+     "objectiveRadius": 6,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      262,
+      120
+     ],
+     "spawnSize": [
+      4,
+      6
+     ],
+     "weapons": {
+      "rifle": 2,
+      "bazooka": 3
+     }
+    },
+    {
+     "name": "Red Tank Section",
+     "order": "Hold",
+     "objective": [
+      338,
+      150
+     ],
+     "objectiveRadius": 15,
+     "facing": [
+      -1,
+      0
+     ],
+     "radio": true,
+     "spawnCenter": [
+      338,
+      150
+     ],
+     "spawnSize": [
+      6,
+      40
+     ],
+     "vehicles": {
+      "tank": 2
+     }
+    }
+   ]
+  }
+ ],
+ "companies": [
+  {
+   "name": "A Company",
+   "commander": "Capt. Hale",
+   "hq": "A Coy HQ",
+   "squads": [
+    "1st Squad",
+    "2nd Squad",
+    "3rd Squad",
+    "4th Squad"
+   ],
+   "traits": {
+    "aggression": 3,
+    "caution": 3,
+    "initiative": 4,
+    "competence": 3,
+    "composure": 3
+   }
+  },
+  {
+   "name": "Red Company",
+   "commander": "Capt. Brandt",
+   "hq": "Red Coy HQ",
+   "squads": [
+    "Farmhouse Squad",
+    "Yard Squad",
+    "Barn MG",
+    "Red AT Team",
+    "Red Tank Section"
+   ],
+   "traits": {
+    "aggression": 2,
+    "caution": 4,
+    "initiative": 3,
+    "competence": 3,
+    "composure": 4
+   }
+  }
+ ],
+ "orders": [
+  {
+   "time": 1,
+   "group": "1st Tank Platoon",
+   "order": "Attach",
+   "attachTo": "A Company"
+  },
+  {
+   "time": 5,
+   "group": "A Company",
+   "order": "Attack",
+   "objective": [
+    299,
+    152
+   ],
+   "objectiveRadius": 22
+  }
+ ]
+}
