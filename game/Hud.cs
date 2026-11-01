@@ -18,6 +18,18 @@ public partial class Hud : CanvasLayer
     private Label _help = null!;
     private Label _banner = null!;
     private PanelContainer _selectedPanel = null!;
+    private PanelContainer _helpPanel = null!;
+    private Label _hint = null!;
+    /// <summary>The panels stacked in the bottom-right corner (battalion, messages, orders), growing upwards.</summary>
+    private VBoxContainer _rightStack = null!;
+
+    /// <summary>I: show everything (squad list, the whole plan, key points, older messages). Off by default, so the
+    /// battlefield stays clear; the panels open up by themselves when something needs you.</summary>
+    public bool Details { get; set; }
+
+    /// <summary>Text built with StringBuilder.AppendLine has "\r\n" line ends on Windows, which a Godot label shows
+    /// as two line breaks (every panel twice as tall). Labels only ever get "\n".</summary>
+    private static string Clean(string s) => s.Replace("\r", "").TrimEnd();
 
     public const string HelpText =
         "CAMERA   WASD / arrows pan · Q E rotate · wheel or + - zoom · right-drag orbit · middle-drag pan · Shift faster\n" +
@@ -26,51 +38,68 @@ public partial class Hud : CanvasLayer
         "COMPANY  Enter approve the brief-back · Backspace reject it · selecting any man in a company orders the company\n" +
         "BATTALION  Y / U artillery HE / smoke, then click the target · K hand the battle to your second in command (or take it back)\n" +
         "WATCH    J battle cam · Z map table · O after-action report · M mute · Shift+R replay with your orders · [ ] back / on 30 s\n" +
-        "OVERLAYS G grid (cover / visibility / control) · C cover points · L aim and path lines · P squad plans · T thoughts · B morale bars · V fog of war on/off · H hide help";
+        "OVERLAYS G grid (cover / visibility / control) · C cover points · L aim and path lines · P squad plans · T thoughts · B morale bars · V fog of war on/off\n" +
+        "SCREEN   H this help · I details on/off · F1 clear view (hide everything) · Esc deselect";
 
     public override void _Ready()
     {
-        _status = MakePanelLabel(new Vector2(12, 12), out _);
-        _selected = MakePanelLabel(new Vector2(0, 12), out _selectedPanel);
+        _status = MakePanelLabel(new Vector2(10, 10), out _);
+        _selected = MakePanelLabel(new Vector2(0, 10), out _selectedPanel);
         _selectedPanel.AnchorLeft = _selectedPanel.AnchorRight = 1f;
-        _selectedPanel.OffsetLeft = -380;
-        _selectedPanel.OffsetRight = -12;
+        _selectedPanel.OffsetLeft = -360;
+        _selectedPanel.OffsetRight = -10;
         _selectedPanel.Visible = false;
 
-        _log = new Label { Position = new Vector2(12, 0), Modulate = new Color(1, 1, 1, 0.85f) };
-        _log.AddThemeFontSizeOverride("font_size", 13);
+        // The last few events, bottom left, as plain outlined text over the battlefield.
+        _log = new Label { Modulate = new Color(1, 1, 1, 0.85f) };
+        _log.AddThemeFontSizeOverride("font_size", 12);
         _log.AnchorTop = _log.AnchorBottom = 1f;
-        _log.OffsetTop = -312;
-        _log.OffsetBottom = -154;
+        _log.OffsetLeft = 10; _log.OffsetRight = 900;
+        _log.OffsetTop = -30; _log.OffsetBottom = -30;
+        _log.GrowVertical = Control.GrowDirection.Begin;
         _log.VerticalAlignment = VerticalAlignment.Bottom;
         _log.AddThemeColorOverride("font_outline_color", Colors.Black);
         _log.AddThemeConstantOverride("outline_size", 4);
         AddChild(_log);
 
-        _help = new Label { Text = HelpText };
-        _help.AddThemeFontSizeOverride("font_size", 13);
-        _help.AnchorTop = _help.AnchorBottom = 1f;
-        _help.OffsetTop = -150;
-        _help.OffsetBottom = -4;
-        _help.OffsetLeft = 12;
-        _help.VerticalAlignment = VerticalAlignment.Bottom;
-        _help.AddThemeColorOverride("font_outline_color", Colors.Black);
-        _help.AddThemeConstantOverride("outline_size", 4);
-        AddChild(_help);
+        _hint = new Label { Text = "H keys  ·  I details  ·  F1 clear view", Modulate = new Color(1, 1, 1, 0.6f) };
+        _hint.AddThemeFontSizeOverride("font_size", 12);
+        _hint.AnchorTop = _hint.AnchorBottom = 1f;
+        _hint.OffsetLeft = 10; _hint.OffsetTop = -24; _hint.OffsetBottom = -6;
+        _hint.AddThemeColorOverride("font_outline_color", Colors.Black);
+        _hint.AddThemeConstantOverride("outline_size", 4);
+        AddChild(_hint);
 
-        BuildOrderPanel();
+        // The key list: hidden until H, then shown in a panel in the middle of the screen.
+        _help = MakePanelLabel(Vector2.Zero, out _helpPanel);
+        _help.Text = HelpText;
+        _help.AddThemeFontSizeOverride("font_size", 13);
+        _helpPanel.AnchorLeft = _helpPanel.AnchorRight = 0.5f;
+        _helpPanel.AnchorTop = _helpPanel.AnchorBottom = 0.5f;
+        _helpPanel.GrowHorizontal = _helpPanel.GrowVertical = Control.GrowDirection.Both;
+        _helpPanel.Visible = false;
+
+        _rightStack = new VBoxContainer();
+        _rightStack.AnchorLeft = _rightStack.AnchorRight = 1f;
+        _rightStack.AnchorTop = _rightStack.AnchorBottom = 1f;
+        _rightStack.OffsetLeft = -440; _rightStack.OffsetRight = -10;
+        _rightStack.OffsetTop = -10; _rightStack.OffsetBottom = -10;
+        _rightStack.GrowVertical = Control.GrowDirection.Begin;
+        _rightStack.Alignment = BoxContainer.AlignmentMode.End;
+        AddChild(_rightStack);
+
         BuildCompanyPanel();
         BuildBattalionPanel();
         _messagesLabel = MakePanelLabel(Vector2.Zero, out _messagesPanel);
-        _messagesLabel.AddThemeFontSizeOverride("font_size", 13);
-        _messagesPanel.AnchorLeft = _messagesPanel.AnchorRight = 1f;
-        _messagesPanel.AnchorTop = _messagesPanel.AnchorBottom = 1f;
-        _messagesPanel.OffsetLeft = -460; _messagesPanel.OffsetRight = -12;
-        _messagesPanel.OffsetTop = -330; _messagesPanel.OffsetBottom = -170;
+        _messagesLabel.AddThemeFontSizeOverride("font_size", 12);
+        _messagesLabel.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis; // long lines end in "…", inside the panel
+        _messagesLabel.CustomMinimumSize = new Vector2(410, 0);
+        _messagesPanel.Reparent(_rightStack);
         _messagesPanel.Visible = false;
+        BuildOrderPanel();
 
         _banner = new Label { HorizontalAlignment = HorizontalAlignment.Center, Visible = false };
-        _banner.AddThemeFontSizeOverride("font_size", 30);
+        _banner.AddThemeFontSizeOverride("font_size", 26);
         _banner.AddThemeColorOverride("font_outline_color", Colors.Black);
         _banner.AddThemeConstantOverride("outline_size", 10);
         _banner.AnchorLeft = 0; _banner.AnchorRight = 1;
@@ -81,26 +110,31 @@ public partial class Hud : CanvasLayer
     private Label MakePanelLabel(Vector2 pos, out PanelContainer panel)
     {
         panel = new PanelContainer { Position = pos };
-        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.06f, 0.05f, 0.72f) };
-        style.SetContentMarginAll(10);
-        style.SetCornerRadiusAll(6);
-        panel.AddThemeStyleboxOverride("panel", style);
+        panel.AddThemeStyleboxOverride("panel", PanelStyle(0.62f));
         var label = new Label();
-        label.AddThemeFontSizeOverride("font_size", 15);
+        label.AddThemeFontSizeOverride("font_size", 13);
         panel.AddChild(label);
         AddChild(panel);
         return label;
     }
 
-    public void ToggleHelp() => _help.Visible = !_help.Visible;
+    private static StyleBoxFlat PanelStyle(float alpha)
+    {
+        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.06f, 0.05f, alpha) };
+        style.ContentMarginLeft = style.ContentMarginRight = 9;
+        style.ContentMarginTop = style.ContentMarginBottom = 6;
+        style.SetCornerRadiusAll(5);
+        return style;
+    }
+
+    public void ToggleHelp() => _helpPanel.Visible = !_helpPanel.Visible;
+    public bool HelpVisible { get => _helpPanel.Visible; set => _helpPanel.Visible = value; }
 
     public void UpdateHud(Battle battle, float speed, bool paused, Soldier? selected, string overlays, bool fog, Side playerSide)
     {
         var sb = new StringBuilder();
         int minutes = (int)(battle.Time / 60), seconds = (int)battle.Time % 60;
-        sb.AppendLine($"{battle.Scenario.Name}   (seed {battle.Seed})");
-        sb.AppendLine($"Time {minutes}:{seconds:00}   Speed {speed}x{(paused ? "   PAUSED" : "")}{(battle.Replaying ? "   REPLAY" : "")}");
-        sb.AppendLine();
+        sb.AppendLine($"{battle.Scenario.Name}  ·  {minutes}:{seconds:00}  ·  {speed}x{(paused ? "  ·  PAUSED" : "")}{(battle.Replaying ? "  ·  REPLAY" : "")}");
         foreach (var side in new[] { Side.Blue, Side.Red })
         {
             var men = battle.Soldiers.Where(s => s.Side == side).ToList();
@@ -109,9 +143,17 @@ public partial class Hud : CanvasLayer
             int broken = men.Count(s => s.IsActive && s.MoraleState == MoraleState.Broken);
             int down = men.Count(s => s.Status is SoldierStatus.Dead or SoldierStatus.Wounded);
             int fled = men.Count(s => s.Status == SoldierStatus.Routed);
-            sb.AppendLine($"{side,-4}  fighting {fighting,2}  pinned {pinned,2}  broken {broken,2}  down {down,2}  fled {fled,2}");
+            if (Details) sb.AppendLine($"{side,-4}  fighting {fighting,2}  pinned {pinned,2}  broken {broken,2}  down {down,2}  fled {fled,2}");
+            else sb.Append($"{side} {fighting} fighting · {pinned + broken} pinned · {down} down").Append(side == Side.Blue ? "    " : "\n");
         }
-        sb.AppendLine();
+        if (!Details)
+        {
+            if (fog) sb.Append($"Fog of war: you see what {playerSide} has spotted");
+            if (overlays.Length > 0) sb.Append(fog ? "  ·  " : "").Append("Overlays: ").Append(overlays);
+            _status.Text = Clean(sb.ToString());
+            goto selectedPanel;
+        }
+        sb.AppendLine($"Seed {battle.Seed}");
         // A tank platoon's crews only show up once some of them have bailed out.
         var groups = battle.Groups.Where(g => (!fog || g.Side == playerSide) && (!g.IsCrew || g.CountActive > 0)).ToList();
         if (groups.Count <= 6)
@@ -141,8 +183,9 @@ public partial class Hud : CanvasLayer
         }
         if (fog) sb.AppendLine($"Fog of war: you see what {playerSide} has spotted");
         if (overlays.Length > 0) { sb.AppendLine(); sb.Append("Overlays: ").Append(overlays); }
-        _status.Text = sb.ToString().TrimEnd();
+        _status.Text = Clean(sb.ToString());
 
+        selectedPanel:
         _selectedPanel.Visible = selected != null;
         if (selected != null)
         {
@@ -173,7 +216,7 @@ public partial class Hud : CanvasLayer
                     t.AppendLine("      " + string.Join(", ", crew.Skip(3)));
                 }
                 t.Append($"Shots {s.ShotsFired}   Hits {s.Hits}");
-                _selected.Text = t.ToString();
+                _selected.Text = Clean(t.ToString());
             }
             else
             {
@@ -190,7 +233,7 @@ public partial class Hud : CanvasLayer
                 t.AppendLine($"Sees {s.VisibleEnemies.Count} enemies{(s.Target != null ? $", target {s.Target.Label}" : "")}");
             }
             t.Append($"Skill {s.Skill:0.00}   Shots {s.ShotsFired}   Hits {s.Hits}");
-            _selected.Text = t.ToString();
+            _selected.Text = Clean(t.ToString());
             }
         }
 
@@ -225,17 +268,10 @@ public partial class Hud : CanvasLayer
     private void BuildOrderPanel()
     {
         _orderPanel = new PanelContainer();
-        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.06f, 0.05f, 0.8f) };
-        style.SetContentMarginAll(10);
-        style.SetCornerRadiusAll(6);
-        _orderPanel.AddThemeStyleboxOverride("panel", style);
-        _orderPanel.AnchorLeft = _orderPanel.AnchorRight = 1f;
-        _orderPanel.AnchorTop = _orderPanel.AnchorBottom = 1f;
-        _orderPanel.OffsetLeft = -460; _orderPanel.OffsetRight = -12;
-        _orderPanel.OffsetTop = -160; _orderPanel.OffsetBottom = -92;
+        _orderPanel.AddThemeStyleboxOverride("panel", PanelStyle(0.75f));
         var box = new VBoxContainer();
-        _orderTitle = new Label();
-        _orderTitle.AddThemeFontSizeOverride("font_size", 14);
+        _orderTitle = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(410, 0) };
+        _orderTitle.AddThemeFontSizeOverride("font_size", 13);
         box.AddChild(_orderTitle);
         var row = _orderRow = new HBoxContainer();
         foreach (var (kind, text) in new[] { (OrderKind.Advance, "Advance"), (OrderKind.Attack, "Attack"), (OrderKind.Suppress, "Suppress"),
@@ -260,12 +296,12 @@ public partial class Hud : CanvasLayer
         _attachButton = Support("Attach to a company", () => AttachRequested?.Invoke(false));
         _detachButton = Support("Back to battalion", () => AttachRequested?.Invoke(true));
         box.AddChild(_supportRow);
-        _orderStatus = new Label();
+        _orderStatus = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(410, 0) };
         _orderStatus.AddThemeFontSizeOverride("font_size", 12);
         box.AddChild(_orderStatus);
         _orderPanel.AddChild(box);
         _orderPanel.Visible = false;
-        AddChild(_orderPanel);
+        _rightStack.AddChild(_orderPanel);
     }
 
     /// <summary>The order panel (when one of your squads is selected) and the list of messages on their way.
@@ -290,7 +326,6 @@ public partial class Hud : CanvasLayer
             _detachButton.Visible = own.IsAsset && ms == null && own.Company != null;
             if (_detachButton.Visible) _detachButton.Text = $"Back to battalion (now with {own.Company!.Name})";
             _supportRow.Visible = _heButton.Visible || _attachButton.Visible || _detachButton.Visible;
-            _orderPanel.OffsetTop = _supportRow.Visible ? -196 : -160;
             if (pending == OrderKind.FireMission)
                 _orderStatus.Text = $"Click the map: where the mortars fire {(pendingFire == FireKind.Smoke ? "smoke" : "high explosive")}. Esc cancels.";
             else if (pending == OrderKind.Attach)
@@ -310,8 +345,7 @@ public partial class Hud : CanvasLayer
             }
         }
 
-        _messagesPanel.Visible = hq != null;
-        if (hq == null) return;
+        if (hq == null) { _messagesPanel.Visible = false; return; }
         var sb = new StringBuilder();
         sb.AppendLine("Messages");
         int shown = 0;
@@ -322,16 +356,19 @@ public partial class Hud : CanvasLayer
             if (shown++ >= 5) break;
             sb.AppendLine($"  → {Short(m)}  ({m.Method.ToString().ToLowerInvariant()}, {Mathf.Max(0f, m.ArriveTime - battle.Time):0} s)");
         }
-        if (shown == 0) sb.AppendLine("  nothing on its way");
         int done = 0;
-        for (int i = battle.Messages.Count - 1; i >= 0 && done < 4; i--)
+        for (int i = battle.Messages.Count - 1; i >= 0 && done < (Details ? 4 : 2); i--)
         {
             var m = battle.Messages[i];
             if (m.Side != playerSide || m.Status == MessageStatus.InTransit || m.Company != null) continue;
+            // Unless details are on, only what arrived (or was lost) in the last 20 s of battle.
+            if (!Details && battle.Time - m.DoneTime > 20f) break;
             done++;
             sb.AppendLine($"  {(m.Status == MessageStatus.Lost ? "✗ lost" : "✓")} {Short(m)}  ({m.DoneTime - m.SentTime:0} s, {m.Method.ToString().ToLowerInvariant()})");
         }
-        _messagesLabel.Text = sb.ToString().TrimEnd();
+        if (shown == 0 && done == 0) sb.AppendLine("  nothing on its way");
+        _messagesPanel.Visible = Details || shown + done > 0;
+        _messagesLabel.Text = Clean(sb.ToString());
     }
 
     // ---------------------------------------------------------------- battalion (milestone 7, part 2)
@@ -346,19 +383,10 @@ public partial class Hud : CanvasLayer
     private void BuildBattalionPanel()
     {
         _battalionPanel = new PanelContainer();
-        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.06f, 0.05f, 0.78f) };
-        style.SetContentMarginAll(10);
-        style.SetCornerRadiusAll(6);
-        _battalionPanel.AddThemeStyleboxOverride("panel", style);
-        _battalionPanel.AnchorLeft = _battalionPanel.AnchorRight = 1f;
-        _battalionPanel.AnchorTop = _battalionPanel.AnchorBottom = 1f;
-        _battalionPanel.OffsetLeft = -460; _battalionPanel.OffsetRight = -12;
-        // Sits just above the messages panel and grows upwards as its text gets longer.
-        _battalionPanel.OffsetTop = -340; _battalionPanel.OffsetBottom = -340;
-        _battalionPanel.GrowVertical = Control.GrowDirection.Begin;
+        _battalionPanel.AddThemeStyleboxOverride("panel", PanelStyle(0.66f));
         var box = new VBoxContainer();
-        _battalionLabel = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(430, 0) };
-        _battalionLabel.AddThemeFontSizeOverride("font_size", 13);
+        _battalionLabel = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(410, 0) };
+        _battalionLabel.AddThemeFontSizeOverride("font_size", 12);
         box.AddChild(_battalionLabel);
         var row = new HBoxContainer();
         Button Add(string text, System.Action act)
@@ -368,13 +396,13 @@ public partial class Hud : CanvasLayer
             row.AddChild(b);
             return b;
         }
-        _artyHeButton = Add("Artillery HE (Y)", () => ArtilleryRequested?.Invoke(FireKind.He));
-        _artySmokeButton = Add("Artillery smoke (U)", () => ArtilleryRequested?.Invoke(FireKind.Smoke));
+        _artyHeButton = Add("Guns HE (Y)", () => ArtilleryRequested?.Invoke(FireKind.He));
+        _artySmokeButton = Add("Guns smoke (U)", () => ArtilleryRequested?.Invoke(FireKind.Smoke));
         _handOverButton = Add("Hand over (K)", () => HandOverRequested?.Invoke());
         box.AddChild(row);
         _battalionPanel.AddChild(box);
         _battalionPanel.Visible = false;
-        AddChild(_battalionPanel);
+        _rightStack.AddChild(_battalionPanel);
     }
 
     /// <summary>The battalion panel: who is running your battalion, its key points and artillery; with fog off,
@@ -392,23 +420,23 @@ public partial class Hud : CanvasLayer
             if (bn.Active && bn.Intent.Length > 0) sb.AppendLine($"  {bn.Intent}");
         }
         var known = battle.Knowledge(playerSide);
-        foreach (var p in battle.KeyPoints)
+        if (Details) foreach (var p in battle.KeyPoints)
         {
             int enemy = known.Contacts.Count(k => battle.Time - k.LastSeen < 120f && System.Numerics.Vector2.Distance(k.LastPosition, p.Position) < p.Radius + 40f);
             int own = battle.Soldiers.Count(s => s.Side == playerSide && s.IsEffective && System.Numerics.Vector2.Distance(s.Position, p.Position) < p.Radius);
             sb.AppendLine($"  {char.ToUpperInvariant(p.Name[0])}{p.Name[1..]}: {own} of ours there, {enemy} enemy known");
         }
-        if (bt != null) sb.AppendLine($"{bt.Name}: {bt.Guns} guns off the map, {bt.AmmoHe} HE and {bt.AmmoSmoke} smoke left");
+        if (bt != null) sb.AppendLine(Details ? $"{bt.Name}: {bt.Guns} guns off the map, {bt.AmmoHe} HE and {bt.AmmoSmoke} smoke left" : $"Artillery: {bt.AmmoHe} HE, {bt.AmmoSmoke} smoke");
         if (pendingArtillery != null) sb.AppendLine($"Click the map: where the artillery fires {(pendingArtillery == FireKind.Smoke ? "smoke" : "high explosive")}. Esc cancels.");
-        if (!fog)
+        if (!fog && Details)
             foreach (var other in battle.Battalions.Where(b => b.Side != playerSide && b.Active && b.Intent.Length > 0))
                 sb.AppendLine($"{other.Side}, {other.Commander}: {other.Intent}");
-        _battalionLabel.Text = sb.ToString().TrimEnd();
+        _battalionLabel.Text = Clean(sb.ToString());
         _artyHeButton.Visible = _artySmokeButton.Visible = bt != null;
         _artyHeButton.Disabled = bt is not { AmmoHe: > 0 };
         _artySmokeButton.Disabled = bt is not { AmmoSmoke: > 0 };
         _handOverButton.Visible = bn != null;
-        _handOverButton.Text = bn is { Active: true } ? "Take command (K)" : $"Hand over to {bn?.Commander} (K)";
+        _handOverButton.Text = bn is { Active: true } ? "Take command (K)" : "Hand over (K)";
     }
 
     // ---------------------------------------------------------------- after-action report (milestone 6)
@@ -437,7 +465,7 @@ public partial class Hud : CanvasLayer
             _reportPanel.AddChild(_reportText);
             AddChild(_reportPanel);
         }
-        _reportText!.Text = text + "\n\n(O closes this report. Shift+R watches the battle again with your orders.)";
+        _reportText!.Text = text.Replace("\r", "") + "\n\n(O closes this report. Shift+R watches the battle again with your orders.)";
         _reportPanel.Visible = true;
     }
 
@@ -463,16 +491,14 @@ public partial class Hud : CanvasLayer
     private void BuildCompanyPanel()
     {
         _companyPanel = new PanelContainer();
-        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.06f, 0.05f, 0.82f) };
-        style.SetContentMarginAll(10);
-        style.SetCornerRadiusAll(6);
-        _companyPanel.AddThemeStyleboxOverride("panel", style);
+        _companyPanel.AddThemeStyleboxOverride("panel", PanelStyle(0.7f));
         _companyPanel.AnchorLeft = _companyPanel.AnchorRight = 0.5f;
-        _companyPanel.OffsetLeft = -280; _companyPanel.OffsetRight = 280;
-        _companyPanel.OffsetTop = 12;
+        _companyPanel.OffsetLeft = -260; _companyPanel.OffsetRight = 260;
+        _companyPanel.OffsetTop = 10;
+        _companyPanel.GrowHorizontal = Control.GrowDirection.Both;
         var box = new VBoxContainer();
-        _companyLabel = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(540, 0) };
-        _companyLabel.AddThemeFontSizeOverride("font_size", 14);
+        _companyLabel = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(500, 0) };
+        _companyLabel.AddThemeFontSizeOverride("font_size", 13);
         box.AddChild(_companyLabel);
         _briefBackRow = new HBoxContainer();
         var approve = new Button { Text = "Approve plan (Enter)", FocusMode = Control.FocusModeEnum.None };
@@ -506,6 +532,10 @@ public partial class Hud : CanvasLayer
         return only;
     }
 
+    private string _companyNews = "";
+    private ulong _companyNewsAt;
+    private const ulong CompanyNewsMs = 10000;
+
     public void UpdateCompany(Battle battle, Soldier? selected, Side playerSide)
     {
         var c = CompanyToShow(battle, selected, playerSide);
@@ -514,25 +544,31 @@ public partial class Hud : CanvasLayer
         if (c == null) return;
         var t = c.Traits;
         var sb = new StringBuilder();
-        sb.AppendLine($"{c.Name}, {c.CommanderName}   ({c.Effective}/{c.StartStrength} fit)   aggression {t.Aggression} · caution {t.Caution} · initiative {t.Initiative} · competence {t.Competence} · composure {t.Composure}");
-        sb.AppendLine(c.Status);
-        if (c.Plan != null && c.State is CompanyState.BriefBack or CompanyState.Executing)
+        // Shown in full when it needs you (a brief-back, a refusal), for 10 s after his plan or its phase changes,
+        // or with details on. Otherwise one line: who, how many fit, what they're doing.
+        string news = $"{c.Name}|{c.State}|{c.Plan?.Summary}|{c.PhaseIndex}";
+        if (news != _companyNews) { _companyNews = news; _companyNewsAt = Time.GetTicksMsec(); }
+        bool full = Details || battle.AwaitingApproval(c) || c.State == CompanyState.Refused || Time.GetTicksMsec() - _companyNewsAt < CompanyNewsMs;
+        sb.AppendLine($"{c.Name}, {c.CommanderName} ({c.Effective}/{c.StartStrength} fit): {c.Status}");
+        if (Details) sb.AppendLine($"aggression {t.Aggression} · caution {t.Caution} · initiative {t.Initiative} · competence {t.Competence} · composure {t.Composure}");
+        if (!full) { }
+        else if (c.Plan != null && c.State is CompanyState.BriefBack or CompanyState.Executing)
         {
             sb.AppendLine($"Plan: {c.Plan.Summary}");
             sb.AppendLine($"He expects to lose {c.Plan.ExpectedLoss * 100:0}% of the company, with a {c.Plan.Success * 100:0}% chance of success.");
-            for (int i = 0; i < c.Plan.Phases.Count; i++)
+            if (Details || c.State == CompanyState.BriefBack) for (int i = 0; i < c.Plan.Phases.Count; i++)
             {
                 string mark = c.State == CompanyState.Executing ? (i < c.PhaseIndex ? "✓" : i == c.PhaseIndex ? "▶" : "·") : "·";
                 sb.AppendLine($"  {mark} {i + 1}. {c.Plan.Phases[i].Name}");
             }
-            if (c.Options.Count > 1)
+            if (c.Options.Count > 1 && Details)
                 sb.Append("Also weighed: " + string.Join("; ", c.Options.Skip(1).Select(o => $"{GroundWar.Sim.AI.CompanyCommander.PlanName(o.Kind)} (lose {o.ExpectedLoss * 100:0}%, {o.Success * 100:0}% chance)")));
         }
         else if (c.State == CompanyState.Refused)
             sb.Append("He won't do it as things stand. Send the same order again to insist, or give him another." +
                       (c.RefusalFire != null ? " He has asked for mortar fire on it and will think again once it has landed." : ""));
         // His fire requests still being worked on.
-        foreach (var fm in battle.FireMissions)
+        if (full) foreach (var fm in battle.FireMissions)
         {
             if (fm.RequestedBy != c || fm.Status is FireMissionStatus.Done or FireMissionStatus.Refused or FireMissionStatus.Cancelled) continue;
             string state = fm.Status switch
@@ -545,7 +581,7 @@ public partial class Hud : CanvasLayer
             };
             sb.Append($"\nMortars: {fm.Describe()} on {fm.Reason}: {state}");
         }
-        _companyLabel.Text = sb.ToString().TrimEnd();
+        _companyLabel.Text = Clean(sb.ToString());
         bool waiting = battle.AwaitingApproval(c);
         _briefBackRow.Visible = waiting;
         if (waiting) _countdown.Text = $"  goes ahead in {battle.BriefBackCountdown(c):0} s unless you step in";
@@ -568,7 +604,7 @@ public partial class Hud : CanvasLayer
     {
         _logLines.Clear();
         var entries = battle.Log.Entries;
-        for (int i = entries.Count - 1; i >= 0 && _logLines.Count < 7; i--)
+        for (int i = entries.Count - 1; i >= 0 && _logLines.Count < (Details ? 8 : 4); i--)
         {
             var e = entries[i];
             bool mine = selected != null && e.SoldierId == selected.Id;

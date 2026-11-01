@@ -61,7 +61,8 @@ To try a pull request before it is merged: in GitHub Desktop pick its branch fro
 | **Support** | Select a man of a mortar section: Fire HE or Fire smoke, then click the target · select a man of an MG section: Attach to a company, then click any man of that company (Back to battalion takes it out again) |
 | **Battalion** | Y artillery HE / U artillery smoke, then click the target · K hand the battle to your second in command (K again takes it back) |
 | **Watch** | J battle cam (follows the hottest fighting) · Z map table · O after-action report · M mute · Shift+R replay the battle with your orders · [ back 30 s · ] on 30 s |
-| **Overlays** | G battlefield grid (cover → visibility → control → off) · C cover points · L aim and path lines · P squad plans · T every soldier's thoughts · B morale bars · V fog of war on/off · H hide help |
+| **Overlays** | G battlefield grid (cover → visibility → control → off) · C cover points · L aim and path lines · P squad plans · T every soldier's thoughts · B morale bars · V fog of war on/off |
+| **Screen** | H list of keys · I details (the full squad list, plan, key points and message history) · F1 clear view: hide everything but the battle (F1 again brings it back) |
 
 **Reading a soldier.** Blue and red uniforms are the two sides; he stands, kneels or lies down to match his stance; a yellow
 disc on the helmet marks the sergeant. The bar above him: top = morale (green steady, yellow shaken, orange pinned, red broken),
