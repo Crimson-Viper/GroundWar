@@ -12,7 +12,7 @@ namespace GroundWar.Game;
 /// </summary>
 public partial class Main : Node3D
 {
-    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/orders_under_fire.json", "scenarios/stress_1000.json" };
+    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/orders_under_fire.json", "scenarios/farmhouse.json", "scenarios/stress_1000.json" };
     private static readonly float[] Speeds = { 0.25f, 0.5f, 1f, 2f, 4f, 8f };
 
     private int _scenario;
@@ -21,6 +21,7 @@ public partial class Main : Node3D
     private MapView? _mapView;
     private BattleView? _battleView;
     private CommsView? _commsView;
+    private CompanyView? _companyView;
     private CameraRig _camera = null!;
     private Hud _hud = null!;
     private float _accumulator;
@@ -88,6 +89,7 @@ public partial class Main : Node3D
         _mapView?.QueueFree();
         _battleView?.QueueFree();
         _commsView?.QueueFree();
+        _companyView?.QueueFree();
         _pendingOrder = null;
         _battle = Battle.Load(new GodotDataSource(), Scenarios[_scenario], _seed);
         _mapView = new MapView(_battle) { Name = "Map" };
@@ -96,7 +98,11 @@ public partial class Main : Node3D
         AddChild(_battleView);
         _commsView = new CommsView(_battle) { Name = "Comms", Fog = _fog };
         AddChild(_commsView);
+        _companyView = new CompanyView(_battle) { Name = "Companies", Fog = _fog };
+        AddChild(_companyView);
         _hud.OrderRequested = OnOrderButton;
+        _hud.ApproveRequested = c => _battle.ApproveBriefBack(c);
+        _hud.RejectRequested = c => _battle.RejectBriefBack(c);
         _accumulator = 0;
         if (frameCamera) _camera.Frame(_battle.Map.Width, _battle.Map.Height);
         _camera.FollowTarget = null;
@@ -128,6 +134,8 @@ public partial class Main : Node3D
         _commsView!.UpdateVisuals(Time.GetTicksMsec() / 1000f);
         _hud.UpdateHud(_battle, speed, _paused, _battleView.Selected, OverlayNames(), _battleView.Fog, _battleView.PlayerSide);
         _hud.UpdateOrders(_battle, _battleView.Selected, _battleView.PlayerSide, _pendingOrder);
+        _companyView!.UpdateVisuals();
+        _hud.UpdateCompany(_battle, _battleView.Selected, _battleView.PlayerSide);
         RunAutomation((float)delta);
     }
 
@@ -158,7 +166,13 @@ public partial class Main : Node3D
                 case Key.C: _mapView!.ToggleCover(); break;
                 case Key.L: _battleView!.ShowLines = !_battleView.ShowLines; break;
                 case Key.P: _battleView!.ShowPlans = !_battleView.ShowPlans; break;
-                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; _commsView!.Fog = _fog; break;
+                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; _commsView!.Fog = _fog; _companyView!.Fog = _fog; break;
+                case Key.Enter or Key.KpEnter:
+                    if (_hud.ShownCompany is { } ac) _battle.ApproveBriefBack(ac);
+                    break;
+                case Key.Backspace:
+                    if (_hud.ShownCompany is { } rc) _battle.RejectBriefBack(rc);
+                    break;
                 case Key.T: _battleView!.ShowAllLabels = !_battleView.ShowAllLabels; break;
                 case Key.B: _battleView!.ShowBars = !_battleView.ShowBars; break;
                 case Key.H: _hud.ToggleHelp(); break;
@@ -178,8 +192,8 @@ public partial class Main : Node3D
             var ground = _camera.GroundPointUnderMouse(mb.Position);
             if (ground != null && _pendingOrder != null && _battleView!.Selected != null)
             {
-                // Second click of an order: where it's to.
-                var g = _battleView.Selected.Group;
+                // Second click of an order: where it's to. A squad in a company is ordered through its commander.
+                var g = _battleView.Selected.Group.Company?.HqGroup ?? _battleView.Selected.Group;
                 var at = new System.Numerics.Vector2(ground.Value.X, ground.Value.Z);
                 _battle.SendOrder(g, new GroundWar.Sim.Comms.Order { Kind = _pendingOrder.Value, Objective = at, Radius = 18f });
                 _pendingOrder = null;
@@ -203,7 +217,7 @@ public partial class Main : Node3D
         if (s == null || s.Side != _battleView.PlayerSide) return;
         if (kind is GroundWar.Sim.Comms.OrderKind.Halt or GroundWar.Sim.Comms.OrderKind.FallBack)
         {
-            _battle.SendOrder(s.Group, new GroundWar.Sim.Comms.Order { Kind = kind });
+            _battle.SendOrder(s.Group.Company?.HqGroup ?? s.Group, new GroundWar.Sim.Comms.Order { Kind = kind });
             _pendingOrder = null;
         }
         else _pendingOrder = kind;
@@ -235,7 +249,7 @@ public partial class Main : Node3D
                 if (_autoOverlays.Contains('c')) _mapView!.ToggleCover();
                 if (_autoOverlays.Contains('l')) _battleView!.ShowLines = true;
                 if (_autoOverlays.Contains('t')) _battleView!.ShowAllLabels = true;
-                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; _commsView!.Fog = false; }
+                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; _commsView!.Fog = false; _companyView!.Fog = false; }
             }
             // --camera=x,y,distance,yaw,pitch
             if (_autoCamera != null)

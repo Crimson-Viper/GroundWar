@@ -50,11 +50,11 @@ same fight. **N** in the game picks a new seed; **R** replays the current one.
 
 | Folder | What |
 |---|---|
-| `sim/GroundWar.Sim/AI/` | Soldier and squad brains |
-| `sim/GroundWar.Sim/Combat/` | `Battle` partial classes: shooting, morale, movement, perception, tanks, comms |
+| `sim/GroundWar.Sim/AI/` | Soldier, squad, tank and company commander brains |
+| `sim/GroundWar.Sim/Combat/` | `Battle` partial classes: shooting, morale, movement, perception, tanks, comms, companies |
 | `sim/GroundWar.Sim/Comms/` | Messages, orders, phone lines, HQ |
 | `sim/GroundWar.Sim/Map/` | Map, cover points, grid, path finding |
-| `sim/GroundWar.Sim/Units/` | Soldier, group (squad), team, knowledge |
+| `sim/GroundWar.Sim/Units/` | Soldier, group (squad), team, company and plan, knowledge |
 | `sim/GroundWar.Sim/Data/` | Loading the JSON files |
 | `sim/GroundWar.Sim.Tests/` | Automated tests |
 | `sim/GroundWar.Runner/` | Headless battle runner |

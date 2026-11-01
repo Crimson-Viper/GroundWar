@@ -31,7 +31,8 @@ public sealed class SquadBrain
                 if (Vector2.Distance(g.Centroid, g.Objective) <= g.ObjectiveRadius + 5f)
                 {
                     // Got there first (or the enemy has gone): the place is ours, so hold it.
-                    if (EnemyCenter(g, g.Objective, g.ObjectiveRadius + 25f) == null)
+                    // (A waypoint is only somewhere to get to: arriving isn't taking anything.)
+                    if (!g.MoveOnly && EnemyCenter(g, g.Objective, g.ObjectiveRadius + 25f) == null)
                     {
                         _b.Note(g, $"{g.Name}: reached the objective, holding it");
                         g.TookObjective = true;

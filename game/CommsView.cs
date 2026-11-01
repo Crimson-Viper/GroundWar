@@ -77,7 +77,7 @@ public partial class CommsView : Node3D
         foreach (var m in _battle.Messages)
         {
             if (m.Status != MessageStatus.InTransit || !Shows(m.Side)) continue;
-            var hq = _battle.Hq(m.Side)!;
+            var top = _battle.UpperEnd(m); // battalion HQ, or the company commander for messages inside a company
             switch (m.Method)
             {
                 case MessageMethod.Runner when r < MaxRunners:
@@ -86,7 +86,7 @@ public partial class CommsView : Node3D
                     _runners.SetInstanceColor(r, col);
                     r++;
                     break;
-                case MessageMethod.Phone when p < MaxPulses:
+                case MessageMethod.Phone when p < MaxPulses && m.Company == null:
                     var line = LineFor(m);
                     if (line != null)
                     {
@@ -97,16 +97,16 @@ public partial class CommsView : Node3D
                     break;
                 case MessageMethod.Radio when rings + 1 < MaxPulses:
                     // Rings spread from the sender's end every couple of seconds while the message is being worked.
-                    var from = m.Down ? hq.Position : Battle.SquadPost(m.Group);
+                    var from = m.Down ? top : Battle.SquadPost(m.Group);
                     float phase = (realTime * 0.6f + m.Id * 0.37f) % 1f;
                     var basis = Basis.FromScale(new Vector3(2f + phase * 18f, 1f, 2f + phase * 18f));
                     _rings.SetInstanceTransform(rings++, new Transform3D(basis, Draw.To3(new System.Numerics.Vector2(from.X, from.Y), 1f)));
                     break;
                 case MessageMethod.Flare:
-                    flareAt = hq.Position;
+                    flareAt = top;
                     flareUntil = m.ArriveTime;
                     float rise = 1f - (m.ArriveTime - _battle.Time) / _battle.Rules.Comms.FlareDelay;
-                    _flare!.Position = Draw.To3(hq.Position, 6f + 40f * Mathf.Sin(Mathf.Clamp(rise, 0f, 1f) * Mathf.Pi));
+                    _flare!.Position = Draw.To3(top, 6f + 40f * Mathf.Sin(Mathf.Clamp(rise, 0f, 1f) * Mathf.Pi));
                     break;
             }
         }

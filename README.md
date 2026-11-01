@@ -35,6 +35,7 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
    - **Town attack**: street fighting. Two Blue squads fight through houses, yards and rubble to take a crossroads held by a Red squad, with a Red machine gun further down the main street. Lots of cover, short ranges; the defender usually holds.
    - **Tank support**: the first tank. The same attack as the firefight at the wall, but a Blue tank leads the squad in with its main gun and machine gun. Red has an anti-tank rifle in the squad (it can only break a track) and a two-man bazooka team off to the north, placed to hit the tank's side armour. Rifles and machine guns just ring off the armour. With the tank Blue usually wins; without it Blue usually loses. Click the tank to see its armour, shells and what its commander is thinking.
    - **Orders under fire** (milestone 4): the squad attack again, but every order comes from Blue HQ (the tent at the west edge) and takes time. The 1st Squad has a telephone line; the 2nd Squad's orders go by runner. Reports come back the same way, and you only see the enemy as those reports reach HQ. Click one of your soldiers to give his squad orders from the order panel.
+   - **Farmhouse** (milestone 5): one company a side. Battalion HQ orders A Company to take a walled farmhouse. Captain Hale weighs up a frontal assault against pinning the farm with one squad while the others go round a flank, and sends you his plan (the brief-back panel at the top). Press **Enter** to approve, **Backspace** to reject, or do nothing and he goes ahead after 10 s. His plan is drawn as arrows on the map. If he thinks an order is a death trap he refuses and says why; send it again to insist. See [docs/systems/company-commander.md](docs/systems/company-commander.md).
    - **Stress test**: 1,000 soldiers a side on a big field, to check the game stays smooth at battalion size. Zoom out to see it all.
 
 To get a new version: in GitHub Desktop press **Fetch origin**, then **Pull**, then press F5 in Godot again.
@@ -47,7 +48,8 @@ To try a pull request before it is merged: in GitHub Desktop pick its branch fro
 | **Camera** | WASD or arrows pan · Q / E rotate · mouse wheel or + / − zoom · right-drag orbit · middle-drag pan · Shift faster |
 | **Battle** | Space pause · `.` step one tick · 1–6 speed (¼× to 8×) · R restart · N new battle (different dice) · Tab next scenario |
 | **Soldier** | Left-click a soldier to see what he's thinking · F follow him · Esc deselect |
-| **Orders** | With one of your soldiers selected (in a scenario with an HQ): press Advance, Attack, Suppress or Hold, then click the map; Halt and Fall back go at once. Esc cancels |
+| **Orders** | With one of your soldiers selected (in a scenario with an HQ): press Advance, Attack, Suppress or Hold, then click the map; Halt and Fall back go at once. Esc cancels. A man in a company: the order goes to his company commander |
+| **Company** | Enter approve the brief-back · Backspace reject it |
 | **Overlays** | G battlefield grid (cover → visibility → control → off) · C cover points · L aim and path lines · P squad plans · T every soldier's thoughts · B morale bars · V fog of war on/off · H hide help |
 
 **Reading a soldier.** Blue and red uniforms are the two sides; he stands, kneels or lies down to match his stance; a yellow

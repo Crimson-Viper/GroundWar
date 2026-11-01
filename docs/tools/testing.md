@@ -17,6 +17,7 @@ dotnet test sim/GroundWar.Sim.Tests
 | `FairnessTests.cs` | Every meeting map is the same from both ends |
 | `TankTests.cs` | Armour, anti-tank weapons, the tank driving and fighting |
 | `CommsTests.cs` | Order delay by phone and runner, cut lines, flares, reports reaching HQ |
+| `CompanyTests.cs` | The company commander: brief-back, choosing the covered flank, approve and reject, refusing and being overruled, traits, company messages |
 
 GitHub runs these on every pull request (`.github/workflows/ci.yml`), plus 10 headless battles and a build of the
 Godot code. A pull request with a red cross has a failing check.

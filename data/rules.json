@@ -78,6 +78,22 @@
     "runnerLostResend": 60,      // HQ sends a lost order again this long after the runner was shot
     "sitrepInterval": 30,        // squads in contact report this often
     "hqContactMemory": 120,      // HQ forgets a sighting this long after it was made
-    "playerSeesReportsOnly": true // you see the enemy only as reports reach your HQ
+    "playerSeesReportsOnly": true, // you see the enemy only as reports reach your HQ
+    "voiceRange": 60, "voiceDelay": 3,        // inside a company: a sergeant this close just shouts
+    "companyRadioDelay": 10, "companyRadioDelayJitter": 4, // the company's own short-range radio net
+    "companySitrepInterval": 60, // a company commander reports to battalion this often
+    "briefBackWait": 10,         // a brief-back plan starts this long after HQ hears it, unless you step in
+    "briefBackReplyDelay": 5     // HQ's "approved" / "rejected" to a commander waiting on the radio
+  },
+  "company": {
+    "deathTrapLoss": 0.35,       // expected loss (fraction of the company) that makes a plan a death trap
+    "deathTrapSuccess": 0.3,     // so does a chance of success below this
+    "assumedEnemyFire": 6,       // fire he assumes on an objective he knows nothing about (+2 per point of caution)
+    "exposureLethality": 0.00045, // how deadly a second under one point of enemy fire is
+    "startLineDistance": 170, "supportDistance": 130, "flankWidth": 70,
+    "establishFireTime": 20,     // seconds of covering fire before the flankers go in
+    "hqBehind": 60,              // the company HQ keeps this far behind its squads
+    "replanLoss": 0.35,          // losing this much of the company makes him think again
+    "maxReplans": 2
   }
 }

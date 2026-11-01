@@ -98,7 +98,10 @@ public sealed class Group
     /// <summary>When the squad last lost its leader (-999 = never). Losing one replacement after another
     /// in quick succession is one shock to the men, not several.</summary>
     public float LeaderLostTime { get; set; } = -999f;
-    /// <summary>A group of vehicles (a tank section) rather than a squad of men.</summary>
+    /// <summary>The company this squad belongs to (or whose HQ it is), if any.</summary>
+    public Company? Company { get; set; }
+    /// <summary>This group is a company HQ (the commander and his radio operator), not a fighting squad.</summary>
+    public bool IsCompanyHq => Company != null && Company.HqGroup == this;
     /// <summary>The squad carries a radio set.</summary>
     public bool HasRadio { get; set; }
     // What the squad has already reported to HQ, so it doesn't repeat itself.
@@ -109,6 +112,13 @@ public sealed class Group
     public bool ReportedBroken { get; set; }
     public bool ReportedTaken { get; set; }
     public bool ReportedFailed { get; set; }
+    /// <summary>Has been ordered to attack, advance or suppress at some point (for the time-limit result).</summary>
+    public bool EverAttacked { get; set; }
+    /// <summary>The Advance order is only to get somewhere (a waypoint), so arriving doesn't count as taking an objective.</summary>
+    public bool MoveOnly { get; set; }
+    /// <summary>The last order that reached the squad (so a company commander knows his order has arrived).</summary>
+    public GroundWar.Sim.Comms.Order? LastOrderReceived { get; set; }
+    /// <summary>A group of vehicles (a tank section) rather than a squad of men.</summary>
     public bool IsVehicles => Members.Count > 0 && Members.All(m => m.IsTank);
     public bool IsAttacking => Order is GroupOrder.Attack or GroupOrder.Advance or GroupOrder.Suppress;
 
