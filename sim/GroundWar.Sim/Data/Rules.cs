@@ -11,6 +11,7 @@ public sealed class Rules
     public MoraleRules Morale { get; set; } = new();
     public AiRules Ai { get; set; } = new();
     public SquadRules Squad { get; set; } = new();
+    public CommsRules Comms { get; set; } = new();
 }
 
 public sealed class SquadRules
@@ -137,4 +138,39 @@ public sealed class AiRules
     public float DigQuietTime { get; set; } = 10f;
     public float UnderFireWindow { get; set; } = 5f;
     public float MapEdgeRoutDistance { get; set; } = 4f;
+}
+
+/// <summary>How orders and reports travel between HQ and squads (milestone 4). See docs/systems/messages-and-delay.md.</summary>
+public sealed class CommsRules
+{
+    /// <summary>Seconds for a telephone message: cranking the handset, getting the right man, saying it.</summary>
+    public float PhoneDelay { get; set; } = 12f;
+    public float PhoneDelayJitter { get; set; } = 5f;
+    /// <summary>A squad can use a phone line if its sergeant is this close to the line's end.</summary>
+    public float PhoneReach { get; set; } = 25f;
+    /// <summary>A shell bursting this close to a cable cuts it.</summary>
+    public float LineCutRadius { get; set; } = 3f;
+    /// <summary>Seconds for a radio message: coding it, sending, decoding.</summary>
+    public float RadioDelay { get; set; } = 30f;
+    public float RadioDelayJitter { get; set; } = 10f;
+    /// <summary>Chance a radio message doesn't get through first time and has to be sent again (double the delay).</summary>
+    public float RadioRepeatChance { get; set; } = 0.15f;
+    /// <summary>Seconds from a flare going up to the squad acting on it.</summary>
+    public float FlareDelay { get; set; } = 6f;
+    /// <summary>A squad sees a flare if its sergeant has a clear line to HQ within this range.</summary>
+    public float FlareRange { get; set; } = 1500f;
+    /// <summary>Metres a second a runner covers (running, taking cover now and then).</summary>
+    public float RunnerSpeed { get; set; } = 3f;
+    /// <summary>Enemies who can see a runner within this range may shoot him.</summary>
+    public float RunnerDangerRange { get; set; } = 250f;
+    /// <summary>Chance a second that a runner is hit, per enemy that can see him, at point blank (less further out).</summary>
+    public float RunnerHitPerSecond { get; set; } = 0.004f;
+    /// <summary>When a runner carrying an order is shot, HQ sends the order again this many seconds later (when he hasn't come back).</summary>
+    public float RunnerLostResend { get; set; } = 60f;
+    /// <summary>Squads in contact send a situation report this often.</summary>
+    public float SitrepInterval { get; set; } = 30f;
+    /// <summary>HQ forgets a sighting this long after the enemy was last seen (it keeps old news longer than a squad does).</summary>
+    public float HqContactMemory { get; set; } = 120f;
+    /// <summary>True: the player sees the enemy only as reports reach HQ. False: as soon as any of their soldiers sees him.</summary>
+    public bool PlayerSeesReportsOnly { get; set; } = true;
 }

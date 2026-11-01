@@ -99,6 +99,16 @@ public sealed class Group
     /// in quick succession is one shock to the men, not several.</summary>
     public float LeaderLostTime { get; set; } = -999f;
     /// <summary>A group of vehicles (a tank section) rather than a squad of men.</summary>
+    /// <summary>The squad carries a radio set.</summary>
+    public bool HasRadio { get; set; }
+    // What the squad has already reported to HQ, so it doesn't repeat itself.
+    public bool ReportedContact { get; set; }
+    public float LastSitrep { get; set; } = -999f;
+    public int ReportedLossQuarter { get; set; }
+    public bool ReportedPinned { get; set; }
+    public bool ReportedBroken { get; set; }
+    public bool ReportedTaken { get; set; }
+    public bool ReportedFailed { get; set; }
     public bool IsVehicles => Members.Count > 0 && Members.All(m => m.IsTank);
     public bool IsAttacking => Order is GroupOrder.Attack or GroupOrder.Advance or GroupOrder.Suppress;
 
