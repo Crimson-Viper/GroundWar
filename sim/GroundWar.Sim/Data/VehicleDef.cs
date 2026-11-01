@@ -20,6 +20,11 @@ public sealed class VehicleDef
     /// <summary>Weapon ids from weapons.json.</summary>
     public string MainGun { get; set; } = "tank_gun";
     public string MachineGun { get; set; } = "tank_mg";
+    /// <summary>Armour-piercing rounds for the main gun (milestone 8): weapon id, and how many are carried.</summary>
+    public string MainGunAp { get; set; } = "";
+    public int ApRounds { get; set; }
+    /// <summary>Men inside: commander, gunner, loader, driver, bow gunner (milestone 8). 0 = no crew modelled.</summary>
+    public int Crew { get; set; }
     /// <summary>Chances for a hit that goes through the armour (the rest wound the crew, see KnockedOut / Immobilised).</summary>
     public float KnockOutChance { get; set; } = 0.45f;
     public float ImmobiliseChance { get; set; } = 0.3f;

@@ -388,5 +388,6 @@ public sealed partial class Battle
         Note(g, $"{g.Name} joins {c.Name}", LogKind.Key);
         var at = Map.Nav.NearestWalkable(Map.Clamp(c.HqGroup.HoldPosition - c.HqGroup.Rear * 20f, 4f));
         ApplyOrder(g, new Order { Kind = OrderKind.Advance, Objective = at, Radius = 15f, IsWaypoint = true });
+        if (g.IsVehicles) _commander.TanksJoined(c, g);
     }
 }

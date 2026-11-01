@@ -12,7 +12,7 @@ namespace GroundWar.Game;
 /// </summary>
 public partial class Main : Node3D
 {
-    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/orders_under_fire.json", "scenarios/farmhouse.json", "scenarios/farmhouse_support.json", "scenarios/battalion.json", "scenarios/stress_1000.json" };
+    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/orders_under_fire.json", "scenarios/farmhouse.json", "scenarios/farmhouse_support.json", "scenarios/battalion.json", "scenarios/tank_platoons.json", "scenarios/stress_1000.json" };
     private static readonly float[] Speeds = { 0.25f, 0.5f, 1f, 2f, 4f, 8f };
 
     private int _scenario;

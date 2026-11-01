@@ -238,7 +238,8 @@ public sealed partial class Battle
         foreach (var g in _groups)
         {
             if (Time < g.NextThink) continue;
-            if (g.IsVehicles) { g.NextThink = float.MaxValue; continue; } // each tank thinks for itself
+            // Each tank thinks for itself; a platoon leader places his tanks every 2 s (milestone 8).
+            if (g.IsVehicles) { _tankBrain.ThinkPlatoon(g); g.NextThink = Time + 2f; continue; }
             _squadBrain.Think(g);
             g.NextThink = Time + Rules.Squad.ThinkInterval * Rng.Range(0.85f, 1.15f);
         }
@@ -276,6 +277,7 @@ public sealed partial class Battle
             if (s.IsTank) MoveTank(s);
             else Move(s);
         }
+        if (Tick % 5 == 0) CarryCrews();
         t0 = Profile.Lap("move", t0);
         foreach (var s in _soldiers) if (s.IsActive && !s.IsTank) UpdateMorale(s);
         t0 = Profile.Lap("morale", t0);
@@ -331,7 +333,7 @@ public sealed partial class Battle
                 if (next != null) MakeLeader(g, next, initial: false);
                 else g.Leader = null;
             }
-            if (g.HasBroken) continue;
+            if (g.HasBroken || g.IsCrew) continue; // bailed-out crews are already going back
             int active = 0, broken = 0;
             foreach (var m in g.Members)
             {
@@ -383,6 +385,10 @@ public sealed partial class Battle
         foreach (var side in new[] { Side.Blue, Side.Red })
             if (_groups.Any(g => g.Side == side && g.AttackFailed))
                 return new BattleResult { Winner = Enemy(side), Time = Time, Reason = $"{side}'s attack failed" };
+        // A company commander who called the attack a death trap and was never sent in again: the defender held.
+        foreach (var side in new[] { Side.Blue, Side.Red })
+            if (_companies.Any(c => c.Side == side && c.RefusedOrder is { Kind: Comms.OrderKind.Attack }))
+                return new BattleResult { Winner = Enemy(side), Time = Time, Reason = $"{side}'s attack stalled (called a death trap)" };
         return new BattleResult { Winner = null, Time = Time, Reason = "The fighting died down" };
     }
 

@@ -24,6 +24,8 @@ public sealed partial class Battle
             if (d <= pr.AutoSpotRange) chance = 1f;
             else if (knowledge.SeenRecently(e.Id, Time, pr.SharedContactWindow)) chance = 0.9f; // a mate shouted it out
             else chance = SpotChance(e, d);
+            // A tank whose commander is gone is buttoned up: it sees much less (milestone 8).
+            if (s.IsTank && chance < 1f) chance *= LookoutFactor(s);
             if (chance < 1f && !Rng.Chance(chance)) continue;
             if (Map.SightBlocked(s.Position, e.Position)) continue;
             // A man behind cover is harder to pick out (only for a fresh sighting).

@@ -137,13 +137,15 @@ Runner, 200 battles each, seeds 1 to 200:
 
 | Scenario | Blue | Red | Draws |
 |---|---|---|---|
-| Farmhouse, no support | 94 | 89 | 17 |
+| Farmhouse, no support | 94 | 99 | 7 |
 | Farmhouse with support (both sides) | 99 | 77 | 24 |
 
 With support on both sides the attack does a little better and battles are a bit shorter (963 s against 1014 s on
 average). In 120-battle checks, Blue's support alone took Blue from 57 to 64 wins, and Red's mortars alone took Red
 from 53 to 72: defensive fire on infantry crossing open ground is the stronger use, which is what you'd expect.
-The full runner table is in [Testing and tuning](../tools/testing.md).
+The full runner table is in [Testing and tuning](../tools/testing.md). (Since milestone 8 a refused attack that is
+never ordered again counts as a defender's win, not a draw: the farmhouse alone went from 94 / 89 / 17 to 94 / 99 / 7.
+The supported battle is unchanged.)
 
 ## Not done yet
 - Artillery (bigger guns from off the map) was added with the battalion battle: see

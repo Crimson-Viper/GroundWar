@@ -112,7 +112,8 @@ public partial class Hud : CanvasLayer
             sb.AppendLine($"{side,-4}  fighting {fighting,2}  pinned {pinned,2}  broken {broken,2}  down {down,2}  fled {fled,2}");
         }
         sb.AppendLine();
-        var groups = battle.Groups.Where(g => !fog || g.Side == playerSide).ToList();
+        // A tank platoon's crews only show up once some of them have bailed out.
+        var groups = battle.Groups.Where(g => (!fog || g.Side == playerSide) && (!g.IsCrew || g.CountActive > 0)).ToList();
         if (groups.Count <= 6)
         {
             foreach (var g in groups)
@@ -157,9 +158,19 @@ public partial class Hud : CanvasLayer
                 {
                     t.AppendLine($"Doing: {s.Group.Status}");
                     t.AppendLine($"Thinking: {s.Thought}");
-                    t.AppendLine($"Main gun: {s.MainGunAmmo} shells{(s.MainGunTimer > 0 ? $", loading ({s.MainGunTimer:0} s)" : ", loaded")}");
+                    string role = s.Group.Leader == s ? "platoon leader" : "tank";
+                    if (s.Overwatch) role += ", on overwatch";
+                    else if (s.PlatoonGoal != null) role += ", moving up";
+                    t.AppendLine($"In the platoon: {role}");
+                    t.AppendLine($"Main gun: {s.MainGunAmmo} HE, {s.ApAmmo} AP{(s.MainGunTimer > 0 ? $", loading ({s.MainGunTimer:0} s)" : ", loaded")}");
                     t.AppendLine($"Machine gun: {s.Magazine} + {s.SpareMagazines} x {s.Weapon.MagazineSize}{(s.ReloadTimer > 0 ? "  (reloading)" : "")}");
                     t.AppendLine($"Sees {s.VisibleEnemies.Count} enemies");
+                }
+                if (s.Crew.Count > 0)
+                {
+                    var crew = s.Crew.Select(m => $"{CrewName(m.CrewRole)} {CrewState(m)}").ToList();
+                    t.AppendLine("Crew: " + string.Join(", ", crew.Take(3)));
+                    t.AppendLine("      " + string.Join(", ", crew.Skip(3)));
                 }
                 t.Append($"Shots {s.ShotsFired}   Hits {s.Hits}");
                 _selected.Text = t.ToString();
@@ -568,4 +579,18 @@ public partial class Hud : CanvasLayer
         _logLines.Reverse();
         return string.Join("\n", _logLines);
     }
+
+    private static string CrewName(CrewRole r) => r switch
+    {
+        CrewRole.Commander => "commander", CrewRole.Gunner => "gunner", CrewRole.Loader => "loader",
+        CrewRole.Driver => "driver", CrewRole.BowGunner => "bow gunner", _ => "crewman",
+    };
+
+    private static string CrewState(Soldier m) => m.Status switch
+    {
+        SoldierStatus.Mounted => "ok",
+        SoldierStatus.Dead => "killed",
+        SoldierStatus.Wounded => "wounded",
+        _ => "bailed out",
+    };
 }

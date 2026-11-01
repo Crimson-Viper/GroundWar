@@ -9,7 +9,7 @@ frame and draws it.
 | `Main.cs` / `Main.tscn` | Starts a battle, runs the simulation at the chosen speed, handles keys, screenshot mode |
 | `BattleView.cs` | Soldiers (through `SoldierCrowd`), tracers, impact puffs, last-known enemy markers, plan lines, selection |
 | `SoldierCrowd.cs` | Draws every soldier from the low-poly models (one batch per pose), with sergeant's cap, morale bar, name labels |
-| `TankView.cs` | Draws each tank from its model, turning the turret; dark wreck when knocked out |
+| `TankView.cs` | Draws each tank from its model, turning the turret; dark wreck when knocked out. Crews inside a tank aren't drawn (`Soldier.InTank`); they appear when they bail out |
 | `ModelViewer.cs` | A separate scene (F6) to look at the models |
 | `MapView.cs` | Ground, walls, craters, foxholes, objectives, grid and cover overlays |
 | `CameraRig.cs` | The free camera and follow mode |

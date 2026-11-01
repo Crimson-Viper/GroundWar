@@ -145,7 +145,7 @@ public partial class SoldierCrowd : Node3D
             var p = System.Numerics.Vector2.Lerp(prev[i], curr[i], alpha);
             var pos = Draw.To3(p);
             Positions[i] = pos;
-            bool shown = s.Status != SoldierStatus.Routed && visible(s);
+            bool shown = s.Status != SoldierStatus.Routed && !s.InTank && visible(s); // crews inside tanks aren't drawn
             Shown[i] = shown;
             if (!shown || s.IsTank) // tanks are drawn by TankView
             {
@@ -207,7 +207,7 @@ public partial class SoldierCrowd : Node3D
             var s = soldiers[i];
             var pos = Draw.To3(System.Numerics.Vector2.Lerp(prev[i], curr[i], alpha));
             Positions[i] = pos;
-            bool shown = s.Status != SoldierStatus.Routed && visible(s);
+            bool shown = s.Status != SoldierStatus.Routed && !s.InTank && visible(s); // crews inside tanks aren't drawn
             Shown[i] = shown;
             int pose = !shown || s.IsTank ? -1 // tanks are drawn by TankView
                 : s.Status == SoldierStatus.Dead ? 3

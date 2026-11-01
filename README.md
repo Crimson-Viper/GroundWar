@@ -19,7 +19,7 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
 | 6. Spectacle: sounds, smoke, map table, battle cam, replays, after-action report | done |
 | 7. Battalion, part 1: mortars, smoke screens, commanders calling for fire, MG sections | done |
 | 7. Battalion, part 2: several companies, battalion commanders, artillery, destroy the HQ to win | done |
-| 8. Tank platoons with crew AI | next |
+| 8. Tank platoons with crew AI: crews of five, armour-piercing shot, platoon tactics, tanks in company plans | done |
 
 ![Two squads taking the wall](docs/screenshots/m3-squad-attack.png)
 
@@ -42,6 +42,7 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
    - **Orders under fire** (milestone 4): the squad attack again, but every order comes from Blue HQ (the tent at the west edge) and takes time. The 1st Squad has a telephone line; the 2nd Squad's orders go by runner. Reports come back the same way, and you only see the enemy as those reports reach HQ. Click one of your soldiers to give his squad orders from the order panel.
    - **Farmhouse** (milestone 5): one company a side. Battalion HQ orders A Company to take a walled farmhouse. Captain Hale weighs up a frontal assault against pinning the farm with one squad while the others go round a flank, and sends you his plan (the brief-back panel at the top). Press **Enter** to approve, **Backspace** to reject, or do nothing and he goes ahead after 10 s. His plan is drawn as arrows on the map. If he thinks an order is a death trap he refuses and says why; send it again to insist. See [docs/systems/company-commander.md](docs/systems/company-commander.md).
    - **Farmhouse with support** (milestone 7): the farmhouse attack with a Blue mortar section, an MG section attached to A Company, and Red mortars. Commanders call for mortar fire and smoke screens. See [docs/systems/support-fire.md](docs/systems/support-fire.md).
+   - **Tank platoons** (milestone 8): the farmhouse attack with a platoon of four Blue tanks that battalion attaches to A Company. Captain Hale gives the tanks a part in his plan; the platoon leader drives them in a wedge, then bounds them half at a time while the other half watches. Each tank has a crew of five: lose the gunner and the loader takes over the gun, lose the commander and the tank is half blind. Knocked-out tanks brew up and their crews bail out and run for it. Red has an anti-tank rifle, a bazooka team and two tanks of its own. Click a tank to see its crew and ammunition. See [docs/systems/tanks.md](docs/systems/tanks.md).
    - **Battalion battle** (milestone 7): three companies a side on a valley a kilometre long. Red holds a village and a farm, with a reserve company at the churchyard and its HQ in the manor house at the far end. Overrun Red's HQ to win. Order your companies yourself, or press **K** to hand the battle to your second in command, Maj. Ashford, and watch the two battalion commanders fight it out. Y and U call your artillery. See [docs/systems/battalion-commander.md](docs/systems/battalion-commander.md).
    - **Stress test**: 1,000 soldiers a side on a big field, to check the game stays smooth at battalion size. Zoom out to see it all.
 
