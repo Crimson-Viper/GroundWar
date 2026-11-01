@@ -12,7 +12,7 @@ namespace GroundWar.Game;
 /// </summary>
 public partial class Main : Node3D
 {
-    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/stress_1000.json" };
+    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/orders_under_fire.json", "scenarios/stress_1000.json" };
     private static readonly float[] Speeds = { 0.25f, 0.5f, 1f, 2f, 4f, 8f };
 
     private int _scenario;
@@ -20,6 +20,7 @@ public partial class Main : Node3D
     private Battle _battle = null!;
     private MapView? _mapView;
     private BattleView? _battleView;
+    private CommsView? _commsView;
     private CameraRig _camera = null!;
     private Hud _hud = null!;
     private float _accumulator;
@@ -86,11 +87,16 @@ public partial class Main : Node3D
     {
         _mapView?.QueueFree();
         _battleView?.QueueFree();
+        _commsView?.QueueFree();
+        _pendingOrder = null;
         _battle = Battle.Load(new GodotDataSource(), Scenarios[_scenario], _seed);
         _mapView = new MapView(_battle) { Name = "Map" };
         AddChild(_mapView);
         _battleView = new BattleView(_battle) { Name = "Battle", Fog = _fog };
         AddChild(_battleView);
+        _commsView = new CommsView(_battle) { Name = "Comms", Fog = _fog };
+        AddChild(_commsView);
+        _hud.OrderRequested = OnOrderButton;
         _accumulator = 0;
         if (frameCamera) _camera.Frame(_battle.Map.Width, _battle.Map.Height);
         _camera.FollowTarget = null;
@@ -119,7 +125,9 @@ public partial class Main : Node3D
         _battleView!.UpdateVisuals(_accumulator / Battle.Dt, (float)delta, speed, _paused);
         _drawMs += System.Diagnostics.Stopwatch.GetElapsedTime(drawStart).TotalMilliseconds;
         _drawFrames++;
+        _commsView!.UpdateVisuals(Time.GetTicksMsec() / 1000f);
         _hud.UpdateHud(_battle, speed, _paused, _battleView.Selected, OverlayNames(), _battleView.Fog, _battleView.PlayerSide);
+        _hud.UpdateOrders(_battle, _battleView.Selected, _battleView.PlayerSide, _pendingOrder);
         RunAutomation((float)delta);
     }
 
@@ -150,7 +158,7 @@ public partial class Main : Node3D
                 case Key.C: _mapView!.ToggleCover(); break;
                 case Key.L: _battleView!.ShowLines = !_battleView.ShowLines; break;
                 case Key.P: _battleView!.ShowPlans = !_battleView.ShowPlans; break;
-                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; break;
+                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; _commsView!.Fog = _fog; break;
                 case Key.T: _battleView!.ShowAllLabels = !_battleView.ShowAllLabels; break;
                 case Key.B: _battleView!.ShowBars = !_battleView.ShowBars; break;
                 case Key.H: _hud.ToggleHelp(); break;
@@ -158,7 +166,9 @@ public partial class Main : Node3D
                     if (_battleView!.Selected != null)
                         _camera.FollowTarget = _camera.FollowTarget == null ? _battleView.SelectedAnchor : null;
                     break;
-                case Key.Escape: _battleView!.Selected = null; _camera.FollowTarget = null; break;
+                case Key.Escape:
+                    if (_pendingOrder != null) { _pendingOrder = null; break; }
+                    _battleView!.Selected = null; _camera.FollowTarget = null; break;
                 default: return;
             }
             GetViewport().SetInputAsHandled();
@@ -166,11 +176,37 @@ public partial class Main : Node3D
         else if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } mb)
         {
             var ground = _camera.GroundPointUnderMouse(mb.Position);
-            if (ground != null)
+            if (ground != null && _pendingOrder != null && _battleView!.Selected != null)
+            {
+                // Second click of an order: where it's to.
+                var g = _battleView.Selected.Group;
+                var at = new System.Numerics.Vector2(ground.Value.X, ground.Value.Z);
+                _battle.SendOrder(g, new GroundWar.Sim.Comms.Order { Kind = _pendingOrder.Value, Objective = at, Radius = 18f });
+                _pendingOrder = null;
+            }
+            else if (ground != null)
             {
                 _battleView!.Selected = _battleView.SoldierNear(ground.Value, 3f);
             }
         }
+    }
+
+    // ---------------------------------------------------------------- orders
+
+    /// <summary>An order waiting for its second click (where to), or null.</summary>
+    private GroundWar.Sim.Comms.OrderKind? _pendingOrder;
+
+    /// <summary>The player pressed an order button in the HUD. Halt and Fall back go at once; the rest need a place.</summary>
+    private void OnOrderButton(GroundWar.Sim.Comms.OrderKind kind)
+    {
+        var s = _battleView!.Selected;
+        if (s == null || s.Side != _battleView.PlayerSide) return;
+        if (kind is GroundWar.Sim.Comms.OrderKind.Halt or GroundWar.Sim.Comms.OrderKind.FallBack)
+        {
+            _battle.SendOrder(s.Group, new GroundWar.Sim.Comms.Order { Kind = kind });
+            _pendingOrder = null;
+        }
+        else _pendingOrder = kind;
     }
 
     // ---------------------------------------------------------------- automated screenshots
@@ -199,7 +235,7 @@ public partial class Main : Node3D
                 if (_autoOverlays.Contains('c')) _mapView!.ToggleCover();
                 if (_autoOverlays.Contains('l')) _battleView!.ShowLines = true;
                 if (_autoOverlays.Contains('t')) _battleView!.ShowAllLabels = true;
-                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; }
+                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; _commsView!.Fog = false; }
             }
             // --camera=x,y,distance,yaw,pitch
             if (_autoCamera != null)

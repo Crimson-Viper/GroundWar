@@ -26,7 +26,10 @@ public sealed partial class Battle
 
     public IReadOnlyList<Soldier> Soldiers => _soldiers;
     public IReadOnlyList<Group> Groups => _groups;
-    public SideKnowledge Knowledge(Side side) => _knowledge[(int)side];
+    /// <summary>What a side's commander knows about the enemy (what the player is shown). With an HQ and
+    /// comms.playerSeesReportsOnly, that's HQ's picture, built from reports; otherwise every sighting at once.</summary>
+    public SideKnowledge Knowledge(Side side) =>
+        _hq[(int)side] is { } hq && Rules.Comms.PlayerSeesReportsOnly ? hq.Knowledge : _knowledge[(int)side];
 
     /// <summary>Shots fired during the last <see cref="Step"/>.</summary>
     public IReadOnlyList<ShotEvent> Shots => _shots;
@@ -60,6 +63,7 @@ public sealed partial class Battle
         _tankBrain = new TankBrain(this, _squadBrain);
         Hash = new SoldierHash(Map.Width, Map.Height);
         Spawn();
+        SetUpComms();
         Hash.Rebuild(_soldiers);
         UpdateGridControl();
     }
@@ -107,6 +111,7 @@ public sealed partial class Battle
                     Facing = Geo.SafeNormalize(BattleMap.V(gd.Facing), Vector2.UnitX),
                     Rear = Geo.SafeNormalize(BattleMap.V(sideDef.Rear), -Vector2.UnitX),
                     SupportPosition = gd.SupportPosition != null ? BattleMap.V(gd.SupportPosition) : null,
+                    HasRadio = gd.Radio,
                 };
                 group.OriginalOrder = group.Order;
                 _groups.Add(group);
@@ -259,11 +264,13 @@ public sealed partial class Battle
         foreach (var s in _soldiers) if (s.IsActive && !s.IsTank) UpdateMorale(s);
         t0 = Profile.Lap("morale", t0);
         UpdateGroups();
+        UpdateComms();
 
         if (Tick % 10 == 0)
         {
             UpdateGridControl();
             foreach (var k in _knowledge) k.Expire(Time, Rules.Perception.ContactMemory);
+            foreach (var hq in _hq) hq?.Knowledge.Expire(Time, Rules.Comms.HqContactMemory);
             foreach (var g in _groups) g.Knowledge.Expire(Time, Rules.Perception.ContactMemory);
         }
         CheckEnd();

@@ -158,6 +158,7 @@ public sealed partial class Battle
 
     private void Blast(Soldier shooter, Vector2 at, WeaponDef gun)
     {
+        CutLinesNear(at);
         var mr = Rules.Morale;
         float r = gun.BlastRadius;
         // Friends too: a shell doesn't care whose men are near it.

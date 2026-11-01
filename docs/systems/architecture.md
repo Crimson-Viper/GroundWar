@@ -21,7 +21,8 @@ The simulation moves in fixed steps ("ticks") of 0.1 seconds. Each tick, in this
 4. **Weapons fire**, and men who are digging carry on digging.
 5. **Everyone moves** along their paths.
 6. **Morale** updates. See [Morale and suppression](morale-and-suppression.md).
-7. Squads update their counts; once a second the battlefield grid and old sightings are refreshed.
+7. Squads update their counts. **Messages** move: runners run, calls arrive, reports are written (see [Messages and delay](messages-and-delay.md)).
+   Once a second the battlefield grid and old sightings are refreshed.
 8. **Check for the end** of the battle. See [Who wins](battle-results.md).
 
 Godot runs at the screen's frame rate and asks the simulation to step as many ticks as the game speed needs,
@@ -50,7 +51,8 @@ same fight. **N** in the game picks a new seed; **R** replays the current one.
 | Folder | What |
 |---|---|
 | `sim/GroundWar.Sim/AI/` | Soldier and squad brains |
-| `sim/GroundWar.Sim/Combat/` | `Battle` partial classes: shooting, morale, movement, perception |
+| `sim/GroundWar.Sim/Combat/` | `Battle` partial classes: shooting, morale, movement, perception, tanks, comms |
+| `sim/GroundWar.Sim/Comms/` | Messages, orders, phone lines, HQ |
 | `sim/GroundWar.Sim/Map/` | Map, cover points, grid, path finding |
 | `sim/GroundWar.Sim/Units/` | Soldier, group (squad), team, knowledge |
 | `sim/GroundWar.Sim/Data/` | Loading the JSON files |

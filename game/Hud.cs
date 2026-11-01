@@ -3,6 +3,7 @@ using System.Linq;
 using System.Text;
 using Godot;
 using GroundWar.Sim;
+using GroundWar.Sim.Comms;
 using GroundWar.Sim.Units;
 using Side = GroundWar.Sim.Units.Side;
 
@@ -21,7 +22,7 @@ public partial class Hud : CanvasLayer
     public const string HelpText =
         "CAMERA   WASD / arrows pan · Q E rotate · wheel or + - zoom · right-drag orbit · middle-drag pan · Shift faster\n" +
         "BATTLE   Space pause · . step · 1-6 speed · R restart · N new battle (new seed) · Tab next scenario\n" +
-        "SOLDIER  left-click select · F follow · Esc deselect\n" +
+        "SOLDIER  left-click select · F follow · Esc deselect · order panel (bottom right): press an order, then click the map\n" +
         "OVERLAYS G grid (cover / visibility / control) · C cover points · L aim and path lines · P squad plans · T thoughts · B morale bars · V fog of war on/off · H hide help";
 
     public override void _Ready()
@@ -51,6 +52,15 @@ public partial class Hud : CanvasLayer
         _help.AddThemeColorOverride("font_outline_color", Colors.Black);
         _help.AddThemeConstantOverride("outline_size", 4);
         AddChild(_help);
+
+        BuildOrderPanel();
+        _messagesLabel = MakePanelLabel(Vector2.Zero, out _messagesPanel);
+        _messagesLabel.AddThemeFontSizeOverride("font_size", 13);
+        _messagesPanel.AnchorLeft = _messagesPanel.AnchorRight = 1f;
+        _messagesPanel.AnchorTop = _messagesPanel.AnchorBottom = 1f;
+        _messagesPanel.OffsetLeft = -460; _messagesPanel.OffsetRight = -12;
+        _messagesPanel.OffsetTop = -330; _messagesPanel.OffsetBottom = -170;
+        _messagesPanel.Visible = false;
 
         _banner = new Label { HorizontalAlignment = HorizontalAlignment.Center, Visible = false };
         _banner.AddThemeFontSizeOverride("font_size", 30);
@@ -177,6 +187,101 @@ public partial class Hud : CanvasLayer
             _banner.Visible = true;
         }
         else _banner.Visible = false;
+    }
+
+    // ---------------------------------------------------------------- orders and messages (milestone 4)
+
+    /// <summary>Main listens to this: the player pressed an order button.</summary>
+    public System.Action<OrderKind>? OrderRequested { get; set; }
+    private PanelContainer _orderPanel = null!;
+    private Label _orderTitle = null!, _orderStatus = null!;
+    private PanelContainer _messagesPanel = null!;
+    private Label _messagesLabel = null!;
+
+    private void BuildOrderPanel()
+    {
+        _orderPanel = new PanelContainer();
+        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.06f, 0.05f, 0.8f) };
+        style.SetContentMarginAll(10);
+        style.SetCornerRadiusAll(6);
+        _orderPanel.AddThemeStyleboxOverride("panel", style);
+        _orderPanel.AnchorLeft = _orderPanel.AnchorRight = 1f;
+        _orderPanel.AnchorTop = _orderPanel.AnchorBottom = 1f;
+        _orderPanel.OffsetLeft = -460; _orderPanel.OffsetRight = -12;
+        _orderPanel.OffsetTop = -160; _orderPanel.OffsetBottom = -92;
+        var box = new VBoxContainer();
+        _orderTitle = new Label();
+        _orderTitle.AddThemeFontSizeOverride("font_size", 14);
+        box.AddChild(_orderTitle);
+        var row = new HBoxContainer();
+        foreach (var (kind, text) in new[] { (OrderKind.Advance, "Advance"), (OrderKind.Attack, "Attack"), (OrderKind.Suppress, "Suppress"),
+                                             (OrderKind.Hold, "Hold"), (OrderKind.Halt, "Halt"), (OrderKind.FallBack, "Fall back") })
+        {
+            var b = new Button { Text = text, FocusMode = Control.FocusModeEnum.None };
+            b.Pressed += () => OrderRequested?.Invoke(kind);
+            row.AddChild(b);
+        }
+        box.AddChild(row);
+        _orderStatus = new Label();
+        _orderStatus.AddThemeFontSizeOverride("font_size", 12);
+        box.AddChild(_orderStatus);
+        _orderPanel.AddChild(box);
+        _orderPanel.Visible = false;
+        AddChild(_orderPanel);
+    }
+
+    /// <summary>The order panel (when one of your squads is selected) and the list of messages on their way.</summary>
+    public void UpdateOrders(Battle battle, Soldier? selected, Side playerSide, OrderKind? pending)
+    {
+        var hq = battle.Hq(playerSide);
+        bool mine = selected != null && selected.Side == playerSide;
+        _orderPanel.Visible = mine;
+        if (mine)
+        {
+            var g = selected!.Group;
+            _orderTitle.Text = hq == null ? $"Orders for {g.Name} (no HQ in this scenario: orders arrive at once)" : $"Orders for {g.Name}, from {hq.Name}";
+            if (pending != null) _orderStatus.Text = $"Click the map: where to {pending.Value.ToString().ToLowerInvariant()}. Esc cancels.";
+            else
+            {
+                Message? last = null;
+                foreach (var m in battle.Messages) if (m.Down && m.Group == g) last = m;
+                _orderStatus.Text = last == null ? "Advance, Attack, Suppress and Hold need a place: press, then click the map."
+                    : last.Status switch
+                    {
+                        MessageStatus.InTransit => $"\"{last.Text}\" on its way by {last.Method.ToString().ToLowerInvariant()}, about {Mathf.Max(0f, last.ArriveTime - battle.Time):0} s",
+                        MessageStatus.Delivered => $"\"{last.Text}\" received after {last.DoneTime - last.SentTime:0} s",
+                        _ => $"\"{last.Text}\" lost on the way",
+                    };
+            }
+        }
+
+        _messagesPanel.Visible = hq != null;
+        if (hq == null) return;
+        var sb = new StringBuilder();
+        sb.AppendLine("Messages");
+        int shown = 0;
+        foreach (var m in battle.Messages)
+        {
+            if (m.Side != playerSide || m.Status != MessageStatus.InTransit) continue;
+            if (shown++ >= 5) break;
+            sb.AppendLine($"  → {Short(m)}  ({m.Method.ToString().ToLowerInvariant()}, {Mathf.Max(0f, m.ArriveTime - battle.Time):0} s)");
+        }
+        if (shown == 0) sb.AppendLine("  nothing on its way");
+        int done = 0;
+        for (int i = battle.Messages.Count - 1; i >= 0 && done < 4; i--)
+        {
+            var m = battle.Messages[i];
+            if (m.Side != playerSide || m.Status == MessageStatus.InTransit) continue;
+            done++;
+            sb.AppendLine($"  {(m.Status == MessageStatus.Lost ? "✗ lost" : "✓")} {Short(m)}  ({m.DoneTime - m.SentTime:0} s, {m.Method.ToString().ToLowerInvariant()})");
+        }
+        _messagesLabel.Text = sb.ToString().TrimEnd();
+    }
+
+    private static string Short(Message m)
+    {
+        string s = m.Describe();
+        return s.Length > 70 ? s.Substring(0, 67) + "..." : s;
     }
 
     private readonly List<string> _logLines = new();

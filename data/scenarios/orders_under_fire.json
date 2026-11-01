@@ -1,0 +1,43 @@
+// Milestone 4: the squad attack again, but every order comes from HQ and takes time to get there.
+// Blue HQ sits at the west edge. A telephone line runs to Blue 1st Squad's start and on to its firing position
+// behind the middle wall; Blue 2nd Squad has no phone, so its orders go by runner. Reports come back the same way,
+// and the player only sees the enemy as those reports reach HQ.
+// Red HQ is behind the east edge with a line to Red 1st Squad; the MG post only has runners.
+{
+  "name": "Orders under fire",
+  "description": "The squad attack with real orders: HQ sends them by telephone and runner, and reports come back late.",
+  "map": "maps/test_range.json",
+  "timeLimit": 900,
+  "sides": [
+    {
+      "side": "Blue", "name": "Blue", "rear": [-1, 0],
+      "hq": { "name": "Blue HQ", "position": [8, 100], "radio": true },
+      "phoneLines": [
+        { "points": [[20, 92], [28, 82]] },
+        { "points": [[60, 100], [100, 100], [134, 100]] }
+      ],
+      "groups": [
+        { "name": "Blue 1st Squad", "order": "Hold", "objective": [28, 80], "objectiveRadius": 12, "facing": [1, 0],
+          "spawnCenter": [28, 80], "spawnSize": [14, 20], "weapons": { "rifle": 8, "lmg": 2 } },
+        { "name": "Blue 2nd Squad", "order": "Hold", "objective": [28, 122], "objectiveRadius": 12, "facing": [1, 0],
+          "spawnCenter": [28, 122], "spawnSize": [14, 20], "weapons": { "rifle": 9, "lmg": 1 } }
+      ]
+    },
+    {
+      "side": "Red", "name": "Red", "rear": [1, 0],
+      "hq": { "name": "Red HQ", "position": [292, 100], "radio": true },
+      "phoneLines": [ { "points": [[250, 104], [216, 100]] } ],
+      "groups": [
+        { "name": "Red 1st Squad", "order": "Hold", "objective": [206, 100], "objectiveRadius": 18, "facing": [-1, 0],
+          "spawnCenter": [212, 100], "spawnSize": [10, 36], "weapons": { "rifle": 8, "lmg": 1 } },
+        { "name": "Red MG post", "order": "Hold", "objective": [228, 58], "objectiveRadius": 7, "facing": [-1, 0.3],
+          "spawnCenter": [228, 58], "spawnSize": [5, 5], "weapons": { "rifle": 2, "lmg": 1 } }
+      ]
+    }
+  ],
+  // What Blue's HQ sends, and when. In the game you can send your own orders too.
+  "orders": [
+    { "time": 5, "group": "Blue 1st Squad", "order": "Suppress", "objective": [206, 100], "objectiveRadius": 20, "supportPosition": [136, 100] },
+    { "time": 5, "group": "Blue 2nd Squad", "order": "Attack", "objective": [206, 100], "objectiveRadius": 18 }
+  ]
+}

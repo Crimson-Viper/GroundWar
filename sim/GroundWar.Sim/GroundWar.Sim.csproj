@@ -7,4 +7,8 @@
     <RootNamespace>GroundWar.Sim</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- Tests may poke at internals (cut a phone line, apply an order). -->
+    <InternalsVisibleTo Include="GroundWar.Sim.Tests" />
+  </ItemGroup>
 </Project>

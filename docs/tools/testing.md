@@ -15,6 +15,8 @@ dotnet test sim/GroundWar.Sim.Tests
 | `BattleTests.cs` | Same seed = same battle, battles end on time, cover use, suppression fading, broken men flee, sergeants replaced |
 | `SquadTests.cs` | Teams, sight lines, each squad's own picture of the enemy, flanking, suppress order, digging in |
 | `FairnessTests.cs` | Every meeting map is the same from both ends |
+| `TankTests.cs` | Armour, anti-tank weapons, the tank driving and fighting |
+| `CommsTests.cs` | Order delay by phone and runner, cut lines, flares, reports reaching HQ |
 
 GitHub runs these on every pull request (`.github/workflows/ci.yml`), plus 10 headless battles and a build of the
 Godot code. A pull request with a red cross has a failing check.
@@ -48,6 +50,8 @@ dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/str
 | Firefight at the wall | 31 | 169 | 0 |
 | Meeting engagement | 94 | 95 | 11 |
 | Town attack | 27 | 153 | 20 |
+| Tank support | 171 | 29 | 0 |
+| Orders under fire | 117 | 83 | 0 |
 
 ## Screenshot mode
 The game can render a frame with no window and save it, which is how screenshots for pull requests are made:
@@ -71,6 +75,8 @@ facing and weapons. Tab in the game cycles through them in the order listed in `
 | `firefight` | One Blue squad attacks alone; should usually fail |
 | `meeting` | Two equal squads advance into each other on a fair map; should be about even |
 | `town_attack` | Street fighting in dense cover; the defender usually holds |
+| `tank_support` | The firefight with a Blue tank; Red has an anti-tank rifle and bazookas |
+| `orders_under_fire` | The squad attack with an HQ: orders by phone and runner, late reports |
 | `stress_1000` | 1,000 a side, to check speed |
 
 ## Maps

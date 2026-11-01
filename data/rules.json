@@ -63,5 +63,21 @@
     "shareRadius": 80,           // squads this close share what they've seen
     "areaFireAccuracy": 0.3,     // firing at where the enemy was seen, not at a man
     "friendlyFireSafety": 8      // never fire where a friend is this close to the aim point
+  },
+  "comms": {
+    "phoneDelay": 12, "phoneDelayJitter": 5,  // seconds for a telephone message
+    "phoneReach": 25,            // a squad can use the phone if its sergeant is this close to the line's end
+    "lineCutRadius": 3,          // a shell bursting this close to a cable cuts it
+    "radioDelay": 30, "radioDelayJitter": 10, // coding, sending, decoding
+    "radioRepeatChance": 0.15,   // chance a radio message has to be sent again (double delay)
+    "flareDelay": 6,             // flare up to squad acting on it (halt and fall back only)
+    "flareRange": 1500,
+    "runnerSpeed": 3,            // metres a second
+    "runnerDangerRange": 250,    // enemies who can see a runner this close may shoot him
+    "runnerHitPerSecond": 0.004, // per enemy that can see him (and isn't pinned), at point blank
+    "runnerLostResend": 60,      // HQ sends a lost order again this long after the runner was shot
+    "sitrepInterval": 30,        // squads in contact report this often
+    "hqContactMemory": 120,      // HQ forgets a sighting this long after it was made
+    "playerSeesReportsOnly": true // you see the enemy only as reports reach your HQ
   }
 }
