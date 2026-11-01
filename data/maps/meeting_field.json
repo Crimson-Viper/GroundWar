@@ -1,0 +1,46 @@
+// Meeting field: the east half of the test range, copied onto the west half turned half a turn
+// around the centre (150, 100). Both sides see the same ground ahead, left and right. Ruins in front of each start area keep the squads out of sight until they move up.
+// Used by the meeting engagement.
+{
+  "name": "Meeting field",
+  "width": 300,
+  "height": 200,
+  "walls": [
+    { "a": [252, 72], "b": [252, 128], "thickness": 0.7, "high": true },
+    { "a": [48, 128], "b": [48, 72], "thickness": 0.7, "high": true },
+    { "a": [155, 145], "b": [170, 145], "thickness": 0.7, "high": true },
+    { "a": [145, 55], "b": [130, 55], "thickness": 0.7, "high": true },
+    { "a": [170, 145], "b": [170, 158], "thickness": 0.7, "high": true },
+    { "a": [130, 55], "b": [130, 42], "thickness": 0.7, "high": true },
+    { "a": [200, 55], "b": [200, 96], "thickness": 0.6 },
+    { "a": [100, 145], "b": [100, 104], "thickness": 0.6 },
+    { "a": [200, 104], "b": [200, 145], "thickness": 0.6 },
+    { "a": [100, 96], "b": [100, 55], "thickness": 0.6 },
+    { "a": [184, 60], "b": [196, 52], "thickness": 0.6 },
+    { "a": [116, 140], "b": [104, 148], "thickness": 0.6 },
+    { "a": [220, 50], "b": [236, 50], "thickness": 0.7, "high": true },
+    { "a": [80, 150], "b": [64, 150], "thickness": 0.7, "high": true },
+    { "a": [236, 50], "b": [236, 64], "thickness": 0.7, "high": true },
+    { "a": [64, 150], "b": [64, 136], "thickness": 0.7, "high": true },
+    { "a": [220, 64], "b": [228, 64], "thickness": 0.7, "high": true },
+    { "a": [80, 136], "b": [72, 136], "thickness": 0.7, "high": true },
+    { "a": [220, 50], "b": [220, 58], "thickness": 0.7, "high": true },
+    { "a": [80, 150], "b": [80, 142], "thickness": 0.7, "high": true },
+    { "a": [240, 80], "b": [240, 120], "thickness": 0.6 },
+    { "a": [60, 120], "b": [60, 80], "thickness": 0.6 }
+  ],
+  "craters": [
+    { "center": [155, 110], "radius": 3 },
+    { "center": [145, 90], "radius": 3 },
+    { "center": [165, 75], "radius": 3.5 },
+    { "center": [135, 125], "radius": 3.5 },
+    { "center": [175, 125], "radius": 2.5 },
+    { "center": [125, 75], "radius": 2.5 },
+    { "center": [185, 95], "radius": 3 },
+    { "center": [115, 105], "radius": 3 },
+    { "center": [178, 140], "radius": 3 },
+    { "center": [122, 60], "radius": 3 },
+    { "center": [260, 140], "radius": 3.5 },
+    { "center": [40, 60], "radius": 3.5 }
+  ]
+}

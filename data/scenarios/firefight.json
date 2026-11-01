@@ -1,0 +1,43 @@
+// Milestone 2: a reinforced squad (12 men, 2 machine guns) attacks a squad of 9 holding a stone wall.
+{
+  "name": "Firefight at the wall",
+  "description": "Blue's squad advances across the test range to take the wall Red is holding.",
+  "map": "maps/test_range.json",
+  "timeLimit": 600,
+  "sides": [
+    {
+      "side": "Blue",
+      "name": "Blue",
+      "rear": [-1, 0],
+      "groups": [
+        {
+          "name": "Blue 1st Squad",
+          "order": "Attack",
+          "objective": [206, 100],
+          "objectiveRadius": 15,
+          "facing": [1, 0],
+          "spawnCenter": [30, 100],
+          "spawnSize": [16, 70],
+          "weapons": { "rifle": 10, "lmg": 2 }
+        }
+      ]
+    },
+    {
+      "side": "Red",
+      "name": "Red",
+      "rear": [1, 0],
+      "groups": [
+        {
+          "name": "Red 1st Squad",
+          "order": "Hold",
+          "objective": [206, 100],
+          "objectiveRadius": 18,
+          "facing": [-1, 0],
+          "spawnCenter": [212, 100],
+          "spawnSize": [10, 36],
+          "weapons": { "rifle": 8, "lmg": 1 }
+        }
+      ]
+    }
+  ]
+}

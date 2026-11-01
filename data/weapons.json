@@ -1,0 +1,36 @@
+// Weapons. "accuracy" is [range in metres, chance to hit a standing man in the open] for an average shooter.
+// Cover, stance, movement, suppression and skill all scale it down from there.
+{
+  "rifle": {
+    "name": "Bolt-action rifle",
+    "range": 450,
+    "accuracy": [[0, 0.40], [25, 0.25], [50, 0.15], [100, 0.08], [200, 0.035], [300, 0.015], [450, 0.005]],
+    "burstSize": 1,
+    "spread": 1.5,
+    "fireInterval": 4.0,        // seconds between aimed shots
+    "fireIntervalJitter": 1.5,
+    "magazineSize": 5,
+    "magazines": 20,         // spare clips: 5 + 100 rounds
+    "reloadTime": 4.0,
+    "suppression": 10,          // fear added to a man the bullet passes close to
+    "suppressionRadius": 3,     // metres around the impact that feel it
+    "threat": 1.0
+  },
+  "lmg": {
+    "name": "Light machine gun",
+    "range": 600,
+    "accuracy": [[0, 0.30], [25, 0.18], [50, 0.10], [100, 0.05], [200, 0.022], [300, 0.01], [600, 0.003]],
+    "burstSize": 6,
+    "burstInterval": 0.12,
+    "spread": 2.5,
+    "fireInterval": 2.5,
+    "fireIntervalJitter": 1.0,
+    "magazineSize": 30,
+    "magazines": 12,
+    "reloadTime": 6.0,
+    "suppression": 9,
+    "suppressionRadius": 4,
+    "threat": 2.5,
+    "isMachineGun": true
+  }
+}
