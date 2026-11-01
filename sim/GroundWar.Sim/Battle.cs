@@ -62,11 +62,12 @@ public sealed partial class Battle
         UpdateGridControl();
     }
 
-    /// <summary>Load a scenario file (and the map it names) and set up the battle.</summary>
-    public static Battle Load(IDataSource source, string scenarioPath, ulong seed)
+    /// <summary>Load a scenario file (and the map it names, unless <paramref name="mapOverride"/> names another) and set up the battle.</summary>
+    public static Battle Load(IDataSource source, string scenarioPath, ulong seed, string? mapOverride = null)
     {
         var data = GameData.Load(source);
         var scenario = GameData.LoadScenario(source, scenarioPath);
+        if (mapOverride != null) scenario.Map = mapOverride;
         var map = GameData.LoadMap(source, scenario.Map);
         return new Battle(data, scenario, map, seed);
     }

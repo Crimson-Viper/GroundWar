@@ -6,11 +6,13 @@ using GroundWar.Sim.Units;
 // Usage:
 //   dotnet run --project sim/GroundWar.Runner -- [--scenario scenarios/firefight.json] [--battles 20] [--seed 1] [--log]
 //   --log prints every decision for the first battle.
+//   --map maps/x.json plays the scenario on another map (e.g. to check a result isn't down to the ground).
 
 string scenario = "scenarios/firefight.json";
 int battles = 20;
 ulong seed = 1;
 bool log = false;
+string? mapOverride = null;
 for (int i = 0; i < args.Length; i++)
 {
     switch (args[i])
@@ -19,6 +21,7 @@ for (int i = 0; i < args.Length; i++)
         case "--battles": battles = int.Parse(args[++i]); break;
         case "--seed": seed = ulong.Parse(args[++i]); break;
         case "--log": log = true; break;
+        case "--map": mapOverride = args[++i]; break;
         case "--profile": GroundWar.Sim.Core.Profile.Enabled = true; break;
     }
 }
@@ -27,7 +30,7 @@ var source = FolderDataSource.FindFrom(AppContext.BaseDirectory);
 var sourceCwd = Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "data"))
     ? new FolderDataSource(Path.Combine(Directory.GetCurrentDirectory(), "data")) : source;
 
-Console.WriteLine($"Scenario: {scenario}   battles: {battles}   first seed: {seed}");
+Console.WriteLine($"Scenario: {scenario}{(mapOverride != null ? $" on {mapOverride}" : "")}   battles: {battles}   first seed: {seed}");
 Console.WriteLine();
 Console.WriteLine(" seed  winner  time   blue lost  red lost  blue broke  red broke  shots   hits  in-cover%");
 
@@ -37,7 +40,7 @@ var sw = Stopwatch.StartNew();
 long ticks = 0;
 for (int b = 0; b < battles; b++)
 {
-    var battle = Battle.Load(sourceCwd, scenario, seed + (ulong)b);
+    var battle = Battle.Load(sourceCwd, scenario, seed + (ulong)b, mapOverride);
     var result = battle.RunToEnd();
     ticks += battle.Tick;
     totalTime += result.Time;

@@ -95,5 +95,6 @@ For developers (no Godot needed):
 dotnet test sim/GroundWar.Sim.Tests
 dotnet run --project sim/GroundWar.Runner -- --battles 30                   # results table
 dotnet run --project sim/GroundWar.Runner -- --battles 1 --seed 4 --log     # every decision in one battle
+dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/meeting.json --map maps/meeting_field_c.json --battles 300   # same scenario, other ground
 dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/stress_1000.json --battles 1 --profile   # 1,000 a side, timing
 ```
