@@ -17,7 +17,8 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
 | 4. Messages and delay | done |
 | 5. Company commander: plans, brief-back, refusing death traps | done |
 | 6. Spectacle: sounds, smoke, map table, battle cam, replays, after-action report | done |
-| 7. Battalion: several companies, mortars and artillery, enemy commander, destroy the HQ to win | next |
+| 7. Battalion, part 1: mortars, smoke screens, commanders calling for fire, MG sections | done |
+| 7. Battalion, part 2: several companies, enemy battalion commander, destroy the HQ to win, reinforcements | next |
 | 8. Tank platoons with crew AI | |
 
 ![Two squads taking the wall](docs/screenshots/m3-squad-attack.png)
@@ -54,6 +55,7 @@ To try a pull request before it is merged: in GitHub Desktop pick its branch fro
 | **Soldier** | Left-click a soldier to see what he's thinking · F follow him · Esc deselect |
 | **Orders** | With one of your soldiers selected (in a scenario with an HQ): press Advance, Attack, Suppress or Hold, then click the map; Halt and Fall back go at once. Esc cancels. A man in a company: the order goes to his company commander |
 | **Company** | Enter approve the brief-back · Backspace reject it |
+| **Support** | Select a man of a mortar section: Fire HE or Fire smoke, then click the target · select a man of an MG section: Attach to a company, then click any man of that company (Back to battalion takes it out again) |
 | **Watch** | J battle cam (follows the hottest fighting) · Z map table · O after-action report · M mute · Shift+R replay the battle with your orders · [ back 30 s · ] on 30 s |
 | **Overlays** | G battlefield grid (cover → visibility → control → off) · C cover points · L aim and path lines · P squad plans · T every soldier's thoughts · B morale bars · V fog of war on/off · H hide help |
 

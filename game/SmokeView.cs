@@ -7,8 +7,10 @@ namespace GroundWar.Game;
 
 /// <summary>
 /// Lingering smoke (milestone 6): clouds that rise and drift downwind from shell and bazooka bursts and hang
-/// about for half a minute, and a column of black smoke with a fire glow from every knocked-out tank. Purely
-/// visual: smoke doesn't block sight in the simulation (yet). See docs/systems/spectacle.md.
+/// about for half a minute, and a column of black smoke with a fire glow from every knocked-out tank. Those are
+/// only for show. Smoke screens from mortar smoke rounds (milestone 7) are different: they are clouds in the
+/// simulation that block sight, and are drawn here from <see cref="GroundWar.Sim.Map.BattleMap.Smoke"/>.
+/// See docs/systems/spectacle.md and docs/systems/support-fire.md.
 /// </summary>
 public partial class SmokeView : Node3D
 {
@@ -95,25 +97,49 @@ public partial class SmokeView : Node3D
             c.At += (c.Velocity + Wind * Mathf.Min(1f, c.Age / 4f)) * dt;
             c.Velocity *= Mathf.Exp(-dt * 0.3f);
         }
-        if (_mm.InstanceCount < _clouds.Count)
+        var screens = _battle.Map.Smoke;
+        int needed = _clouds.Count + screens.Count * ScreenPuffs;
+        if (_mm.InstanceCount < needed)
         {
-            _mm.InstanceCount = (int)System.Numerics.BitOperations.RoundUpToPowerOf2((uint)System.Math.Max(64, _clouds.Count));
+            _mm.InstanceCount = (int)System.Numerics.BitOperations.RoundUpToPowerOf2((uint)System.Math.Max(64, needed));
             _buf = new float[_mm.InstanceCount * 16];
+        }
+        // Smoke screens: a heap of big white puffs over each cloud, as wide and as thick as the simulation says.
+        float now = (float)Time.GetTicksMsec() / 1000f;
+        for (int i = 0; i < screens.Count; i++)
+        {
+            var sc = screens[i];
+            for (int k = 0; k < ScreenPuffs; k++)
+            {
+                float ang = k * 2.39996f + i * 0.7f; // spread the puffs round the middle
+                float rr = sc.Radius * (k == 0 ? 0f : 0.35f + 0.45f * ((k * 7 + i * 3) % 5) / 4f);
+                float bob = Mathf.Sin(now * 0.3f + k + i) * 0.4f;
+                var at = Draw.To3(sc.Center, 2.5f + (k % 3) * 1.6f + bob) + new Vector3(Mathf.Cos(ang) * rr, 0, Mathf.Sin(ang) * rr);
+                float size = sc.Radius * (k == 0 ? 1.3f : 0.95f);
+                float shade = 0.82f + 0.04f * (k % 4);
+                Write(n++, at, size, new Color(shade, shade, shade * 0.98f), 0.55f * sc.Density);
+            }
         }
         foreach (var c in _clouds)
         {
             float t = c.Age / c.Life;
             float size = c.Size * (1f + c.Grow * c.Age);
             float alpha = c.Alpha * Mathf.Min(1f, c.Age * 3f) * (1f - t) * (1f - t);
-            int o = n * 16;
-            // Transform3D as 12 floats (basis rows with origin), then colour.
-            _buf[o + 0] = size; _buf[o + 1] = 0; _buf[o + 2] = 0; _buf[o + 3] = c.At.X;
-            _buf[o + 4] = 0; _buf[o + 5] = size; _buf[o + 6] = 0; _buf[o + 7] = c.At.Y;
-            _buf[o + 8] = 0; _buf[o + 9] = 0; _buf[o + 10] = size; _buf[o + 11] = c.At.Z;
-            _buf[o + 12] = c.Color.R; _buf[o + 13] = c.Color.G; _buf[o + 14] = c.Color.B; _buf[o + 15] = alpha;
-            n++;
+            Write(n++, c.At, size, c.Color, alpha);
         }
         _mm.VisibleInstanceCount = n;
         if (n > 0) RenderingServer.MultimeshSetBuffer(_mm.GetRid(), _buf);
+    }
+
+    private const int ScreenPuffs = 7;
+
+    private void Write(int n, Vector3 at, float size, Color color, float alpha)
+    {
+        int o = n * 16;
+        // Transform3D as 12 floats (basis rows with origin), then colour.
+        _buf[o + 0] = size; _buf[o + 1] = 0; _buf[o + 2] = 0; _buf[o + 3] = at.X;
+        _buf[o + 4] = 0; _buf[o + 5] = size; _buf[o + 6] = 0; _buf[o + 7] = at.Y;
+        _buf[o + 8] = 0; _buf[o + 9] = 0; _buf[o + 10] = size; _buf[o + 11] = at.Z;
+        _buf[o + 12] = color.R; _buf[o + 13] = color.G; _buf[o + 14] = color.B; _buf[o + 15] = alpha;
     }
 }

@@ -19,6 +19,7 @@ The design (what the game should become) lives in the design docs. These pages d
 | [Fog of war](systems/fog-of-war.md) | What each side knows, sightings, sharing between squads, what the player sees |
 | [Messages and delay](systems/messages-and-delay.md) | HQ, telephone, radio, runners and flares; orders and reports that take time; the order panel |
 | [Company commander](systems/company-commander.md) | Companies: the commander's personality, how he plans, the brief-back, phases, re-planning, refusing death traps |
+| [Battalion support](systems/support-fire.md) | Mortar sections and fire missions, smoke screens that block sight, commanders calling for fire, MG sections you attach to a company |
 | [Who wins](systems/battle-results.md) | How a battle ends and who is given the win |
 | [Spectacle](systems/spectacle.md) | Sounds, lingering smoke and burning wrecks, the map table, the battle cam and slow motion |
 | [Replays and reports](systems/replays-and-reports.md) | Replays from the seed and your orders, rewinding, the after-action report |

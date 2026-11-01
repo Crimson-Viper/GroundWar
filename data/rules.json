@@ -95,5 +95,22 @@
     "hqBehind": 60,              // the company HQ keeps this far behind its squads
     "replanLoss": 0.35,          // losing this much of the company makes him think again
     "maxReplans": 2
+  },
+  "support": {
+    "setUpTime": 12,             // seconds to lay the mortars on a new target
+    "roundInterval": 5,          // seconds between rounds from one tube
+    "flightTime": 8, "flightSpeed": 150, // time of flight: 8 s plus 1 s per 150 m
+    "firstSpread": 30,           // metres: where the first rounds land around the target (one standard deviation)
+    "adjustedSpread": 14,        // once the fall of shot has been corrected
+    "minRange": 80, "maxRange": 2500,
+    "crewPerTube": 2,
+    "smokeRadius": 14,           // one smoke round's cloud
+    "smokeDuration": 75,         // seconds it hides things
+    "smokeGrowTime": 6,
+    "wind": [0.4, 0.15],         // metres per second; smoke drifts with it
+    "prepRounds": 9, "smokeRounds": 6, "quickRounds": 4, // rounds a commander asks for
+    "requestCooldown": 90,       // a commander waits this long before asking again for the same area
+    "dangerClose": 60,           // he won't call fire this close to his own men
+    "defensiveFireRange": 350    // a defending commander fires on attackers this close
   }
 }

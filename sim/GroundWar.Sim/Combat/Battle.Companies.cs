@@ -136,7 +136,7 @@ public sealed partial class Battle
     /// for quiet while this is so.</summary>
     private bool CommandBusy()
     {
-        if (_scheduled.Count > 0) return true;
+        if (_scheduled.Count > 0 || SupportBusy()) return true;
         foreach (var c in _companies)
             if (!c.CommanderDown && c.State is CompanyState.BriefBack or CompanyState.Executing) return true;
         foreach (var m in _messages)

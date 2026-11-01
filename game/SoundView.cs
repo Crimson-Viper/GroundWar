@@ -68,6 +68,12 @@ public partial class SoundView : Node3D
         // Big guns always; small arms nearest first.
         foreach (var s in shots)
         {
+            if (s.Indirect)
+            {
+                // The hollow thump of a mortar: the tank gun sound, low and quiet.
+                Play(_tankGun, Draw.To3(s.From, 1f), -8f, 0.55f, 0.65f);
+                continue;
+            }
             if (!s.Shell) continue;
             // A tank gun's boom, or (pitched up and quieter) the whoosh of a bazooka; the burst comes when it lands.
             bool tank = _battle.GetSoldier(s.ShooterId)?.IsTank == true;
@@ -78,7 +84,7 @@ public partial class SoundView : Node3D
         {
             if (played++ >= budget) break;
             var s = shots[i];
-            if (s.Shell) continue;
+            if (s.Shell || s.Indirect) continue;
             Play(s.MachineGun ? _mg : _rifle, Draw.To3(s.From, 1.2f), s.MachineGun ? -4f : -2f, 0.92f, 1.1f);
         }
     }
@@ -95,6 +101,12 @@ public partial class SoundView : Node3D
     public void Burst(Vector3 at)
     {
         if (!Muted) Play(_explosion, at, 2f, 0.85f, 1.1f);
+    }
+
+    /// <summary>A smoke round landing: a dull pop rather than a bang.</summary>
+    public void SmokePop(Vector3 at)
+    {
+        if (!Muted) Play(_explosion, at, -10f, 1.6f, 1.9f);
     }
 
     private void Play(AudioStream? stream, Vector3 at, float volumeDb, float pitchMin, float pitchMax)

@@ -26,6 +26,8 @@ public partial class BattleView : Node3D
     private readonly List<Tracer> _tracers = new();
     /// <summary>A shell or rocket has landed here (for sound and lingering smoke).</summary>
     public System.Action<Vector3>? ShellBurst { get; set; }
+    /// <summary>A smoke round has landed (for the pop sound).</summary>
+    public System.Action<Vector3>? SmokeRound { get; set; }
     private readonly List<Puff> _puffs = new();
     // Tracers and dust puffs are drawn in batches too: one MultiMesh each, refilled every frame.
     private MultiMesh _rifleTracers = null!, _mgTracers = null!, _puffMesh = null!;
@@ -161,6 +163,13 @@ public partial class BattleView : Node3D
             var shooter = _battle.Soldiers[shot.ShooterId];
             float muzzle = shooter.IsTank ? 1.95f : shooter.Stance switch { Stance.Prone => 0.3f, Stance.Crouched => 0.95f, _ => 1.35f };
             var from = Draw.To3(shot.From, muzzle);
+            if (shot.Indirect)
+            {
+                // A mortar round leaving the tube: a flash and a puff straight up. It lands later (see Impacts below).
+                SpawnPuff(Draw.To3(shot.From, 1.0f), new Color(1f, 0.8f, 0.4f, 1f), 0.12f, 0.8f);
+                SpawnPuff(Draw.To3(shot.From, 1.8f), new Color(0.75f, 0.73f, 0.68f, 0.6f), 1.5f, 1.6f);
+                continue;
+            }
             if (shot.Shell)
             {
                 var burst = Draw.To3(shot.Impact, shot.Hit ? 1.5f : 0.3f);
@@ -181,6 +190,22 @@ public partial class BattleView : Node3D
             float dist = from.DistanceTo(to);
             SpawnTracer(from, to, dist / 450f, shot.Hit, shot.MachineGun);
             SpawnPuff(from + (to - from).Normalized() * 0.6f, new Color(1f, 0.9f, 0.5f, 0.9f), 0.35f, 0.06f);
+        }
+        // Mortar rounds coming down: high explosive bursts like a shell; smoke rounds pop and start the screen
+        // (the screen itself is drawn by SmokeView from the simulation's clouds).
+        foreach (var hit in _battle.Impacts)
+        {
+            var at = Draw.To3(hit.Position, 0.3f);
+            if (hit.Smoke)
+            {
+                SpawnPuff(at + new Vector3(0, 1f, 0), new Color(0.95f, 0.95f, 0.92f, 0.9f), 2.5f, 3f);
+                SmokeRound?.Invoke(at);
+                continue;
+            }
+            ShellBurst?.Invoke(at);
+            SpawnPuff(at + new Vector3(0, 0.5f, 0), new Color(1f, 0.75f, 0.35f, 1f), 0.25f, 3.5f);
+            SpawnPuff(at + new Vector3(0, 1.0f, 0), new Color(0.32f, 0.27f, 0.22f, 0.9f), 1.8f, 6f);
+            SpawnPuff(at + new Vector3(0, 2.5f, 0), new Color(0.45f, 0.42f, 0.38f, 0.6f), 2.5f, 5f);
         }
     }
 

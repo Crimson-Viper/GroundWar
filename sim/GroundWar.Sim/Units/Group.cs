@@ -120,6 +120,10 @@ public sealed class Group
     public GroundWar.Sim.Comms.Order? LastOrderReceived { get; set; }
     /// <summary>A group of vehicles (a tank section) rather than a squad of men.</summary>
     public bool IsVehicles => Members.Count > 0 && Members.All(m => m.IsTank);
+    /// <summary>A mortar section: its men work the tubes instead of fighting as a squad.</summary>
+    public MortarSection? Mortars { get; set; }
+    /// <summary>A battalion asset (an MG section or mortars) that the player can attach to a company.</summary>
+    public bool IsAsset { get; set; }
     public bool IsAttacking => Order is GroupOrder.Attack or GroupOrder.Advance or GroupOrder.Suppress;
 
     public Group(Side side)
@@ -145,4 +149,18 @@ public sealed class Group
             return n > 0 ? sum / n : (Members.Count > 0 ? Members[0].Position : Objective);
         }
     }
+}
+
+/// <summary>The tubes, ammunition and fire missions of a mortar section (milestone 7).</summary>
+public sealed class MortarSection
+{
+    public int Tubes { get; init; }
+    public int AmmoHe { get; set; }
+    public int AmmoSmoke { get; set; }
+    public Queue<GroundWar.Sim.Comms.FireMission> Queue { get; } = new();
+    public GroundWar.Sim.Comms.FireMission? Current { get; set; }
+    /// <summary>When the tubes are laid on the current target and can start firing.</summary>
+    public float ReadyAt { get; set; }
+    public float NextRound { get; set; }
+    public int Ammo(GroundWar.Sim.Comms.FireKind k) => k == GroundWar.Sim.Comms.FireKind.Smoke ? AmmoSmoke : AmmoHe;
 }

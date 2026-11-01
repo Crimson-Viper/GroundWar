@@ -82,8 +82,11 @@ public sealed class BattleMap
 
     // ---------------------------------------------------------------- sight and cover
 
-    /// <summary>True if a high wall blocks the straight line between a and b.</summary>
-    public bool SightBlocked(Vector2 a, Vector2 b)
+    /// <summary>True if a high wall or a smoke screen blocks the view between a and b.</summary>
+    public bool SightBlocked(Vector2 a, Vector2 b) => (_smoke.Count > 0 && SmokeBlocks(a, b)) || WallBlocked(a, b);
+
+    /// <summary>True if a high wall stands between a and b (smoke hides, but doesn't stop a bullet or a blast).</summary>
+    public bool WallBlocked(Vector2 a, Vector2 b)
     {
         if (_highWalls.Count <= 8)
         {
@@ -131,7 +134,7 @@ public sealed class BattleMap
     /// 0 = in the open, 1 = completely hidden behind a high wall.</summary>
     public float ProtectionAt(Vector2 pos, Vector2 from)
     {
-        if (SightBlocked(from, pos)) return 1f;
+        if (WallBlocked(from, pos)) return 1f;
         float prot = 0f;
         var wb = BucketAt(_wallBuckets, pos);
         if (wb != null)
@@ -281,5 +284,48 @@ public sealed class BattleMap
         int x = (int)(p.X / BucketSize), y = (int)(p.Y / BucketSize);
         if (x < 0 || y < 0 || x >= _bucketsX || y >= _bucketsY) return null;
         return buckets[y * _bucketsX + x];
+    }
+
+    // ---------------------------------------------------------------- smoke screens (milestone 7)
+
+    private readonly List<SmokeCloud> _smoke = new();
+    /// <summary>Smoke clouds from smoke shells. They hide everything behind them until they thin out.</summary>
+    public IReadOnlyList<SmokeCloud> Smoke => _smoke;
+
+    public SmokeCloud AddSmoke(Vector2 at, float radius, float born, float duration)
+    {
+        var c = new SmokeCloud { Center = at, FullRadius = radius, Born = born, Expires = born + duration };
+        _smoke.Add(c);
+        return c;
+    }
+
+    /// <summary>Clouds grow to full size over a few seconds, drift with the wind and thin out at the end.</summary>
+    public void UpdateSmoke(float time, float dt, Vector2 wind, float growTime)
+    {
+        for (int i = _smoke.Count - 1; i >= 0; i--)
+        {
+            var c = _smoke[i];
+            if (time >= c.Expires) { _smoke.RemoveAt(i); continue; }
+            c.Center += wind * dt;
+            float age = time - c.Born, left = c.Expires - time;
+            float grow = Math.Clamp(age / MathF.Max(growTime, 0.1f), 0f, 1f);
+            float thin = Math.Clamp(left / 10f, 0f, 1f);
+            c.Radius = c.FullRadius * (0.3f + 0.7f * grow) * (0.6f + 0.4f * thin);
+            c.Density = MathF.Min(grow * 1.5f, 1f) * thin;
+        }
+    }
+
+    /// <summary>A line of sight is blocked if it passes through the thick middle of a cloud. Two men close
+    /// together inside the smoke can still see each other.</summary>
+    private bool SmokeBlocks(Vector2 a, Vector2 b)
+    {
+        if (Vector2.DistanceSquared(a, b) < 12f * 12f) return false;
+        foreach (var c in _smoke)
+        {
+            if (c.Density < 0.5f) continue;
+            float core = c.Radius * 0.8f;
+            if (Geo.PointSegmentDistSq(c.Center, a, b, out _) < core * core) return true;
+        }
+        return false;
     }
 }

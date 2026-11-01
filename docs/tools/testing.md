@@ -17,6 +17,7 @@ dotnet test sim/GroundWar.Sim.Tests
 | `FairnessTests.cs` | Every meeting map is the same from both ends |
 | `TankTests.cs` | Armour, anti-tank weapons, the tank driving and fighting |
 | `CommsTests.cs` | Order delay by phone and runner, cut lines, flares, reports reaching HQ |
+| `SupportTests.cs` | Smoke blocks sight but not bullets and drifts; fire missions take time and land round the target; commanders plan and ask for mortar fire; attaching an MG section; defensive fire; ammunition running out |
 | `ReplayTests.cs` | Same seed and same player commands give the same battle; the after-action report adds up |
 | `CompanyTests.cs` | The company commander: brief-back, choosing the covered flank, approve and reject, refusing and being overruled, traits, company messages |
 
@@ -55,6 +56,7 @@ dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/str
 | Town attack | 27 | 153 | 20 |
 | Tank support | 171 | 29 | 0 |
 | Orders under fire | 117 | 83 | 0 |
+| Farmhouse with support (mortars, smoke, MG section) | 99 | 77 | 24 |
 | Farmhouse (company attack) | 94 | 89 | 17 |
 
 ## Screenshot mode
@@ -82,6 +84,7 @@ facing and weapons. Tab in the game cycles through them in the order listed in `
 | `tank_support` | The firefight with a Blue tank; Red has an anti-tank rifle and bazookas |
 | `orders_under_fire` | The squad attack with an HQ: orders by phone and runner, late reports |
 | `farmhouse` | A Company (Capt. Hale, four squads) attacks a farmhouse held by a Red company; brief-back and phased plans |
+| `farmhouse_support` | The farmhouse with battalion support: Blue mortars (HE and smoke) and an MG section attached to A Company; Red mortars |
 | `stress_1000` | 1,000 a side, to check speed |
 
 ## Maps

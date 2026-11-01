@@ -45,8 +45,9 @@ moves on. If anyone is hit within 30 m of him, the battle runs at ¼ speed for 2
 - **Bursts** (tank shells and bazooka rockets) leave seven puffs of dirty grey smoke that billow up, drift downwind
   (`SmokeView.Wind`) and fade over 20–30 s.
 - **Knocked-out tanks** burn: a column of black smoke and a flickering orange light for the rest of the battle.
-- Smoke is only for show for now: it does not block sight in the simulation. Smoke shells and smoke screens that do
-  are a later addition (they matter for tactics, so they belong in the simulation, not just the drawing).
+- The smoke from bursts and burning wrecks is only for show: it does not block sight. **Smoke screens** from mortar
+  smoke rounds (milestone 7) do: they are clouds in the simulation, drawn here as heaps of big white puffs as wide
+  and thick as the simulation says. See [Battalion support](support-fire.md).
 
 ## Sound
 - Placeholder sounds made from noise by `tools/make_sounds.py`: `rifle`, `mg`, `tank_gun`, `explosion`, `radio`,

@@ -23,6 +23,16 @@ public enum PlanKind { FrontalAssault, PinAndFlankLeft, PinAndFlankRight, WaitFo
 
 public enum PhaseKind { MoveUp, EstablishFire, Assault, Consolidate, Hold }
 
+/// <summary>Mortar fire the commander means to ask for when a phase starts.</summary>
+public sealed class PlannedFire
+{
+    public int Phase { get; init; }
+    public Vector2 Target { get; init; }
+    public FireKind Kind { get; init; }
+    public int Rounds { get; init; }
+    public string Reason { get; init; } = "";
+}
+
 /// <summary>One squad's job in one phase.</summary>
 public sealed class SquadTask
 {
@@ -53,6 +63,8 @@ public sealed class CompanyPlan
     public List<(Group Squad, float Loss)> SquadLosses { get; } = new();
     /// <summary>The squad giving covering fire, in a pin-and-flank plan.</summary>
     public Group? Support { get; init; }
+    /// <summary>Mortar fire he will ask battalion for, and in which phase.</summary>
+    public List<PlannedFire> Fires { get; } = new();
     /// <summary>Arrows for the brief-back on the player's map: (from, to, phase index).</summary>
     public List<(Vector2 From, Vector2 To, int Phase)> Arrows { get; } = new();
 }
@@ -122,6 +134,13 @@ public sealed class Company
     public HashSet<int> MgsEngaged { get; } = new();
     /// <summary>Why he refused the last order (for the player).</summary>
     public string RefusalReason { get; set; } = "";
+    /// <summary>The on-call fire missions he asked for when the plan started, by the planned fire they are for.</summary>
+    public Dictionary<PlannedFire, FireMission> PlannedMissions { get; } = new();
+    /// <summary>Every fire request he has made: where and when (so he doesn't keep asking for the same thing).</summary>
+    public List<(Vector2 Target, float Time)> FireRequests { get; } = new();
+    /// <summary>Mortar fire he asked for when he refused an order; once it has landed he thinks again.</summary>
+    public FireMission? RefusalFire { get; set; }
+    public int RefusalFires { get; set; }
 
     public PlanPhase? Phase => Plan != null && PhaseIndex < Plan.Phases.Count ? Plan.Phases[PhaseIndex] : null;
     public int Effective => Squads.Sum(s => s.CountEffective);

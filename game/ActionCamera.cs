@@ -16,7 +16,8 @@ public sealed class ActionCamera
 
     public void AfterStep(Battle b)
     {
-        foreach (var s in b.Shots) { _recent.Add((b.Time, s.From)); _recent.Add((b.Time, s.Impact)); }
+        foreach (var s in b.Shots) { if (s.Indirect) continue; _recent.Add((b.Time, s.From)); _recent.Add((b.Time, s.Impact)); }
+        foreach (var i in b.Impacts) if (!i.Smoke) _recent.Add((b.Time, i.Position));
         foreach (var c in b.Casualties) if (b.GetSoldier(c.SoldierId) is { } v) _hits.Add((b.Time, v.Position));
         _recent.RemoveAll(r => b.Time - r.Time > 5f);
         _hits.RemoveAll(r => b.Time - r.Time > 1f);

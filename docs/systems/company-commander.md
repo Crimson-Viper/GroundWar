@@ -106,7 +106,12 @@ battalion, no brief-back). After two new plans for one order, or if his initiati
 orders. If the new best plan is a death trap he refuses mid-attack: halts, or with poor composure pulls back.
 
 **Shifting fire.** In the covering fire and assault phases, if a squad reports being pinned and he knows of a machine
-gun within 150 m of it, he orders the support squad to switch its fire onto that gun (once per gun).
+gun within 150 m of it, he orders the support squad to switch its fire onto that gun (once per gun). If battalion
+has mortars, he also asks for fire on the gun (from moving up onwards): smoke if he's careful, HE if not.
+
+**Mortar fire (milestone 7).** With mortars in the battalion he books on-call fire when the plan starts and calls it as the assault goes in, asks for it when a
+squad is pinned, asks for it when he refuses an attack (and thinks again once it has landed), and fires on attackers
+he sees coming while holding. All of this is in [Battalion support](support-fire.md).
 
 **His HQ** stays about 60 m behind the middle of his squads, at whichever of a few spots there is least in view of
 the enemy he knows about. If his HQ group is wiped out or breaks, he is **down**: the squads carry on with their last
@@ -154,5 +159,5 @@ about half the battles. See the runner table in [Testing and tuning](../tools/te
 
 ## Not done yet
 - When the commander is down, nobody takes over the company (the senior sergeant should).
-- Plans use only squads; machine-gun sections, mortars and the battalion's support come with milestone 7.
+- Mortars and MG sections arrived in milestone 7 part 1 ([Battalion support](support-fire.md)); artillery comes with the battalion battle.
 - The enemy company only defends where it is put (no counter-attacks) until the enemy battalion AI (milestone 7).

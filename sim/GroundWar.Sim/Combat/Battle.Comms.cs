@@ -55,6 +55,8 @@ public sealed partial class Battle
             {
                 Kind = kind, Objective = od.Objective != null ? BattleMap.V(od.Objective) : g.Objective, Radius = od.ObjectiveRadius,
                 SupportPosition = od.SupportPosition != null ? BattleMap.V(od.SupportPosition) : null,
+                AttachTo = kind == OrderKind.Attach && od.AttachTo != "" ? FindCompany(od.AttachTo) ?? throw new InvalidDataException($"Scenario attaches to unknown company '{od.AttachTo}'") : null,
+                Fire = Enum.Parse<FireKind>(od.Fire, ignoreCase: true), Rounds = od.Rounds,
             };
             _scheduled.Add((od.Time, g, order, null));
         }
@@ -67,6 +69,7 @@ public sealed partial class Battle
     /// Without an HQ the order takes effect at once.</summary>
     public Message? SendOrder(Group g, Order order)
     {
+        order = WithMission(g, order);
         var hq = _hq[(int)g.Side];
         if (hq == null)
         {
@@ -106,12 +109,12 @@ public sealed partial class Battle
     }
 
     private Message NewMessage(Group g, MessageMethod method, bool down, string text, Order? order,
-        Company? company = null, MessageKind kind = MessageKind.Order, CompanyPlan? plan = null)
+        Company? company = null, MessageKind kind = MessageKind.Order, CompanyPlan? plan = null, FireMission? mission = null)
     {
         var m = new Message
         {
             Id = _nextMessageId++, Side = g.Side, Method = method, Group = g, Down = down, Order = order, Text = text, SentTime = Time,
-            Company = company, Kind = order != null ? MessageKind.Order : kind, Plan = plan, Strength = g.CountEffective,
+            Company = company, Kind = order != null ? MessageKind.Order : kind, Plan = plan, Strength = g.CountEffective, Mission = mission,
         };
         switch (method)
         {
@@ -220,7 +223,7 @@ public sealed partial class Battle
         m.DoneTime = Time;
         Note(m.Group, $"{(m.Down ? "Order to " + m.Group.Name : m.Group.Name + "'s report")} lost: {why}");
         var method = m.Company != null ? CompanyMethod(m.Company, m.Group) : BestMethod(m.Group, _hq[(int)m.Side]!, m.Down, m.Order);
-        var again = NewMessage(m.Group, method, m.Down, m.Text, m.Order, m.Company, m.Kind, m.Plan);
+        var again = NewMessage(m.Group, method, m.Down, m.Text, m.Order, m.Company, m.Kind, m.Plan, m.Mission);
         again.Contacts.AddRange(m.Contacts);
     }
 
@@ -297,6 +300,7 @@ public sealed partial class Battle
             Note(m.Group, $"HQ hears from {Addressee(m.Group)} ({Time - m.SentTime:0} s old): {m.Text}");
             if (m.Kind == MessageKind.BriefBack && m.Group.Company is { State: CompanyState.BriefBack } bc && bc.Plan == m.Plan)
                 bc.BriefBackHeardAt = Time;
+            if (m.Kind == MessageKind.FireRequest && m.Mission != null) ForwardToMortars(m.Mission);
             foreach (var c in m.Contacts)
             {
                 var enemy = GetSoldier(c.EnemyId);
@@ -311,6 +315,9 @@ public sealed partial class Battle
     /// <summary>The order has arrived: the squad leader takes it on.</summary>
     internal void ApplyOrder(Group g, Order o)
     {
+        // Orders for battalion's support don't change where the men are or what they're doing.
+        if (o.Kind == OrderKind.FireMission) { TakeFireMission(g, WithMission(g, o)); return; }
+        if (o.Kind == OrderKind.Attach) { Attach(g, o.AttachTo); return; }
         switch (o.Kind)
         {
             case OrderKind.Halt:

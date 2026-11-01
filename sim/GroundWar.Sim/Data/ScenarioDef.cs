@@ -41,11 +41,16 @@ public sealed class ScheduledOrderDef
     public float Time { get; set; }
     /// <summary>The squad, or the company, the order is for.</summary>
     public string Group { get; set; } = "";
-    /// <summary>"Hold", "Advance", "Attack", "Suppress", "Halt" or "FallBack".</summary>
+    /// <summary>"Hold", "Advance", "Attack", "Suppress", "Halt", "FallBack", "FireMission" (mortars) or "Attach" (MG section).</summary>
     public string Order { get; set; } = "Hold";
     public float[]? Objective { get; set; }
     public float ObjectiveRadius { get; set; } = 15f;
     public float[]? SupportPosition { get; set; }
+    /// <summary>For "Attach": the company the MG section joins (empty = back under battalion).</summary>
+    public string AttachTo { get; set; } = "";
+    /// <summary>For "FireMission": "He" or "Smoke", and how many rounds.</summary>
+    public string Fire { get; set; } = "He";
+    public int Rounds { get; set; } = 6;
 }
 
 /// <summary>A side's headquarters: where orders come from and reports go to.</summary>
@@ -97,4 +102,10 @@ public sealed class GroupDef
     public float MoraleBonus { get; set; }
     /// <summary>The squad carries a radio set (rare for a WW2 squad).</summary>
     public bool Radio { get; set; }
+    /// <summary>A mortar section: number of tubes, and rounds of HE and smoke. The men in "weapons" are the crew.</summary>
+    public int Mortars { get; set; }
+    public int MortarHe { get; set; }
+    public int MortarSmoke { get; set; }
+    /// <summary>A battalion asset (MG section, mortars) rather than a company squad: the player can attach it.</summary>
+    public bool Asset { get; set; }
 }

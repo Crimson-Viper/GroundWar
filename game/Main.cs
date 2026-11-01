@@ -12,7 +12,7 @@ namespace GroundWar.Game;
 /// </summary>
 public partial class Main : Node3D
 {
-    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/orders_under_fire.json", "scenarios/farmhouse.json", "scenarios/stress_1000.json" };
+    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/orders_under_fire.json", "scenarios/farmhouse.json", "scenarios/farmhouse_support.json", "scenarios/stress_1000.json" };
     private static readonly float[] Speeds = { 0.25f, 0.5f, 1f, 2f, 4f, 8f };
 
     private int _scenario;
@@ -22,6 +22,7 @@ public partial class Main : Node3D
     private BattleView? _battleView;
     private CommsView? _commsView;
     private CompanyView? _companyView;
+    private SupportView? _supportView;
     private SoundView? _soundView;
     private SmokeView? _smokeView;
     private TableView? _tableView;
@@ -101,6 +102,7 @@ public partial class Main : Node3D
         _battleView?.QueueFree();
         _commsView?.QueueFree();
         _companyView?.QueueFree();
+        _supportView?.QueueFree();
         _pendingOrder = null;
         _battle = Battle.Load(new GodotDataSource(), Scenarios[_scenario], _seed);
         if (replay != null) _battle.LoadReplay(replay);
@@ -113,6 +115,8 @@ public partial class Main : Node3D
         AddChild(_commsView);
         _companyView = new CompanyView(_battle) { Name = "Companies", Fog = _fog };
         AddChild(_companyView);
+        _supportView = new SupportView(_battle) { Name = "Support", Fog = _fog };
+        AddChild(_supportView);
         _soundView = new SoundView(_battle, _camera.Camera) { Name = "Sound", Muted = _muted };
         AddChild(_soundView);
         _smokeView = new SmokeView(_battle) { Name = "Smoke" };
@@ -120,7 +124,10 @@ public partial class Main : Node3D
         _tableView = new TableView(_battle) { Name = "Table", Fog = _fog };
         AddChild(_tableView);
         _battleView.ShellBurst = at => { _soundView?.Burst(at); _smokeView?.Burst(at); };
+        _battleView.SmokeRound = at => _soundView?.SmokePop(at);
         _hud.OrderRequested = OnOrderButton;
+        _hud.FireRequested = OnFireButton;
+        _hud.AttachRequested = OnAttachButton;
         _hud.ApproveRequested = c => _battle.PlayerApprove(c);
         _hud.RejectRequested = c => _battle.PlayerReject(c);
         _hud.HideReport();
@@ -167,8 +174,9 @@ public partial class Main : Node3D
         UpdateActionCam((float)delta);
         if (_battle.Result != null && !_reportShown) { _reportShown = true; _hud.ShowReport(AfterActionReport.Build(_battle).ToText()); }
         _hud.UpdateHud(_battle, _slowmoUntil > 0f ? SlowMoSpeed : speed, _paused, _battleView.Selected, OverlayNames(), _battleView.Fog, _battleView.PlayerSide);
-        _hud.UpdateOrders(_battle, _battleView.Selected, _battleView.PlayerSide, _pendingOrder);
+        _hud.UpdateOrders(_battle, _battleView.Selected, _battleView.PlayerSide, _pendingOrder, _pendingFire);
         _companyView!.UpdateVisuals();
+        _supportView!.UpdateVisuals();
         _hud.UpdateCompany(_battle, _battleView.Selected, _battleView.PlayerSide);
         RunAutomation((float)delta);
     }
@@ -224,7 +232,7 @@ public partial class Main : Node3D
                 case Key.C: _mapView!.ToggleCover(); break;
                 case Key.L: _battleView!.ShowLines = !_battleView.ShowLines; break;
                 case Key.P: _battleView!.ShowPlans = !_battleView.ShowPlans; break;
-                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; _commsView!.Fog = _fog; _companyView!.Fog = _fog; _tableView!.Fog = _fog; break;
+                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; _commsView!.Fog = _fog; _companyView!.Fog = _fog; _supportView!.Fog = _fog; _tableView!.Fog = _fog; break;
                 case Key.Enter or Key.KpEnter:
                     if (_hud.ShownCompany is { } ac) _battle.PlayerApprove(ac);
                     break;
@@ -250,10 +258,27 @@ public partial class Main : Node3D
             var ground = _camera.GroundPointUnderMouse(mb.Position);
             if (ground != null && _pendingOrder != null && _battleView!.Selected != null)
             {
-                // Second click of an order: where it's to. A squad in a company is ordered through its commander.
-                var g = _battleView.Selected.Group.Company?.HqGroup ?? _battleView.Selected.Group;
                 var at = new System.Numerics.Vector2(ground.Value.X, ground.Value.Z);
-                _battle.PlayerOrder(g, new GroundWar.Sim.Comms.Order { Kind = _pendingOrder.Value, Objective = at, Radius = 18f });
+                var own = _battleView.Selected.Group;
+                switch (_pendingOrder.Value)
+                {
+                    case GroundWar.Sim.Comms.OrderKind.FireMission:
+                        // Second click of a fire mission: the target. It goes to the mortar section itself.
+                        int rounds = _pendingFire == GroundWar.Sim.Comms.FireKind.Smoke ? _battle.Rules.Support.SmokeRounds : _battle.Rules.Support.PrepRounds;
+                        _battle.PlayerOrder(own, new GroundWar.Sim.Comms.Order { Kind = GroundWar.Sim.Comms.OrderKind.FireMission, Objective = at, Fire = _pendingFire, Rounds = rounds, Radius = 10f });
+                        break;
+                    case GroundWar.Sim.Comms.OrderKind.Attach:
+                        // Second click of attach: any man of the company it is to join.
+                        var man = _battleView.SoldierNear(ground.Value, 4f);
+                        if (man?.Group.Company is not { } company || man.Side != own.Side) return;
+                        _battle.PlayerOrder(own, new GroundWar.Sim.Comms.Order { Kind = GroundWar.Sim.Comms.OrderKind.Attach, AttachTo = company });
+                        break;
+                    default:
+                        // Second click of an order: where it's to. A squad in a company is ordered through its commander.
+                        var g = own.Company?.HqGroup ?? own;
+                        _battle.PlayerOrder(g, new GroundWar.Sim.Comms.Order { Kind = _pendingOrder.Value, Objective = at, Radius = 18f });
+                        break;
+                }
                 _pendingOrder = null;
             }
             else if (ground != null)
@@ -267,6 +292,8 @@ public partial class Main : Node3D
 
     /// <summary>An order waiting for its second click (where to), or null.</summary>
     private GroundWar.Sim.Comms.OrderKind? _pendingOrder;
+    /// <summary>For a pending fire mission: HE or smoke.</summary>
+    private GroundWar.Sim.Comms.FireKind _pendingFire;
 
     /// <summary>The player pressed an order button in the HUD. Halt and Fall back go at once; the rest need a place.</summary>
     private void OnOrderButton(GroundWar.Sim.Comms.OrderKind kind)
@@ -279,6 +306,28 @@ public partial class Main : Node3D
             _pendingOrder = null;
         }
         else _pendingOrder = kind;
+    }
+
+    /// <summary>The player pressed HE or Smoke with a mortar section selected: the next click is the target.</summary>
+    private void OnFireButton(GroundWar.Sim.Comms.FireKind kind)
+    {
+        var s = _battleView!.Selected;
+        if (s == null || s.Side != _battleView.PlayerSide || s.Group.Mortars == null) return;
+        _pendingFire = kind;
+        _pendingOrder = GroundWar.Sim.Comms.OrderKind.FireMission;
+    }
+
+    /// <summary>Attach (then click a man of the company) or, for a section already attached, back under battalion.</summary>
+    private void OnAttachButton(bool detach)
+    {
+        var s = _battleView!.Selected;
+        if (s == null || s.Side != _battleView.PlayerSide || !s.Group.IsAsset) return;
+        if (detach)
+        {
+            _battle.PlayerOrder(s.Group, new GroundWar.Sim.Comms.Order { Kind = GroundWar.Sim.Comms.OrderKind.Attach, AttachTo = null });
+            _pendingOrder = null;
+        }
+        else _pendingOrder = GroundWar.Sim.Comms.OrderKind.Attach;
     }
 
     // ---------------------------------------------------------------- battle cam (milestone 6)
@@ -335,7 +384,7 @@ public partial class Main : Node3D
                 if (_autoOverlays.Contains('c')) _mapView!.ToggleCover();
                 if (_autoOverlays.Contains('l')) _battleView!.ShowLines = true;
                 if (_autoOverlays.Contains('t')) _battleView!.ShowAllLabels = true;
-                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; _commsView!.Fog = false; _companyView!.Fog = false; _tableView!.Fog = false; }
+                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; _commsView!.Fog = false; _companyView!.Fog = false; _supportView!.Fog = false; _tableView!.Fog = false; }
                 if (_autoOverlays.Contains('j')) { _actionCam = true; _actionClock = 999f; }
                 if (_autoOverlays.Contains('r')) _autoReport = true;
             }

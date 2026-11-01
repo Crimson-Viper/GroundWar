@@ -15,6 +15,7 @@ public sealed class AfterActionReport
         public Side Side { get; init; }
         public int Men, Killed, Wounded, Fled, Fighting, Shots, Hits, Tanks, TanksLost;
         public int OrdersSent, ReportsSent, MessagesLost;
+        public int FireMissions, MortarRounds, SmokeRounds;
         public float AverageOrderDelay;
         public string Casualties => $"{Killed} killed, {Wounded} wounded, {Fled} fled, {Fighting} of {Men} still fighting";
     }
@@ -121,6 +122,9 @@ public sealed class AfterActionReport
             Tanks = tanks.Count, TanksLost = tanks.Count(t => t.Status == SoldierStatus.Dead),
             OrdersSent = msgs.Count(m => m.Down && m.Order != null),
             ReportsSent = msgs.Count(m => !m.Down),
+            FireMissions = b.FireMissions.Count(f => f.Side == side && f.RoundsLanded > 0),
+            MortarRounds = b.FireMissions.Where(f => f.Side == side && f.Kind == FireKind.He).Sum(f => f.RoundsLanded),
+            SmokeRounds = b.FireMissions.Where(f => f.Side == side && f.Kind == FireKind.Smoke).Sum(f => f.RoundsLanded),
             MessagesLost = msgs.Count(m => m.Status == MessageStatus.Lost),
             AverageOrderDelay = delivered.Count > 0 ? delivered.Average(m => m.DoneTime - m.SentTime) : 0f,
         };
@@ -141,6 +145,8 @@ public sealed class AfterActionReport
                           (s.Tanks > 0 ? $" Tanks: {s.TanksLost} of {s.Tanks} knocked out." : ""));
             if (s.OrdersSent > 0 || s.ReportsSent > 0)
                 sb.AppendLine($"      {(s.OrdersSent > 0 ? $"{s.OrdersSent} orders (average {s.AverageOrderDelay:0} s to arrive), " : "")}{s.ReportsSent} reports, {s.MessagesLost} messages lost.");
+            if (s.FireMissions > 0)
+                sb.AppendLine($"      Mortars: {s.FireMissions} fire missions, {s.MortarRounds} rounds of HE{(s.SmokeRounds > 0 ? $" and {s.SmokeRounds} of smoke" : "")}.");
         }
         sb.AppendLine();
         sb.AppendLine("SQUADS");
