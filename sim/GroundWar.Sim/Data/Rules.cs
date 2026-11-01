@@ -74,6 +74,8 @@ public sealed class CombatRules
 {
     public float LowWallProtection { get; set; } = 0.7f;
     public float CraterProtection { get; set; } = 0.6f;
+    /// <summary>A dug foxhole: all-round protection, better than a crater.</summary>
+    public float FoxholeProtection { get; set; } = 0.75f;
     public float CoverCheckDistance { get; set; } = 1.8f;
     public float StandingHitFactor { get; set; } = 1f;
     public float CrouchedHitFactor { get; set; } = 0.6f;
@@ -126,6 +128,10 @@ public sealed class AiRules
     public float CoverSearchRadius { get; set; } = 25f;
     public float SuppressedCoverSearchRadius { get; set; } = 8f;
     public float StickinessBonus { get; set; } = 10f;
+    /// <summary>Seconds of digging for one man to dig a foxhole (shortened from real life so it shows in a battle).</summary>
+    public float DigTime { get; set; } = 90f;
+    /// <summary>A man only digs if nobody has shot at him for this many seconds.</summary>
+    public float DigQuietTime { get; set; } = 10f;
     public float UnderFireWindow { get; set; } = 5f;
     public float MapEdgeRoutDistance { get; set; } = 4f;
 }

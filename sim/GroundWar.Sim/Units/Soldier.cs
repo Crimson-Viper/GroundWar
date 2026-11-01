@@ -13,7 +13,7 @@ public enum Stance { Standing, Crouched, Prone }
 /// <summary>Steady, then Shaken (slower, less accurate), Pinned (won't advance), Broken (runs, ignores orders).</summary>
 public enum MoraleState { Steady, Shaken, Pinned, Broken }
 
-public enum SoldierAction { Idle, TakeCover, Engage, Advance, HugCover, Flee }
+public enum SoldierAction { Idle, TakeCover, Engage, Advance, HugCover, Flee, Dig }
 
 public enum MoveMode { None, Walk, Run, Crawl }
 
@@ -69,6 +69,9 @@ public sealed class Soldier
     public MoveMode MoveMode { get; set; }
     public Vector2? Destination { get; set; }
     public CoverPoint? Cover { get; set; }
+    /// <summary>Seconds spent digging a foxhole at <see cref="DigSpot"/>.</summary>
+    public float DigProgress { get; set; }
+    public Vector2 DigSpot { get; set; }
 
     // Orders from the squad leader
     public Team? Team { get; set; }

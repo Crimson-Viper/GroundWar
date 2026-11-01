@@ -68,8 +68,16 @@ defender wins. If both sides attacked, the side with clearly more men still figh
 an enemy was last seen (fading as the sighting gets older; a big disc is a guess from a muzzle flash). Each squad only knows what its
 own men have seen, or what a squad close by tells it. Press V to see everything.
 
+**Foxholes.** A squad told to hold digs in when things are quiet: each man digs his own foxhole (about 90 seconds),
+shown as a dark hole with a ring of earth. A foxhole protects from every side, better than a crater.
+
 **Cover points (C).** Green = low wall, yellow = crater, cyan = corner of a ruin you can shoot from,
 blue = hiding spot behind a ruin, orange = someone has claimed it. Bars point at the side they protect from.
+
+## How it all works
+
+Every system (soldier AI, squads, morale, fog of war, maps, results, drawing, testing tools) is written up in plain
+words in [docs/](docs/README.md): what it does, how it works, why, where the code is, and how to tune and test it.
 
 ## Change how battles feel
 

@@ -156,10 +156,24 @@ public sealed class BattleMap
             {
                 if (Vector2.DistanceSquared(pos, c.Center) < c.Radius * c.Radius &&
                     Vector2.Distance(from, c.Center) > c.Radius + 2f)
-                    prot = MathF.Max(prot, _combat.CraterProtection);
+                    prot = MathF.Max(prot, c.Foxhole ? _combat.FoxholeProtection : _combat.CraterProtection);
             }
         }
         return prot;
+    }
+
+    /// <summary>A soldier has finished digging a foxhole here: a small hole that protects all round,
+    /// better than a shell crater. Returns its cover point.</summary>
+    public CoverPoint AddFoxhole(Vector2 pos)
+    {
+        var c = new Crater { Id = _craters.Count, Center = pos, Radius = 0.9f, Foxhole = true };
+        _craters.Add(c);
+        AddToBuckets(_craterBuckets, c, pos.X - c.Radius, pos.Y - c.Radius, pos.X + c.Radius, pos.Y + c.Radius);
+        var cp = new CoverPoint { Id = _cover.Count, Position = pos, Kind = CoverKind.Foxhole, Facing = Vector2.Zero,
+            Strength = _combat.FoxholeProtection, CanFire = true };
+        _cover.Add(cp);
+        BucketAt(_coverBuckets, pos)?.Add(cp);
+        return cp;
     }
 
     public bool InCrater(Vector2 pos)

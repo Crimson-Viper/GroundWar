@@ -19,9 +19,11 @@ public sealed class Crater
     public int Id { get; init; }
     public Vector2 Center { get; init; }
     public float Radius { get; init; }
+    /// <summary>Dug by a soldier during the battle, not part of the map.</summary>
+    public bool Foxhole { get; init; }
 }
 
-public enum CoverKind { LowWall, HighWall, Crater }
+public enum CoverKind { LowWall, HighWall, Crater, Foxhole }
 
 /// <summary>A spot a soldier can take cover at. Generated from the map's walls and craters.</summary>
 public sealed class CoverPoint

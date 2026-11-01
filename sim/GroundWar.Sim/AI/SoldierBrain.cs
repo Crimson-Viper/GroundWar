@@ -22,7 +22,7 @@ public sealed class SoldierBrain
     private Data.AiRules Ai => _b.Rules.Ai;
     private Data.MoraleRules Mr => _b.Rules.Morale;
 
-    private enum Option { Idle, TakeCover, CrawlToCover, Engage, AreaFire, FollowOrders, HugCover }
+    private enum Option { Idle, TakeCover, CrawlToCover, Engage, AreaFire, FollowOrders, HugCover, Dig }
 
     public void Think(Soldier s)
     {
@@ -119,6 +119,12 @@ public sealed class SoldierBrain
             Consider(Option.FollowOrders, score, SoldierAction.Advance);
         }
 
+        // 5. Told to hold, in position, nobody to shoot and nobody shooting at him: dig in.
+        if (s.Task == TaskMode.Hold && s.Group.Order == GroupOrder.Hold && !farFromTask && best is Option.Idle && s.Suppression < Mr.SuppressionShaken &&
+            s.MoraleState is MoraleState.Steady or MoraleState.Shaken &&
+            _b.Time - s.LastShotAtTime > Ai.DigQuietTime && !(s.InCover && s.Cover!.Kind == CoverKind.Foxhole))
+            Consider(Option.Dig, 40f, SoldierAction.Dig);
+
         long et = Core.Profile.Start();
         Execute(s, best, bestCover, taskDest, taskCover, curProt, realThreats);
         Core.Profile.Lap("think.execute", et);
@@ -201,6 +207,17 @@ public sealed class SoldierBrain
                     $"Firing at {t.Label} ({t.Role.ToLowerInvariant()}), {Vector2.Distance(s.Position, t.Position):0} m");
                 return;
             }
+            case Option.Dig:
+            {
+                _b.StopMoving(s);
+                s.AreaTarget = null;
+                if (Vector2.DistanceSquared(s.DigSpot, s.Position) > 1f) { s.DigSpot = s.Position; s.DigProgress = 0f; }
+                if (_threats.Count > 0) s.Facing = Geo.SafeNormalize(_threats[0] - s.Position, s.Facing);
+                s.Stance = Stance.Crouched;
+                SetAction(s, SoldierAction.Dig, "Digging a foxhole");
+                s.Thought = $"Digging a foxhole ({100f * s.DigProgress / Ai.DigTime:0}%)";
+                return;
+            }
             case Option.HugCover:
                 _b.StopMoving(s);
                 s.Stance = Stance.Prone;
@@ -249,7 +266,7 @@ public sealed class SoldierBrain
         bool threat = s.Group.Knowledge.Contacts.Any() || s.UnderFire(_b.Time, Ai.UnderFireWindow);
         if (!threat) s.Stance = s.InCover ? Stance.Crouched : Stance.Standing;
         else if (s.Suppression >= Mr.SuppressionPinned) s.Stance = Stance.Prone;
-        else s.Stance = s.InCover && s.Cover!.Kind != CoverKind.Crater ? Stance.Crouched : Stance.Prone;
+        else s.Stance = s.InCover && s.Cover!.Kind is not CoverKind.Crater ? Stance.Crouched : Stance.Prone;
     }
 
     private bool Claim(Soldier s, CoverPoint c)
@@ -265,6 +282,7 @@ public sealed class SoldierBrain
     {
         CoverKind.LowWall => "low wall",
         CoverKind.HighWall => c.CanFire ? "corner of a ruin" : "behind a ruin",
+        CoverKind.Foxhole => "foxhole",
         _ => "crater",
     };
 
