@@ -24,6 +24,7 @@ public partial class Hud : CanvasLayer
         "BATTLE   Space pause · . step · 1-6 speed · R restart · N new battle (new seed) · Tab next scenario\n" +
         "SOLDIER  left-click select · F follow · Esc deselect · order panel (bottom right): press an order, then click the map\n" +
         "COMPANY  Enter approve the brief-back · Backspace reject it · selecting any man in a company orders the company\n" +
+        "WATCH    J battle cam · Z map table · O after-action report · M mute · Shift+R replay with your orders · [ ] back / on 30 s\n" +
         "OVERLAYS G grid (cover / visibility / control) · C cover points · L aim and path lines · P squad plans · T thoughts · B morale bars · V fog of war on/off · H hide help";
 
     public override void _Ready()
@@ -38,8 +39,8 @@ public partial class Hud : CanvasLayer
         _log = new Label { Position = new Vector2(12, 0), Modulate = new Color(1, 1, 1, 0.85f) };
         _log.AddThemeFontSizeOverride("font_size", 13);
         _log.AnchorTop = _log.AnchorBottom = 1f;
-        _log.OffsetTop = -250;
-        _log.OffsetBottom = -92;
+        _log.OffsetTop = -290;
+        _log.OffsetBottom = -132;
         _log.VerticalAlignment = VerticalAlignment.Bottom;
         _log.AddThemeColorOverride("font_outline_color", Colors.Black);
         _log.AddThemeConstantOverride("outline_size", 4);
@@ -48,8 +49,10 @@ public partial class Hud : CanvasLayer
         _help = new Label { Text = HelpText };
         _help.AddThemeFontSizeOverride("font_size", 13);
         _help.AnchorTop = _help.AnchorBottom = 1f;
-        _help.OffsetTop = -84;
+        _help.OffsetTop = -128;
+        _help.OffsetBottom = -4;
         _help.OffsetLeft = 12;
+        _help.VerticalAlignment = VerticalAlignment.Bottom;
         _help.AddThemeColorOverride("font_outline_color", Colors.Black);
         _help.AddThemeConstantOverride("outline_size", 4);
         AddChild(_help);
@@ -94,7 +97,7 @@ public partial class Hud : CanvasLayer
         var sb = new StringBuilder();
         int minutes = (int)(battle.Time / 60), seconds = (int)battle.Time % 60;
         sb.AppendLine($"{battle.Scenario.Name}   (seed {battle.Seed})");
-        sb.AppendLine($"Time {minutes}:{seconds:00}   Speed {speed}x{(paused ? "   PAUSED" : "")}");
+        sb.AppendLine($"Time {minutes}:{seconds:00}   Speed {speed}x{(paused ? "   PAUSED" : "")}{(battle.Replaying ? "   REPLAY" : "")}");
         sb.AppendLine();
         foreach (var side in new[] { Side.Blue, Side.Red })
         {
@@ -184,7 +187,7 @@ public partial class Hud : CanvasLayer
         {
             var r = battle.Result;
             string who = r.Winner == null ? "No winner" : $"{r.Winner} wins";
-            _banner.Text = $"{r.Reason}. {who} ({(int)(r.Time / 60)}:{(int)r.Time % 60:00})\nR to replay  ·  N for a new battle";
+            _banner.Text = $"{r.Reason}. {who} ({(int)(r.Time / 60)}:{(int)r.Time % 60:00})\nO report  ·  Shift+R replay with your orders  ·  R restart  ·  N new battle";
             _banner.Modulate = r.Winner == Side.Blue ? new Color(0.6f, 0.75f, 1f) : r.Winner == Side.Red ? new Color(1f, 0.65f, 0.6f) : Colors.White;
             _banner.Visible = true;
         }
@@ -281,6 +284,44 @@ public partial class Hud : CanvasLayer
             sb.AppendLine($"  {(m.Status == MessageStatus.Lost ? "✗ lost" : "✓")} {Short(m)}  ({m.DoneTime - m.SentTime:0} s, {m.Method.ToString().ToLowerInvariant()})");
         }
         _messagesLabel.Text = sb.ToString().TrimEnd();
+    }
+
+    // ---------------------------------------------------------------- after-action report (milestone 6)
+
+    private PanelContainer? _reportPanel;
+    private RichTextLabel? _reportText;
+
+    public void ShowReport(string text)
+    {
+        if (_reportPanel == null)
+        {
+            _reportPanel = new PanelContainer();
+            var style = new StyleBoxFlat { BgColor = new Color(0.86f, 0.81f, 0.66f, 0.97f), BorderColor = new Color(0.3f, 0.22f, 0.12f) };
+            style.SetBorderWidthAll(3);
+            style.SetContentMarginAll(18);
+            style.SetCornerRadiusAll(4);
+            _reportPanel.AddThemeStyleboxOverride("panel", style);
+            _reportPanel.AnchorLeft = 0.5f; _reportPanel.AnchorRight = 0.5f; _reportPanel.AnchorTop = 0.5f; _reportPanel.AnchorBottom = 0.5f;
+            _reportPanel.OffsetLeft = -560; _reportPanel.OffsetRight = 560; _reportPanel.OffsetTop = -290; _reportPanel.OffsetBottom = 330; // clear of the end banner and its hint line
+            _reportText = new RichTextLabel { ScrollActive = true, SelectionEnabled = true, FitContent = false, CustomMinimumSize = new Vector2(1080, 620) };
+            // A typewriter face, so the report's columns line up.
+            var mono = new SystemFont { FontNames = new[] { "Courier New", "DejaVu Sans Mono", "Consolas", "Menlo", "monospace" } };
+            _reportText.AddThemeFontOverride("normal_font", mono);
+            _reportText.AddThemeFontSizeOverride("normal_font_size", 13);
+            _reportText.AddThemeColorOverride("default_color", new Color(0.12f, 0.09f, 0.06f));
+            _reportPanel.AddChild(_reportText);
+            AddChild(_reportPanel);
+        }
+        _reportText!.Text = text + "\n\n(O closes this report. Shift+R watches the battle again with your orders.)";
+        _reportPanel.Visible = true;
+    }
+
+    public void HideReport() { if (_reportPanel != null) _reportPanel.Visible = false; }
+
+    public void ToggleReport(string text)
+    {
+        if (_reportPanel is { Visible: true }) HideReport();
+        else ShowReport(text);
     }
 
     // ---------------------------------------------------------------- company commander (milestone 5)

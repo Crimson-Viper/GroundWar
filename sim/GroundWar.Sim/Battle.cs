@@ -93,7 +93,7 @@ public sealed partial class Battle
 
     internal void Note(Soldier? s, string text, LogKind kind = LogKind.Event) =>
         Log.Add(Time, s?.Id ?? -1, s == null ? text : $"{s.Label} {text}", s?.Side, kind);
-    internal void Note(Group g, string text) => Log.Add(Time, -1, text, g.Side);
+    internal void Note(Group g, string text, LogKind kind = LogKind.Event) => Log.Add(Time, -1, text, g.Side, kind);
 
     private void Spawn()
     {
@@ -213,6 +213,7 @@ public sealed partial class Battle
     /// <summary>Advance the battle by one tick.</summary>
     public void Step()
     {
+        if (_replay.Count > 0) PlayReplay();
         Tick++;
         Time = Tick * Dt;
         _shots.Clear();
@@ -327,7 +328,7 @@ public sealed partial class Battle
             if (active > 0 && broken >= active * Rules.Morale.GroupBrokenFraction && broken > 0)
             {
                 g.HasBroken = true;
-                Note(g, $"{g.Name} ({g.Side}) is breaking!");
+                Note(g, $"{g.Name} ({g.Side}) is breaking!", LogKind.Key);
                 foreach (var m in g.Members)
                     if (m.IsActive && m.MoraleState != MoraleState.Broken) m.Morale -= Rules.Morale.GroupBrokenShock;
             }
@@ -420,6 +421,6 @@ public sealed partial class Battle
         else if (!_groups.Any(g => g.IsAttacking && g.CountEffective > 0) && Time - LastShotTime() > Rules.Squad.QuietEndTime && !CommandBusy())
             Result = QuietResult();
         else if (Time >= Scenario.TimeLimit) Result = TimeLimitResult();
-        if (Result != null) Log.Add(Time, -1, $"Battle over: {Result.Reason}");
+        if (Result != null) Log.Add(Time, -1, $"Battle over: {Result.Reason}", null, LogKind.Key);
     }
 }

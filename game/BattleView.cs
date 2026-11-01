@@ -24,6 +24,8 @@ public partial class BattleView : Node3D
     private MeshInstance3D _selectRing = null!;
 
     private readonly List<Tracer> _tracers = new();
+    /// <summary>A shell or rocket has landed here (for sound and lingering smoke).</summary>
+    public System.Action<Vector3>? ShellBurst { get; set; }
     private readonly List<Puff> _puffs = new();
     // Tracers and dust puffs are drawn in batches too: one MultiMesh each, refilled every frame.
     private MultiMesh _rifleTracers = null!, _mgTracers = null!, _puffMesh = null!;
@@ -212,6 +214,7 @@ public partial class BattleView : Node3D
             t.Age += dt;
             if (t.Age >= t.Duration && t.Shell)
             {
+                ShellBurst?.Invoke(t.To);
                 // Shell burst: a flash, then a column of earth and smoke.
                 SpawnPuff(t.To + new Vector3(0, 0.5f, 0), new Color(1f, 0.75f, 0.35f, 1f), 0.25f, 3.5f);
                 SpawnPuff(t.To + new Vector3(0, 1.0f, 0), new Color(0.32f, 0.27f, 0.22f, 0.9f), 1.8f, 6f);

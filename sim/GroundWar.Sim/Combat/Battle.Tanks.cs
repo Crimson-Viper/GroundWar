@@ -144,6 +144,7 @@ public sealed partial class Battle
         impact = Map.Clamp(impact, 0.5f);
         bool directTankHit = onTarget && target?.IsTank == true;
         _shots.Add(new ShotEvent(t.Id, t.Position, impact, directTankHit, false, true));
+        if (FirstShotTime < 0f) FirstShot(t);
 
         if (directTankHit) ArmourHit(target!, t, gun);
         Blast(t, impact, gun);

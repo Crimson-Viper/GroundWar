@@ -41,7 +41,7 @@ public sealed class CompanyCommander
         {
             c.CommanderDown = true;
             c.Status = "Commander down: squads carry on with their last orders";
-            _b.Note(c.HqGroup, $"{c.CommanderName} of {c.Name} is down: the squads carry on with their last orders");
+            _b.Note(c.HqGroup, $"{c.CommanderName} of {c.Name} is down: the squads carry on with their last orders", LogKind.Key);
             return;
         }
         // What he and his radio operator see themselves goes straight into his picture.
@@ -81,7 +81,7 @@ public sealed class CompanyCommander
         CompanyState.BriefBack => c.BriefBackHeardAt >= 0f ? "Brief-back with HQ: waiting for the go-ahead" : "Brief-back on its way to HQ",
         CompanyState.Executing => c.Phase != null ? $"Phase {c.PhaseIndex + 1}/{c.Plan!.Phases.Count}: {c.Phase.Name}" : "Carrying out the plan",
         CompanyState.Refused => $"Refused: {c.RefusalReason}",
-        _ => c.Plan != null ? $"Holding ({c.Plan.Kind})" : "Holding",
+        _ => c.Plan != null ? $"Holding, plan finished ({PlanName(c.Plan.Kind)})" : "Holding",
     };
 
     internal void Merge(Company c, int enemyId, Vector2 pos, float seenAt, float confidence)
@@ -139,7 +139,7 @@ public sealed class CompanyCommander
         c.SupportSquad = null;
         c.BriefBackHeardAt = -1f;
         c.BriefBackAnswered = false;
-        if (insisted) _b.Note(c.HqGroup, $"{c.CommanderName}: HQ insists. \"Understood. We'll do it.\"");
+        if (insisted) _b.Note(c.HqGroup, $"{c.CommanderName}: HQ insists. \"Understood. We'll do it.\"", LogKind.Key);
 
         if (o.Kind is OrderKind.Halt or OrderKind.FallBack)
         {
@@ -167,7 +167,7 @@ public sealed class CompanyCommander
         c.State = CompanyState.AwaitingOrders;
         c.Plan = null;
         c.CurrentOrder = null;
-        _b.Note(c.HqGroup, $"{c.CommanderName}: plan rejected, holding and waiting for orders");
+        _b.Note(c.HqGroup, $"{c.CommanderName}: plan rejected, holding and waiting for orders", LogKind.Key);
         c.Status = StatusText(c);
     }
 
@@ -197,7 +197,7 @@ public sealed class CompanyCommander
         RememberMgs(c, o);
         c.SupportSquad = best.Support;
         string others = c.Options.Count > 1 ? $" (also weighed: {string.Join(", ", c.Options.Skip(1).Select(p => PlanName(p.Kind)))})" : "";
-        _b.Note(c.HqGroup, $"{c.CommanderName} plans: {best.Summary} Expects to lose {best.ExpectedLoss * 100:0}%, {best.Success * 100:0}% chance{others}");
+        _b.Note(c.HqGroup, $"{c.CommanderName} plans: {best.Summary} Expects to lose {best.ExpectedLoss * 100:0}%, {best.Success * 100:0}% chance{others}", LogKind.Key);
 
         if (replan)
         {
@@ -252,7 +252,7 @@ public sealed class CompanyCommander
             foreach (var g in c.Squads) if (g.CountEffective > 0) _b.SendCompanyOrder(c, g, squadOrder);
         string what = midAttack ? (withdraw ? "the attack has failed, falling back" : "the attack has stalled, holding") : $"cannot carry out \"{o}\"";
         _b.SendUp(c, $"{what}: {c.RefusalReason}. Request support. Send the order again if it must be done.", MessageKind.Refusal, best, withContacts: true);
-        _b.Note(c.HqGroup, $"{c.CommanderName} refuses: {c.RefusalReason}");
+        _b.Note(c.HqGroup, $"{c.CommanderName} refuses: {c.RefusalReason}", LogKind.Key);
         c.Status = StatusText(c);
     }
 
@@ -275,7 +275,7 @@ public sealed class CompanyCommander
         c.PhaseStarted = Time;
         foreach (var t in ph.Tasks)
             if (t.Squad.CountEffective > 0) _b.SendCompanyOrder(c, t.Squad, t.Order);
-        _b.Note(c.HqGroup, $"{c.Name}: phase {c.PhaseIndex + 1}/{c.Plan!.Phases.Count}, {ph.Name.ToLowerInvariant()}");
+        _b.Note(c.HqGroup, $"{c.Name}: phase {c.PhaseIndex + 1}/{c.Plan!.Phases.Count}, {ph.Name.ToLowerInvariant()}", LogKind.Key);
         if (ph.Kind is PhaseKind.Consolidate or PhaseKind.Hold)
         {
             c.State = CompanyState.Holding;
@@ -361,7 +361,7 @@ public sealed class CompanyCommander
             if (mg == null) continue;
             c.MgsEngaged.Add(mg.EnemyId);
             _b.SendCompanyOrder(c, support, new Order { Kind = OrderKind.Suppress, Objective = mg.LastPosition, Radius = 12f, SupportPosition = support.Centroid });
-            _b.Note(c.HqGroup, $"{c.CommanderName}: {g.Name} is pinned by a machine gun, {support.Name} to switch fire onto it");
+            _b.Note(c.HqGroup, $"{c.CommanderName}: {g.Name} is pinned by a machine gun, {support.Name} to switch fire onto it", LogKind.Key);
             return;
         }
     }
@@ -374,7 +374,7 @@ public sealed class CompanyCommander
             c.State = CompanyState.Holding;
             foreach (var g in c.Squads) if (g.CountEffective > 0) _b.SendCompanyOrder(c, g, new Order { Kind = OrderKind.Halt });
             _b.SendUp(c, $"{why}: holding where we are, waiting for orders", MessageKind.Failed, null, withContacts: true);
-            _b.Note(c.HqGroup, $"{c.CommanderName}: {why}, holding and asking for orders");
+            _b.Note(c.HqGroup, $"{c.CommanderName}: {why}, holding and asking for orders", LogKind.Key);
             c.Status = StatusText(c);
             return;
         }
@@ -392,7 +392,7 @@ public sealed class CompanyCommander
             _b.Note(c.HqGroup, $"{c.CommanderName}: {why}, but the plan still holds (now expects to lose {options[0].ExpectedLoss * 100:0}%)");
             return;
         }
-        _b.Note(c.HqGroup, $"{c.CommanderName}: {why}, making a new plan");
+        _b.Note(c.HqGroup, $"{c.CommanderName}: {why}, making a new plan", LogKind.Key);
         MakePlan(c, o, replan: true);
     }
 

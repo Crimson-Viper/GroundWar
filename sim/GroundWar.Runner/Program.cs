@@ -6,10 +6,12 @@ using GroundWar.Sim.Units;
 // Usage:
 //   dotnet run --project sim/GroundWar.Runner -- [--scenario scenarios/firefight.json] [--battles 20] [--seed 1] [--log]
 //   --log prints every decision for the first battle.
+//   --report prints the after-action report of the first battle.
 //   --map maps/x.json plays the scenario on another map (e.g. to check a result isn't down to the ground).
 
 string scenario = "scenarios/firefight.json";
 int battles = 20;
+bool report = false;
 ulong seed = 1;
 bool log = false;
 string? mapOverride = null;
@@ -22,6 +24,7 @@ for (int i = 0; i < args.Length; i++)
         case "--seed": seed = ulong.Parse(args[++i]); break;
         case "--log": log = true; break;
         case "--map": mapOverride = args[++i]; break;
+        case "--report": report = true; break;
         case "--profile": GroundWar.Sim.Core.Profile.Enabled = true; break;
     }
 }
@@ -65,6 +68,12 @@ for (int b = 0; b < battles; b++)
     float total = battle.Soldiers.Count * result.Time;
     Console.WriteLine($"{seed + (ulong)b,5}  {(result.Winner?.ToString() ?? "draw"),-6} {result.Time,5:0}s  {Lost(Side.Blue),9}  {Lost(Side.Red),8}  {Broke(Side.Blue),10}  {Broke(Side.Red),9}  {shots,5}  {hits,5}  {100f * inCover / MathF.Max(total, 1f),8:0}");
 
+    if (report && b == 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine(AfterActionReport.Build(battle).ToText());
+        Console.WriteLine();
+    }
     if (log && b == 0)
     {
         Console.WriteLine();

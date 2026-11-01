@@ -14,7 +14,11 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
 | 1. Test range: map, battlefield grid, cover points, free camera, overlays | done |
 | 2. Soldiers that fight: take cover, shoot, get suppressed, break and run | done |
 | 3. Squads with tactics and fog of war | done |
-| 4. Messages and delay | next |
+| 4. Messages and delay | done |
+| 5. Company commander: plans, brief-back, refusing death traps | done |
+| 6. Spectacle: sounds, smoke, map table, battle cam, replays, after-action report | done |
+| 7. Battalion: several companies, mortars and artillery, enemy commander, destroy the HQ to win | next |
+| 8. Tank platoons with crew AI | |
 
 ![Two squads taking the wall](docs/screenshots/m3-squad-attack.png)
 
@@ -50,6 +54,7 @@ To try a pull request before it is merged: in GitHub Desktop pick its branch fro
 | **Soldier** | Left-click a soldier to see what he's thinking · F follow him · Esc deselect |
 | **Orders** | With one of your soldiers selected (in a scenario with an HQ): press Advance, Attack, Suppress or Hold, then click the map; Halt and Fall back go at once. Esc cancels. A man in a company: the order goes to his company commander |
 | **Company** | Enter approve the brief-back · Backspace reject it |
+| **Watch** | J battle cam (follows the hottest fighting) · Z map table · O after-action report · M mute · Shift+R replay the battle with your orders · [ back 30 s · ] on 30 s |
 | **Overlays** | G battlefield grid (cover → visibility → control → off) · C cover points · L aim and path lines · P squad plans · T every soldier's thoughts · B morale bars · V fog of war on/off · H hide help |
 
 **Reading a soldier.** Blue and red uniforms are the two sides; he stands, kneels or lies down to match his stance; a yellow
@@ -117,7 +122,8 @@ Standing, Crouched, Prone and Dead and the tank's turret "Turret".
 | `game/` | The Godot side: drawing, camera, input, overlays. |
 | `data/` | Tuning, maps and scenarios. |
 | `models/` | 3D models for soldiers and tanks (`.glb`). Replace them with your own: see [docs/models.md](docs/models.md). |
-| `tools/` | Scripts that generate content: the town map, the placeholder models. |
+| `sounds/` | Placeholder battle sounds (`.wav`), made by `tools/make_sounds.py`. Replace them with real recordings of the same name. |
+| `tools/` | Scripts that generate content: the maps, the placeholder models and sounds. |
 
 For developers (no Godot needed):
 

@@ -17,6 +17,7 @@ dotnet test sim/GroundWar.Sim.Tests
 | `FairnessTests.cs` | Every meeting map is the same from both ends |
 | `TankTests.cs` | Armour, anti-tank weapons, the tank driving and fighting |
 | `CommsTests.cs` | Order delay by phone and runner, cut lines, flares, reports reaching HQ |
+| `ReplayTests.cs` | Same seed and same player commands give the same battle; the after-action report adds up |
 | `CompanyTests.cs` | The company commander: brief-back, choosing the covered flank, approve and reject, refusing and being overruled, traits, company messages |
 
 GitHub runs these on every pull request (`.github/workflows/ci.yml`), plus 10 headless battles and a build of the
@@ -40,10 +41,11 @@ dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/str
 | `--battles <n>` | How many battles, default 20 (seeds 1..n, or counting up from `--seed`) |
 | `--seed <n>` | First seed |
 | `--log` | Print every log line (decisions, thoughts, casualties) of the first battle |
+| `--report` | Print the after-action report of the first battle |
 | `--map <path>` | Fight the scenario on a different map |
 | `--profile` | Print where the time goes each tick |
 
-**Current results** (200 battles each, 1 Nov 2026, after foxholes):
+**Current results** (200 battles each, 1 Nov 2026, after the company commander):
 
 | Scenario | Blue | Red | Draws |
 |---|---|---|---|
@@ -53,6 +55,7 @@ dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/str
 | Town attack | 27 | 153 | 20 |
 | Tank support | 171 | 29 | 0 |
 | Orders under fire | 117 | 83 | 0 |
+| Farmhouse (company attack) | 94 | 89 | 17 |
 
 ## Screenshot mode
 The game can render a frame with no window and save it, which is how screenshots for pull requests are made:
@@ -63,7 +66,7 @@ godot --path . --rendering-driver vulkan -- --screenshot=out.png --scenario=0 --
 ```
 
 `--camera=x,y,distance,yaw,pitch`; `--overlays=` letters are the overlay keys (g grid, c cover, l lines, p plans, t thoughts,
-b bars, f = fog off); `--select=` a soldier id. It prints draw calls, node count and soldier-update time.
+b bars, f = fog off, j = battle cam, r = show the after-action report); `--select=` a soldier id. It prints draw calls, node count and soldier-update time.
 On a headless Linux machine wrap it in `xvfb-run`.
 
 ## Scenarios
@@ -78,6 +81,7 @@ facing and weapons. Tab in the game cycles through them in the order listed in `
 | `town_attack` | Street fighting in dense cover; the defender usually holds |
 | `tank_support` | The firefight with a Blue tank; Red has an anti-tank rifle and bazookas |
 | `orders_under_fire` | The squad attack with an HQ: orders by phone and runner, late reports |
+| `farmhouse` | A Company (Capt. Hale, four squads) attacks a farmhouse held by a Red company; brief-back and phased plans |
 | `stress_1000` | 1,000 a side, to check speed |
 
 ## Maps

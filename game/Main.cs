@@ -22,6 +22,10 @@ public partial class Main : Node3D
     private BattleView? _battleView;
     private CommsView? _commsView;
     private CompanyView? _companyView;
+    private SoundView? _soundView;
+    private SmokeView? _smokeView;
+    private TableView? _tableView;
+    private bool _muted;
     private CameraRig _camera = null!;
     private Hud _hud = null!;
     private float _accumulator;
@@ -84,14 +88,23 @@ public partial class Main : Node3D
         });
     }
 
-    private void StartBattle(bool frameCamera)
+    /// <summary>Start (or restart) the battle. With <paramref name="replay"/>, the player's recorded commands are played
+    /// back; with <paramref name="runUntil"/>, the battle is run on without drawing to that time first (a jump in a replay).</summary>
+    private void StartBattle(bool frameCamera, IReadOnlyList<GroundWar.Sim.PlayerCommand>? replay = null, float runUntil = 0f)
     {
+        _soundView?.QueueFree();
+        _smokeView?.QueueFree();
+        _tableView?.QueueFree();
+        _reportShown = false;
+        _actionCam = false;
         _mapView?.QueueFree();
         _battleView?.QueueFree();
         _commsView?.QueueFree();
         _companyView?.QueueFree();
         _pendingOrder = null;
         _battle = Battle.Load(new GodotDataSource(), Scenarios[_scenario], _seed);
+        if (replay != null) _battle.LoadReplay(replay);
+        if (runUntil > 0f) _battle.RunUntil(runUntil);
         _mapView = new MapView(_battle) { Name = "Map" };
         AddChild(_mapView);
         _battleView = new BattleView(_battle) { Name = "Battle", Fog = _fog };
@@ -100,9 +113,17 @@ public partial class Main : Node3D
         AddChild(_commsView);
         _companyView = new CompanyView(_battle) { Name = "Companies", Fog = _fog };
         AddChild(_companyView);
+        _soundView = new SoundView(_battle, _camera.Camera) { Name = "Sound", Muted = _muted };
+        AddChild(_soundView);
+        _smokeView = new SmokeView(_battle) { Name = "Smoke" };
+        AddChild(_smokeView);
+        _tableView = new TableView(_battle) { Name = "Table", Fog = _fog };
+        AddChild(_tableView);
+        _battleView.ShellBurst = at => { _soundView?.Burst(at); _smokeView?.Burst(at); };
         _hud.OrderRequested = OnOrderButton;
-        _hud.ApproveRequested = c => _battle.ApproveBriefBack(c);
-        _hud.RejectRequested = c => _battle.RejectBriefBack(c);
+        _hud.ApproveRequested = c => _battle.PlayerApprove(c);
+        _hud.RejectRequested = c => _battle.PlayerReject(c);
+        _hud.HideReport();
         _accumulator = 0;
         if (frameCamera) _camera.Frame(_battle.Map.Width, _battle.Map.Height);
         _camera.FollowTarget = null;
@@ -112,6 +133,12 @@ public partial class Main : Node3D
     public override void _Process(double delta)
     {
         float speed = Speeds[_speedIndex];
+        // Battle cam slow motion: a moment of drama near the man we're watching plays at a quarter speed.
+        if (_slowmoUntil > 0f)
+        {
+            if (Time.GetTicksMsec() / 1000f < _slowmoUntil) speed = SlowMoSpeed;
+            else _slowmoUntil = 0f;
+        }
         if (!_paused || _stepOnce)
         {
             _accumulator += _stepOnce ? Battle.Dt : (float)delta * speed;
@@ -122,6 +149,8 @@ public partial class Main : Node3D
                 _battleView!.BeforeStep();
                 _battle.Step();
                 _battleView.AfterStep(speed);
+                _soundView!.AfterStep(speed);
+                _actionCamera.AfterStep(_battle);
                 _accumulator -= Battle.Dt;
                 steps++;
             }
@@ -132,7 +161,12 @@ public partial class Main : Node3D
         _drawMs += System.Diagnostics.Stopwatch.GetElapsedTime(drawStart).TotalMilliseconds;
         _drawFrames++;
         _commsView!.UpdateVisuals(Time.GetTicksMsec() / 1000f);
-        _hud.UpdateHud(_battle, speed, _paused, _battleView.Selected, OverlayNames(), _battleView.Fog, _battleView.PlayerSide);
+        _smokeView!.UpdateVisuals(_paused ? 0f : (float)delta * speed);
+        _tableView!.UpdateVisuals(_camera.Distance);
+        _soundView!.UpdateAudio((float)delta, _battleView.PlayerSide);
+        UpdateActionCam((float)delta);
+        if (_battle.Result != null && !_reportShown) { _reportShown = true; _hud.ShowReport(AfterActionReport.Build(_battle).ToText()); }
+        _hud.UpdateHud(_battle, _slowmoUntil > 0f ? SlowMoSpeed : speed, _paused, _battleView.Selected, OverlayNames(), _battleView.Fog, _battleView.PlayerSide);
         _hud.UpdateOrders(_battle, _battleView.Selected, _battleView.PlayerSide, _pendingOrder);
         _companyView!.UpdateVisuals();
         _hud.UpdateCompany(_battle, _battleView.Selected, _battleView.PlayerSide);
@@ -159,19 +193,43 @@ public partial class Main : Node3D
                 case Key.Space: _paused = !_paused; break;
                 case Key.Period: _paused = true; _stepOnce = true; break;
                 case >= Key.Key1 and <= Key.Key6: _speedIndex = (int)(key.Keycode - Key.Key1); break;
+                case Key.R when key.ShiftPressed:
+                    // Replay: the same battle with everything you did, done again at the same moments.
+                    var commands = new List<GroundWar.Sim.PlayerCommand>(_battle.Commands);
+                    StartBattle(frameCamera: false, replay: commands);
+                    break;
                 case Key.R: StartBattle(frameCamera: false); break;
+                case Key.Bracketleft:
+                    {
+                        // Back 30 s: replay from the start (with your commands) and run on to that moment.
+                        var cmds = new List<GroundWar.Sim.PlayerCommand>(_battle.Commands);
+                        StartBattle(frameCamera: false, replay: cmds, runUntil: Mathf.Max(0f, _battle.Time - 30f));
+                        break;
+                    }
+                case Key.Bracketright: _battle.RunUntil(_battle.Time + 30f); break;
+                case Key.M: _muted = !_muted; _soundView!.Muted = _muted; break;
+                case Key.O: _hud.ToggleReport(AfterActionReport.Build(_battle).ToText()); break;
+                case Key.Z:
+                    if (_camera.Distance > TableView.FadeEnd) _camera.FlyTo(_camera.Position, 140f, 0f, -50f, 1.2f);
+                    else _camera.ToTable();
+                    break;
+                case Key.J:
+                    _actionCam = !_actionCam;
+                    _actionClock = 999f;
+                    if (!_actionCam) { _slowmoUntil = 0f; _camera.FollowTarget = null; }
+                    break;
                 case Key.N: _seed++; StartBattle(frameCamera: false); break;
                 case Key.Tab: _scenario = (_scenario + 1) % Scenarios.Length; StartBattle(frameCamera: true); break;
                 case Key.G: _mapView!.CycleGrid(); break;
                 case Key.C: _mapView!.ToggleCover(); break;
                 case Key.L: _battleView!.ShowLines = !_battleView.ShowLines; break;
                 case Key.P: _battleView!.ShowPlans = !_battleView.ShowPlans; break;
-                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; _commsView!.Fog = _fog; _companyView!.Fog = _fog; break;
+                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; _commsView!.Fog = _fog; _companyView!.Fog = _fog; _tableView!.Fog = _fog; break;
                 case Key.Enter or Key.KpEnter:
-                    if (_hud.ShownCompany is { } ac) _battle.ApproveBriefBack(ac);
+                    if (_hud.ShownCompany is { } ac) _battle.PlayerApprove(ac);
                     break;
                 case Key.Backspace:
-                    if (_hud.ShownCompany is { } rc) _battle.RejectBriefBack(rc);
+                    if (_hud.ShownCompany is { } rc) _battle.PlayerReject(rc);
                     break;
                 case Key.T: _battleView!.ShowAllLabels = !_battleView.ShowAllLabels; break;
                 case Key.B: _battleView!.ShowBars = !_battleView.ShowBars; break;
@@ -195,7 +253,7 @@ public partial class Main : Node3D
                 // Second click of an order: where it's to. A squad in a company is ordered through its commander.
                 var g = _battleView.Selected.Group.Company?.HqGroup ?? _battleView.Selected.Group;
                 var at = new System.Numerics.Vector2(ground.Value.X, ground.Value.Z);
-                _battle.SendOrder(g, new GroundWar.Sim.Comms.Order { Kind = _pendingOrder.Value, Objective = at, Radius = 18f });
+                _battle.PlayerOrder(g, new GroundWar.Sim.Comms.Order { Kind = _pendingOrder.Value, Objective = at, Radius = 18f });
                 _pendingOrder = null;
             }
             else if (ground != null)
@@ -217,10 +275,38 @@ public partial class Main : Node3D
         if (s == null || s.Side != _battleView.PlayerSide) return;
         if (kind is GroundWar.Sim.Comms.OrderKind.Halt or GroundWar.Sim.Comms.OrderKind.FallBack)
         {
-            _battle.SendOrder(s.Group.Company?.HqGroup ?? s.Group, new GroundWar.Sim.Comms.Order { Kind = kind });
+            _battle.PlayerOrder(s.Group.Company?.HqGroup ?? s.Group, new GroundWar.Sim.Comms.Order { Kind = kind });
             _pendingOrder = null;
         }
         else _pendingOrder = kind;
+    }
+
+    // ---------------------------------------------------------------- battle cam (milestone 6)
+
+    private const float SlowMoSpeed = 0.25f;
+    private readonly ActionCamera _actionCamera = new();
+    private bool _actionCam, _reportShown, _autoReport;
+    private float _actionClock, _slowmoUntil;
+
+    /// <summary>J: the camera picks the fiercest fighting your men are in, flies down behind one of them and follows
+    /// him for a few seconds, then moves on. A man hit close by slows time for a moment.</summary>
+    private void UpdateActionCam(float delta)
+    {
+        if (!_actionCam) return;
+        _actionClock += delta;
+        var focus = _battleView!.Selected;
+        if (focus != null && _actionCamera.DramaNear(focus, _battle) && _slowmoUntil == 0f && !_paused)
+            _slowmoUntil = Time.GetTicksMsec() / 1000f + 2.5f;
+        bool stale = focus == null || !focus.IsActive || _actionClock > 9f;
+        if (!stale) return;
+        var next = _actionCamera.PickHotspot(_battle, _battleView.PlayerSide, _fog);
+        _actionClock = 0f;
+        if (next == null) return;
+        _battleView.Selected = next;
+        var behind = -next.Facing;
+        float yaw = Mathf.RadToDeg(Mathf.Atan2(behind.X, behind.Y)) + (float)GD.RandRange(-35, 35);
+        _camera.FollowTarget = _battleView.SelectedAnchor;
+        _camera.FlyTo(Draw.To3(next.Position), (float)GD.RandRange(16, 30), yaw, (float)GD.RandRange(-22, -12), 1.6f);
     }
 
     // ---------------------------------------------------------------- automated screenshots
@@ -249,7 +335,9 @@ public partial class Main : Node3D
                 if (_autoOverlays.Contains('c')) _mapView!.ToggleCover();
                 if (_autoOverlays.Contains('l')) _battleView!.ShowLines = true;
                 if (_autoOverlays.Contains('t')) _battleView!.ShowAllLabels = true;
-                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; _commsView!.Fog = false; _companyView!.Fog = false; }
+                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; _commsView!.Fog = false; _companyView!.Fog = false; _tableView!.Fog = false; }
+                if (_autoOverlays.Contains('j')) { _actionCam = true; _actionClock = 999f; }
+                if (_autoOverlays.Contains('r')) _autoReport = true;
             }
             // --camera=x,y,distance,yaw,pitch
             if (_autoCamera != null)
@@ -259,7 +347,8 @@ public partial class Main : Node3D
             }
         }
         if (_autoSelect >= 0) _battleView!.Selected = _battle.GetSoldier(_autoSelect);
-        if (_battle.Time < _autoSeconds) return;
+        if (_battle.Time < _autoSeconds && _battle.Result == null) return; // a battle that ends early is shot at its end
+        if (_autoReport && !_reportShown) { _reportShown = true; _hud.ShowReport(AfterActionReport.Build(_battle).ToText()); }
         _speedIndex = 0;
         _autoClock += delta;
         if (_autoClock < 0.6f) return; // let tracers and interpolation settle
