@@ -112,6 +112,15 @@
     "threat": 0,
     "blastRadius": 9
   },
+  "shell_105": {
+    "name": "Artillery shell (high explosive)",
+    "range": 10000,             // fired by guns off the map when battalion calls for them (rules.json "support")
+    "accuracy": [[0, 1]],
+    "suppression": 70,
+    "suppressionRadius": 45,
+    "threat": 0,
+    "blastRadius": 14
+  },
   "tank_mg": {
     "name": "Tank machine gun",
     "range": 600,

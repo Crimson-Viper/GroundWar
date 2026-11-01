@@ -8,7 +8,7 @@ using GroundWar.Sim.Units;
 namespace GroundWar.Sim;
 
 /// <summary>Where a mortar round came down this tick (Godot draws the burst or the smoke).</summary>
-public readonly record struct ImpactEvent(Vector2 Position, bool Smoke, Side Side);
+public readonly record struct ImpactEvent(Vector2 Position, bool Smoke, Side Side, bool Heavy = false);
 
 /// <summary>
 /// Battalion support (milestone 7): mortar sections, their fire missions, smoke screens, and MG sections the player
@@ -21,7 +21,9 @@ public sealed partial class Battle
     private readonly List<FireMission> _missions = new();
     private readonly List<(float Time, Vector2 At, FireMission Mission, Soldier Crew)> _inFlight = new();
     private readonly List<ImpactEvent> _impacts = new();
-    private WeaponDef? _mortarHe;
+    private WeaponDef? _mortarHe, _shellHe;
+    private readonly List<Battery> _batteries = new();
+    private readonly List<(float Time, FireMission Mission)> _artilleryCalls = new();
 
     /// <summary>Every fire mission asked for so far.</summary>
     public IReadOnlyList<FireMission> FireMissions => _missions;
@@ -30,7 +32,12 @@ public sealed partial class Battle
     /// <summary>Mortar rounds in the air: where and when each will land.</summary>
     public int RoundsInFlight => _inFlight.Count;
 
+    /// <summary>Each side's guns off the map.</summary>
+    public IReadOnlyList<Battery> Batteries => _batteries;
+
     private SupportRules Sr => Rules.Support;
+    private WeaponDef ShellHe => _shellHe ??= Data.Weapons.TryGetValue("shell_105", out var w) ? w
+        : new WeaponDef { Id = "shell_105", Name = "Artillery shell", BlastRadius = 14f, Suppression = 70f, SuppressionRadius = 45f };
     private WeaponDef MortarHe => _mortarHe ??= Data.Weapons.TryGetValue("mortar_he", out var w) ? w
         : new WeaponDef { Id = "mortar_he", Name = "Mortar bomb", BlastRadius = 9f, Suppression = 45f, SuppressionRadius = 30f };
 
@@ -140,10 +147,78 @@ public sealed partial class Battle
         g.Mortars.Queue.Enqueue(fm);
     }
 
+    // ---------------------------------------------------------------- artillery
+
+    /// <summary>This side's guns with rounds of this kind left (null = none).</summary>
+    public Battery? ArtilleryFor(Side side, FireKind kind) => _batteries.FirstOrDefault(b => b.Side == side && b.Ammo(kind) > 0);
+
+    /// <summary>Battalion HQ calls the artillery: the call goes to the guns by radio (HQ needs a radio, and must
+    /// still be standing). Returns null if there are no guns with that kind of round.</summary>
+    public FireMission? CallArtillery(Side side, Vector2 target, FireKind kind, int rounds, string reason)
+    {
+        var hq = _hq[(int)side];
+        var bt = ArtilleryFor(side, kind);
+        if (bt == null || hq == null || !hq.HasRadio || hq.Destroyed) return null;
+        var fm = NewMission(side, target, kind, rounds > 0 ? rounds : Sr.ArtilleryRounds, null, reason);
+        fm.Battery = bt;
+        fm.Status = FireMissionStatus.Ordered;
+        _artilleryCalls.Add((Time + Sr.ArtilleryCallDelay, fm));
+        Log.Add(Time, -1, $"HQ calls {bt.Name}: {fm.Describe()} on {reason}", side);
+        return fm;
+    }
+
+    private void UpdateArtillery()
+    {
+        for (int i = _artilleryCalls.Count - 1; i >= 0; i--)
+        {
+            if (_artilleryCalls[i].Time > Time) continue;
+            var fm = _artilleryCalls[i].Mission;
+            _artilleryCalls.RemoveAt(i);
+            if (fm.Status != FireMissionStatus.Cancelled) fm.Battery!.Queue.Enqueue(fm);
+        }
+        foreach (var bt in _batteries)
+        {
+            if (bt.Current == null)
+            {
+                while (bt.Queue.Count > 0 && bt.Queue.Peek().Status == FireMissionStatus.Cancelled) bt.Queue.Dequeue();
+                if (bt.Queue.Count == 0) continue;
+                var next = bt.Queue.Dequeue();
+                if (bt.Ammo(next.Kind) <= 0) { next.Status = FireMissionStatus.Refused; next.DoneAt = Time; continue; }
+                bt.Current = next;
+                next.Status = FireMissionStatus.Firing;
+                bt.NextRound = Time + Sr.ArtillerySetUpTime;
+            }
+            var fm = bt.Current;
+            if (Time < bt.NextRound) continue;
+            bool observed = Observed(bt.Side, fm.Target);
+            var shooter = AnyOf(bt.Side);
+            for (int i = 0; i < bt.Guns && fm.RoundsFired < fm.Rounds && bt.Ammo(fm.Kind) > 0 && shooter != null; i++)
+            {
+                if (fm.Kind == FireKind.Smoke) bt.AmmoSmoke--; else bt.AmmoHe--;
+                float spread = fm.RoundsFired >= bt.Guns && observed ? Sr.ArtilleryAdjustedSpread : Sr.ArtilleryFirstSpread;
+                if (fm.Kind == FireKind.Smoke) spread *= 0.6f;
+                var at = Map.Clamp(fm.Target + new Vector2(Rng.Gaussian(), Rng.Gaussian()) * spread, 1f);
+                fm.RoundsFired++;
+                _inFlight.Add((Time + Sr.ArtilleryFlightTime, at, fm, shooter));
+            }
+            bt.NextRound = Time + Sr.ArtilleryRoundInterval;
+            if (fm.RoundsFired >= fm.Rounds || bt.Ammo(fm.Kind) <= 0 || shooter == null) bt.Current = null;
+        }
+    }
+
+    /// <summary>Someone on this side to stand for the gunners off the map (a blast needs a side to count for).</summary>
+    private Soldier? AnyOf(Side side)
+    {
+        if (_hq[(int)side]?.Staff is { } st && st.Members.Count > 0) return st.Members[0];
+        foreach (var s in _soldiers) if (s.Side == side) return s;
+        return null;
+    }
+
     // ---------------------------------------------------------------- the mortars at work
 
     private void UpdateSupport()
     {
+        if (_batteries.Count > 0) UpdateArtillery();
         foreach (var g in _groups)
         {
             if (g.Mortars is not { } ms) continue;
@@ -254,15 +329,15 @@ public sealed partial class Battle
     {
         fm.RoundsLanded++;
         if (fm.FirstLanded < 0f) fm.FirstLanded = Time;
-        _impacts.Add(new ImpactEvent(at, fm.Kind == FireKind.Smoke, fm.Side));
+        _impacts.Add(new ImpactEvent(at, fm.Kind == FireKind.Smoke, fm.Side, fm.Artillery));
         if (fm.Kind == FireKind.Smoke)
         {
-            Map.AddSmoke(at, Sr.SmokeRadius, Time, Sr.SmokeDuration);
+            Map.AddSmoke(at, Sr.SmokeRadius * (fm.Artillery ? 1.5f : 1f), Time, Sr.SmokeDuration);
         }
         else
         {
             int before = _casualties.Count;
-            Blast(crew, at, MortarHe);
+            Blast(crew, at, fm.Artillery ? ShellHe : MortarHe);
             // Whoever asked for it is watching: men seen to go down there are struck off his picture.
             for (int i = before; i < _casualties.Count; i++)
             {
@@ -272,7 +347,16 @@ public sealed partial class Battle
                 _hq[(int)fm.Side]?.Knowledge.Forget(id);
             }
         }
-        if (fm.RoundsLanded >= fm.RoundsFired && fm.FiredBy?.Mortars?.Current != fm)
+        if (fm.Battery is { } bt)
+        {
+            if (fm.RoundsLanded >= fm.RoundsFired && bt.Current != fm)
+            {
+                fm.Status = FireMissionStatus.Done;
+                fm.DoneAt = Time;
+                Log.Add(Time, -1, $"{bt.Name}: fire mission on {fm.Reason} complete ({fm.RoundsLanded} rounds)", fm.Side);
+            }
+        }
+        else if (fm.RoundsLanded >= fm.RoundsFired && fm.FiredBy?.Mortars?.Current != fm)
         {
             fm.Status = FireMissionStatus.Done;
             fm.DoneAt = Time;
@@ -282,7 +366,7 @@ public sealed partial class Battle
 
     /// <summary>Fire missions still being worked on (ordered, being fired, or with rounds still to land). A request
     /// still on its way up doesn't count: if its runner is shot, nobody will ever know.</summary>
-    private bool SupportBusy() => _inFlight.Count > 0 || _missions.Any(m => m.Status is FireMissionStatus.Ordered or FireMissionStatus.Firing && !m.Waiting);
+    private bool SupportBusy() => _inFlight.Count > 0 || _artilleryCalls.Count > 0 || _missions.Any(m => m.Status is FireMissionStatus.Ordered or FireMissionStatus.Firing && !m.Waiting);
 
     // ---------------------------------------------------------------- attaching MG sections
 

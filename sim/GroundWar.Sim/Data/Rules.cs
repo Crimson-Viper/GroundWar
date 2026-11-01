@@ -14,6 +14,7 @@ public sealed class Rules
     public CommsRules Comms { get; set; } = new();
     public CompanyRules Company { get; set; } = new();
     public SupportRules Support { get; set; } = new();
+    public BattalionRules Battalion { get; set; } = new();
 }
 
 public sealed class SquadRules
@@ -251,4 +252,47 @@ public sealed class SupportRules
     public float DangerClose { get; set; } = 60f;
     /// <summary>A defending commander fires on attackers seen within this distance of his position.</summary>
     public float DefensiveFireRange { get; set; } = 350f;
+
+    /// <summary>Artillery (guns off the map): seconds for the call to reach the guns by radio, to lay them, between
+    /// rounds from one gun, and in flight; spread of the first and of corrected rounds (metres).</summary>
+    public float ArtilleryCallDelay { get; set; } = 25f;
+    public float ArtillerySetUpTime { get; set; } = 20f;
+    public float ArtilleryRoundInterval { get; set; } = 8f;
+    public float ArtilleryFlightTime { get; set; } = 25f;
+    public float ArtilleryFirstSpread { get; set; } = 55f;
+    public float ArtilleryAdjustedSpread { get; set; } = 28f;
+    /// <summary>Rounds battalion asks for in one artillery mission.</summary>
+    public int ArtilleryRounds { get; set; } = 8;
+}
+
+/// <summary>Battalion commanders and HQs (milestone 7, part 2). See docs/systems/battalion-commander.md.</summary>
+public sealed class BattalionRules
+{
+    /// <summary>Seconds between a battalion commander's looks at the battle.</summary>
+    public float ThinkInterval { get; set; } = 20f;
+    /// <summary>An HQ is destroyed when enemy men are within this many metres of it and none of its own are, for
+    /// <see cref="HqCaptureTime"/> seconds.</summary>
+    public float HqCaptureRadius { get; set; } = 30f;
+    public float HqCaptureTime { get; set; } = 15f;
+    /// <summary>A company with at least this fraction of its men fit is fresh enough to attack.</summary>
+    public float FreshStrength { get; set; } = 0.55f;
+    /// <summary>Below this fraction a company is spent: it holds where it is.</summary>
+    public float SpentStrength { get; set; } = 0.3f;
+    /// <summary>Seconds after a failed attack before the same place is tried again.</summary>
+    public float RetryDelay { get; set; } = 180f;
+    /// <summary>Seconds he waits on a company that refused before insisting or giving up on that place.</summary>
+    public float RefusalWait { get; set; } = 120f;
+    /// <summary>An attack that hasn't taken its key point after this long is treated as having failed.</summary>
+    public float AttackTimeLimit { get; set; } = 900f;
+    /// <summary>Enemy known this close to a key point count as being at it (on top of its radius).</summary>
+    public float KeyPointRange { get; set; } = 40f;
+    /// <summary>Enemy known this close to his HQ make a defender send his reserve to guard it.</summary>
+    public float HqThreatRange { get; set; } = 350f;
+    /// <summary>Seconds between his artillery missions, the fewest enemy known together worth one, and how close to
+    /// his own men he won't fire.</summary>
+    public float ArtilleryCooldown { get; set; } = 120f;
+    public int ArtilleryMinTargets { get; set; } = 5;
+    public float ArtilleryDangerClose { get; set; } = 110f;
+    /// <summary>Sightings older than this (seconds) are too stale to fire on or count.</summary>
+    public float ContactAge { get; set; } = 90f;
 }

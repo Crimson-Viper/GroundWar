@@ -191,7 +191,7 @@ public partial class BattleView : Node3D
             SpawnTracer(from, to, dist / 450f, shot.Hit, shot.MachineGun);
             SpawnPuff(from + (to - from).Normalized() * 0.6f, new Color(1f, 0.9f, 0.5f, 0.9f), 0.35f, 0.06f);
         }
-        // Mortar rounds coming down: high explosive bursts like a shell; smoke rounds pop and start the screen
+        // Mortar rounds and artillery shells coming down: high explosive bursts like a shell; smoke rounds pop and start the screen
         // (the screen itself is drawn by SmokeView from the simulation's clouds).
         foreach (var hit in _battle.Impacts)
         {
@@ -203,9 +203,12 @@ public partial class BattleView : Node3D
                 continue;
             }
             ShellBurst?.Invoke(at);
-            SpawnPuff(at + new Vector3(0, 0.5f, 0), new Color(1f, 0.75f, 0.35f, 1f), 0.25f, 3.5f);
-            SpawnPuff(at + new Vector3(0, 1.0f, 0), new Color(0.32f, 0.27f, 0.22f, 0.9f), 1.8f, 6f);
-            SpawnPuff(at + new Vector3(0, 2.5f, 0), new Color(0.45f, 0.42f, 0.38f, 0.6f), 2.5f, 5f);
+            // An artillery shell (milestone 7) is a bigger burst than a mortar bomb, with earth thrown higher.
+            float k = hit.Heavy ? 1.7f : 1f;
+            SpawnPuff(at + new Vector3(0, 0.5f * k, 0), new Color(1f, 0.75f, 0.35f, 1f), 0.25f, 3.5f * k);
+            SpawnPuff(at + new Vector3(0, 1.0f * k, 0), new Color(0.32f, 0.27f, 0.22f, 0.9f), 1.8f, 6f * k);
+            SpawnPuff(at + new Vector3(0, 2.5f * k, 0), new Color(0.45f, 0.42f, 0.38f, 0.6f), 2.5f, 5f * k);
+            if (hit.Heavy) SpawnPuff(at + new Vector3(0, 6f, 0), new Color(0.3f, 0.26f, 0.2f, 0.7f), 3f, 7f);
         }
     }
 

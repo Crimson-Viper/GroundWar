@@ -9,7 +9,8 @@ namespace GroundWar.Game;
 /// <summary>
 /// Draws the communications of milestone 4: each HQ (a command tent with a flag), field telephone cables
 /// (dark on the ground, red where cut), runners carrying messages, a pulse running along the cable for a phone
-/// call, rings spreading from the radio aerial, and flares over HQ. See docs/systems/messages-and-delay.md.
+/// call, rings spreading from the radio aerial, and flares over HQ. An HQ the enemy has overrun (milestone 7) is
+/// knocked flat. See docs/systems/messages-and-delay.md.
 /// </summary>
 public partial class CommsView : Node3D
 {
@@ -19,6 +20,7 @@ public partial class CommsView : Node3D
     private Node3D? _lines;
     private int _cutCount = -1;
     private MeshInstance3D? _flare;
+    private readonly List<(Headquarters Hq, Node3D Node, Label3D Label)> _hqs = new();
 
     public Side PlayerSide { get; set; } = Side.Blue;
     public bool Fog { get; set; } = true;
@@ -59,6 +61,7 @@ public partial class CommsView : Node3D
             n.AddChild(new MeshInstance3D { Mesh = new CylinderMesh { TopRadius = 0.02f, BottomRadius = 0.03f, Height = 8f }, Position = new Vector3(-2.4f, 4f, 1f), MaterialOverride = Draw.Lit(new Color(0.2f, 0.2f, 0.2f)) });
         var label = new Label3D { Text = hq.Name, Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FixedSize = true, PixelSize = 0.0009f, FontSize = 24, OutlineSize = 8, NoDepthTest = true, Position = new Vector3(0, 7.5f, 0), Modulate = col.Lightened(0.4f) };
         n.AddChild(label);
+        _hqs.Add((hq, n, label));
         return n;
     }
 
@@ -66,6 +69,13 @@ public partial class CommsView : Node3D
 
     public void UpdateVisuals(float realTime)
     {
+        // An HQ overrun by the enemy (milestone 7): the tent is down and the label says so.
+        foreach (var (hq, node, label) in _hqs)
+        {
+            if (!hq.Destroyed || label.Text.EndsWith("(overrun)")) continue;
+            label.Text = $"{hq.Name} (overrun)";
+            foreach (var child in node.GetChildren()) if (child is MeshInstance3D mi) mi.Scale = new Vector3(1f, 0.25f, 1f);
+        }
         // Cables: rebuilt when one is cut.
         int cut = 0;
         foreach (var l in _battle.PhoneLines) if (l.Cut) cut++;

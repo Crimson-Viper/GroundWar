@@ -39,6 +39,7 @@ public sealed partial class Battle
                 Knowledge = new SideKnowledge(side),
             };
             _hq[(int)side] = hq;
+            if (sideDef.Hq.Staff.Count > 0) hq.Staff = _groups.FirstOrDefault(g => g.Side == side && g.Name == hq.Name);
             foreach (var ld in sideDef.PhoneLines)
             {
                 var pts = new List<Vector2> { hq.Position };
@@ -101,6 +102,15 @@ public sealed partial class Battle
         {
             var hq = _hq[(int)g.Side];
             if (hq == null) return;
+            if (hq.Staff == g)
+            {
+                // The HQ's own men: what they see, HQ knows at once (no need to send a report to themselves).
+                if (withContacts)
+                    foreach (var c in g.Knowledge.Contacts)
+                        if (GetSoldier(c.EnemyId) is { Status: not SoldierStatus.Dead } e && !(hq.Knowledge.Get(c.EnemyId)?.LastSeen >= c.LastSeen))
+                            hq.Knowledge.Report(e, c.LastPosition, c.LastSeen, c.Confidence);
+                return;
+            }
             m = NewMessage(g, BestMethod(g, hq, down: false, null), down: false, text, null, null, kind);
         }
         if (withContacts)
@@ -301,6 +311,7 @@ public sealed partial class Battle
             if (m.Kind == MessageKind.BriefBack && m.Group.Company is { State: CompanyState.BriefBack } bc && bc.Plan == m.Plan)
                 bc.BriefBackHeardAt = Time;
             if (m.Kind == MessageKind.FireRequest && m.Mission != null) ForwardToMortars(m.Mission);
+            if (m.Group.IsCompanyHq) HearFromCompany(m);
             foreach (var c in m.Contacts)
             {
                 var enemy = GetSoldier(c.EnemyId);

@@ -12,7 +12,7 @@ namespace GroundWar.Game;
 /// </summary>
 public partial class Main : Node3D
 {
-    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/orders_under_fire.json", "scenarios/farmhouse.json", "scenarios/farmhouse_support.json", "scenarios/stress_1000.json" };
+    private static readonly string[] Scenarios = { "scenarios/squad_attack.json", "scenarios/firefight.json", "scenarios/meeting.json", "scenarios/town_attack.json", "scenarios/tank_support.json", "scenarios/orders_under_fire.json", "scenarios/farmhouse.json", "scenarios/farmhouse_support.json", "scenarios/battalion.json", "scenarios/stress_1000.json" };
     private static readonly float[] Speeds = { 0.25f, 0.5f, 1f, 2f, 4f, 8f };
 
     private int _scenario;
@@ -23,6 +23,7 @@ public partial class Main : Node3D
     private CommsView? _commsView;
     private CompanyView? _companyView;
     private SupportView? _supportView;
+    private KeyPointView? _keyPointView;
     private SoundView? _soundView;
     private SmokeView? _smokeView;
     private TableView? _tableView;
@@ -54,6 +55,7 @@ public partial class Main : Node3D
             if (arg.StartsWith("--scenario=")) { _scenario = int.Parse(arg.Substring(11)); StartBattle(true); }
             if (arg.StartsWith("--camera=")) _autoCamera = arg.Substring(9);
             if (arg.StartsWith("--select=")) _autoSelect = int.Parse(arg.Substring(9));
+            if (arg == "--handover") _battle.PlayerHandOver(true); // your second in command runs the battle (put it after --seed / --scenario)
         }
     }
 
@@ -103,6 +105,7 @@ public partial class Main : Node3D
         _commsView?.QueueFree();
         _companyView?.QueueFree();
         _supportView?.QueueFree();
+        _keyPointView?.QueueFree();
         _pendingOrder = null;
         _battle = Battle.Load(new GodotDataSource(), Scenarios[_scenario], _seed);
         if (replay != null) _battle.LoadReplay(replay);
@@ -116,6 +119,8 @@ public partial class Main : Node3D
         _companyView = new CompanyView(_battle) { Name = "Companies", Fog = _fog };
         AddChild(_companyView);
         _supportView = new SupportView(_battle) { Name = "Support", Fog = _fog };
+        _keyPointView = new KeyPointView(_battle) { Name = "KeyPoints", Fog = _fog };
+        AddChild(_keyPointView);
         AddChild(_supportView);
         _soundView = new SoundView(_battle, _camera.Camera) { Name = "Sound", Muted = _muted };
         AddChild(_soundView);
@@ -127,6 +132,8 @@ public partial class Main : Node3D
         _battleView.SmokeRound = at => _soundView?.SmokePop(at);
         _hud.OrderRequested = OnOrderButton;
         _hud.FireRequested = OnFireButton;
+        _hud.ArtilleryRequested = kind => { _pendingArtillery = kind; _pendingOrder = null; };
+        _hud.HandOverRequested = () => _battle.PlayerHandOver(!(_battle.BattalionOf(_battle.PlayerSide)?.Active ?? true));
         _hud.AttachRequested = OnAttachButton;
         _hud.ApproveRequested = c => _battle.PlayerApprove(c);
         _hud.RejectRequested = c => _battle.PlayerReject(c);
@@ -177,7 +184,9 @@ public partial class Main : Node3D
         _hud.UpdateOrders(_battle, _battleView.Selected, _battleView.PlayerSide, _pendingOrder, _pendingFire);
         _companyView!.UpdateVisuals();
         _supportView!.UpdateVisuals();
+        _keyPointView!.UpdateVisuals();
         _hud.UpdateCompany(_battle, _battleView.Selected, _battleView.PlayerSide);
+        _hud.UpdateBattalion(_battle, _battleView.PlayerSide, _fog, _pendingArtillery);
         RunAutomation((float)delta);
     }
 
@@ -232,13 +241,18 @@ public partial class Main : Node3D
                 case Key.C: _mapView!.ToggleCover(); break;
                 case Key.L: _battleView!.ShowLines = !_battleView.ShowLines; break;
                 case Key.P: _battleView!.ShowPlans = !_battleView.ShowPlans; break;
-                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; _commsView!.Fog = _fog; _companyView!.Fog = _fog; _supportView!.Fog = _fog; _tableView!.Fog = _fog; break;
+                case Key.V: _fog = !_fog; _battleView!.Fog = _fog; _commsView!.Fog = _fog; _companyView!.Fog = _fog; _supportView!.Fog = _fog; _keyPointView!.Fog = _fog; _tableView!.Fog = _fog; break;
                 case Key.Enter or Key.KpEnter:
                     if (_hud.ShownCompany is { } ac) _battle.PlayerApprove(ac);
                     break;
                 case Key.Backspace:
                     if (_hud.ShownCompany is { } rc) _battle.PlayerReject(rc);
                     break;
+                case Key.K: _battle.PlayerHandOver(!(_battle.BattalionOf(_battle.PlayerSide)?.Active ?? true)); break;
+                case Key.Y when _battle.ArtilleryFor(_battle.PlayerSide, GroundWar.Sim.Comms.FireKind.He) != null:
+                    _pendingArtillery = GroundWar.Sim.Comms.FireKind.He; _pendingOrder = null; break;
+                case Key.U when _battle.ArtilleryFor(_battle.PlayerSide, GroundWar.Sim.Comms.FireKind.Smoke) != null:
+                    _pendingArtillery = GroundWar.Sim.Comms.FireKind.Smoke; _pendingOrder = null; break;
                 case Key.T: _battleView!.ShowAllLabels = !_battleView.ShowAllLabels; break;
                 case Key.B: _battleView!.ShowBars = !_battleView.ShowBars; break;
                 case Key.H: _hud.ToggleHelp(); break;
@@ -247,7 +261,7 @@ public partial class Main : Node3D
                         _camera.FollowTarget = _camera.FollowTarget == null ? _battleView.SelectedAnchor : null;
                     break;
                 case Key.Escape:
-                    if (_pendingOrder != null) { _pendingOrder = null; break; }
+                    if (_pendingOrder != null || _pendingArtillery != null) { _pendingOrder = null; _pendingArtillery = null; break; }
                     _battleView!.Selected = null; _camera.FollowTarget = null; break;
                 default: return;
             }
@@ -256,7 +270,13 @@ public partial class Main : Node3D
         else if (e is InputEventMouseButton { Pressed: true, ButtonIndex: MouseButton.Left } mb)
         {
             var ground = _camera.GroundPointUnderMouse(mb.Position);
-            if (ground != null && _pendingOrder != null && _battleView!.Selected != null)
+            if (ground != null && _pendingArtillery is { } artyKind)
+            {
+                // Second click of an artillery call: the target. It goes from HQ to the guns by radio.
+                _battle.PlayerArtillery(new System.Numerics.Vector2(ground.Value.X, ground.Value.Z), artyKind);
+                _pendingArtillery = null;
+            }
+            else if (ground != null && _pendingOrder != null && _battleView!.Selected != null)
             {
                 var at = new System.Numerics.Vector2(ground.Value.X, ground.Value.Z);
                 var own = _battleView.Selected.Group;
@@ -292,6 +312,8 @@ public partial class Main : Node3D
 
     /// <summary>An order waiting for its second click (where to), or null.</summary>
     private GroundWar.Sim.Comms.OrderKind? _pendingOrder;
+    /// <summary>An artillery call waiting for its target click (HE or smoke), or null.</summary>
+    private GroundWar.Sim.Comms.FireKind? _pendingArtillery;
     /// <summary>For a pending fire mission: HE or smoke.</summary>
     private GroundWar.Sim.Comms.FireKind _pendingFire;
 
@@ -384,7 +406,7 @@ public partial class Main : Node3D
                 if (_autoOverlays.Contains('c')) _mapView!.ToggleCover();
                 if (_autoOverlays.Contains('l')) _battleView!.ShowLines = true;
                 if (_autoOverlays.Contains('t')) _battleView!.ShowAllLabels = true;
-                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; _commsView!.Fog = false; _companyView!.Fog = false; _supportView!.Fog = false; _tableView!.Fog = false; }
+                if (_autoOverlays.Contains('f')) { _fog = false; _battleView!.Fog = false; _commsView!.Fog = false; _companyView!.Fog = false; _supportView!.Fog = false; _keyPointView!.Fog = false; _tableView!.Fog = false; }
                 if (_autoOverlays.Contains('j')) { _actionCam = true; _actionClock = 999f; }
                 if (_autoOverlays.Contains('r')) _autoReport = true;
             }

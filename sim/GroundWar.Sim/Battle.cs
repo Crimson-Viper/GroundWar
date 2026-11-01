@@ -65,6 +65,7 @@ public sealed partial class Battle
         Spawn();
         SetUpCompanies();
         SetUpComms();
+        SetUpBattalions();
         Hash.Rebuild(_soldiers);
         UpdateGridControl();
     }
@@ -100,7 +101,15 @@ public sealed partial class Battle
         foreach (var sideDef in Scenario.Sides)
         {
             var side = Enum.Parse<Side>(sideDef.Side, ignoreCase: true);
-            foreach (var gd in sideDef.Groups)
+            var groupDefs = sideDef.Groups.ToList();
+            // The battalion HQ's own men (milestone 7) are a group like any other, holding at the HQ.
+            if (sideDef.Hq is { Staff.Count: > 0 } hd)
+                groupDefs.Add(new GroupDef
+                {
+                    Name = hd.Name, Order = "Hold", Objective = hd.Position, ObjectiveRadius = 12f, Facing = new[] { -sideDef.Rear[0], -sideDef.Rear[1] },
+                    SpawnCenter = hd.Position, SpawnSize = new[] { 8f, 8f }, Weapons = hd.Staff, MoraleBonus = 10f, Radio = true,
+                });
+            foreach (var gd in groupDefs)
             {
                 var group = new Group(side)
                 {
@@ -234,6 +243,7 @@ public sealed partial class Battle
             g.NextThink = Time + Rules.Squad.ThinkInterval * Rng.Range(0.85f, 1.15f);
         }
         UpdateCompanies();
+        UpdateBattalions();
         t0 = Profile.Lap("squads", t0);
         foreach (var s in _soldiers)
         {
@@ -413,6 +423,14 @@ public sealed partial class Battle
     private void CheckEnd()
     {
         if (Result != null) return;
+        if (HqVictory)
+            foreach (var hq in _hq)
+                if (hq is { Destroyed: true })
+                {
+                    Result = new BattleResult { Winner = Enemy(hq.Side), Time = Time, Reason = $"{Enemy(hq.Side)} overran {hq.Name}" };
+                    Log.Add(Time, -1, $"Battle over: {Result.Reason}", null, LogKind.Key);
+                    return;
+                }
         int blue = 0, red = 0;
         foreach (var s in _soldiers)
         {
@@ -422,9 +440,10 @@ public sealed partial class Battle
         if (blue == 0 && red == 0) Result = new BattleResult { Winner = null, Time = Time, Reason = "Both sides broke" };
         else if (blue == 0) Result = new BattleResult { Winner = Side.Red, Time = Time, Reason = "Blue can no longer fight" };
         else if (red == 0) Result = new BattleResult { Winner = Side.Blue, Time = Time, Reason = "Red can no longer fight" };
-        else if (!_groups.Any(g => g.IsAttacking && g.CountEffective > 0) && Time - LastShotTime() > Rules.Squad.QuietEndTime && !CommandBusy())
-            Result = QuietResult();
-        else if (Time >= Scenario.TimeLimit) Result = TimeLimitResult();
+        else if (!_groups.Any(g => g.IsAttacking && g.CountEffective > 0) && Time - LastShotTime() > Rules.Squad.QuietEndTime && !CommandBusy()
+            && !_battalions.Any(b => b.Active && b.Busy))
+            Result = HqVictory ? NoHqResult("The fighting died down") : QuietResult();
+        else if (Time >= Scenario.TimeLimit) Result = HqVictory ? NoHqResult("Time up") : TimeLimitResult();
         if (Result != null) Log.Add(Time, -1, $"Battle over: {Result.Reason}", null, LogKind.Key);
     }
 }

@@ -111,6 +111,24 @@
     "prepRounds": 9, "smokeRounds": 6, "quickRounds": 4, // rounds a commander asks for
     "requestCooldown": 90,       // a commander waits this long before asking again for the same area
     "dangerClose": 60,           // he won't call fire this close to his own men
-    "defensiveFireRange": 350    // a defending commander fires on attackers this close
+    "defensiveFireRange": 350,   // a defending commander fires on attackers this close
+    "artilleryCallDelay": 25,    // battalion's radio call to the guns off the map
+    "artillerySetUpTime": 20, "artilleryRoundInterval": 8, "artilleryFlightTime": 25,
+    "artilleryFirstSpread": 55, "artilleryAdjustedSpread": 28,
+    "artilleryRounds": 8         // rounds in one of battalion's artillery missions
+  },
+  "battalion": {
+    "thinkInterval": 20,         // seconds between a battalion commander's looks at the battle
+    "hqCaptureRadius": 30,       // enemy within this of an HQ, and none of its own men...
+    "hqCaptureTime": 15,         // ...for this long: the HQ is destroyed
+    "freshStrength": 0.55,       // a company this fit can attack
+    "spentStrength": 0.3,        // below this it just holds
+    "retryDelay": 180,           // seconds before trying a place again after a failed attack
+    "refusalWait": 120,          // seconds before insisting on (or giving up) an order a company refused
+    "attackTimeLimit": 900,      // an attack not done by then counts as failed
+    "keyPointRange": 40,         // enemy this close to a key point are "at" it
+    "hqThreatRange": 350,        // enemy this close to a defender's HQ bring his reserve back to guard it
+    "artilleryCooldown": 120, "artilleryMinTargets": 5, "artilleryDangerClose": 110,
+    "contactAge": 90             // sightings older than this are too stale to act on
   }
 }

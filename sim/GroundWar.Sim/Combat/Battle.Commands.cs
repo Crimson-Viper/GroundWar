@@ -3,7 +3,7 @@ using GroundWar.Sim.Units;
 
 namespace GroundWar.Sim;
 
-public enum CommandKind { Order, Approve, Reject }
+public enum CommandKind { Order, Approve, Reject, HandOver, Artillery }
 
 /// <summary>Something the player did, and the tick it was done after. A battle is the seed plus these: play the
 /// same seed with the same commands and you get the same battle again (a replay).</summary>
@@ -48,6 +48,15 @@ public sealed partial class Battle
         RejectBriefBack(c);
     }
 
+    /// <summary>The player calls the artillery on a place (through his HQ, by radio).</summary>
+    public FireMission? PlayerArtillery(System.Numerics.Vector2 target, FireKind kind)
+    {
+        if (ArtilleryFor(PlayerSide, kind) == null) return null;
+        TakeOver();
+        _commands.Add(new PlayerCommand(Tick, CommandKind.Artillery, -1, -1, new Order { Kind = OrderKind.FireMission, Objective = target, Fire = kind }));
+        return CallArtillery(PlayerSide, target, kind, kind == FireKind.Smoke ? Rules.Support.SmokeRounds : Rules.Support.ArtilleryRounds, "battalion's target");
+    }
+
     /// <summary>The player does something himself during a replay: from here on it's his battle, and the rest of
     /// the recording is dropped.</summary>
     private void TakeOver()
@@ -80,6 +89,8 @@ public sealed partial class Battle
                     break;
                 case CommandKind.Approve: PlayerApprove(_companies[c.CompanyId]); break;
                 case CommandKind.Reject: PlayerReject(_companies[c.CompanyId]); break;
+                case CommandKind.HandOver: PlayerHandOver(c.CompanyId == 1); break;
+                case CommandKind.Artillery: PlayerArtillery(c.Order!.Objective, c.Order.Fire); break;
             }
             _playingBack = false;
         }
