@@ -18,8 +18,8 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
 | 5. Company commander: plans, brief-back, refusing death traps | done |
 | 6. Spectacle: sounds, smoke, map table, battle cam, replays, after-action report | done |
 | 7. Battalion, part 1: mortars, smoke screens, commanders calling for fire, MG sections | done |
-| 7. Battalion, part 2: several companies, enemy battalion commander, destroy the HQ to win, reinforcements | next |
-| 8. Tank platoons with crew AI | |
+| 7. Battalion, part 2: several companies, battalion commanders, artillery, destroy the HQ to win | done |
+| 8. Tank platoons with crew AI | next |
 
 ![Two squads taking the wall](docs/screenshots/m3-squad-attack.png)
 
@@ -41,6 +41,8 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
    - **Tank support**: the first tank. The same attack as the firefight at the wall, but a Blue tank leads the squad in with its main gun and machine gun. Red has an anti-tank rifle in the squad (it can only break a track) and a two-man bazooka team off to the north, placed to hit the tank's side armour. Rifles and machine guns just ring off the armour. With the tank Blue usually wins; without it Blue usually loses. Click the tank to see its armour, shells and what its commander is thinking.
    - **Orders under fire** (milestone 4): the squad attack again, but every order comes from Blue HQ (the tent at the west edge) and takes time. The 1st Squad has a telephone line; the 2nd Squad's orders go by runner. Reports come back the same way, and you only see the enemy as those reports reach HQ. Click one of your soldiers to give his squad orders from the order panel.
    - **Farmhouse** (milestone 5): one company a side. Battalion HQ orders A Company to take a walled farmhouse. Captain Hale weighs up a frontal assault against pinning the farm with one squad while the others go round a flank, and sends you his plan (the brief-back panel at the top). Press **Enter** to approve, **Backspace** to reject, or do nothing and he goes ahead after 10 s. His plan is drawn as arrows on the map. If he thinks an order is a death trap he refuses and says why; send it again to insist. See [docs/systems/company-commander.md](docs/systems/company-commander.md).
+   - **Farmhouse with support** (milestone 7): the farmhouse attack with a Blue mortar section, an MG section attached to A Company, and Red mortars. Commanders call for mortar fire and smoke screens. See [docs/systems/support-fire.md](docs/systems/support-fire.md).
+   - **Battalion battle** (milestone 7): three companies a side on a valley a kilometre long. Red holds a village and a farm, with a reserve company at the churchyard and its HQ in the manor house at the far end. Overrun Red's HQ to win. Order your companies yourself, or press **K** to hand the battle to your second in command, Maj. Ashford, and watch the two battalion commanders fight it out. Y and U call your artillery. See [docs/systems/battalion-commander.md](docs/systems/battalion-commander.md).
    - **Stress test**: 1,000 soldiers a side on a big field, to check the game stays smooth at battalion size. Zoom out to see it all.
 
 To get a new version: in GitHub Desktop press **Fetch origin**, then **Pull**, then press F5 in Godot again.
@@ -56,6 +58,7 @@ To try a pull request before it is merged: in GitHub Desktop pick its branch fro
 | **Orders** | With one of your soldiers selected (in a scenario with an HQ): press Advance, Attack, Suppress or Hold, then click the map; Halt and Fall back go at once. Esc cancels. A man in a company: the order goes to his company commander |
 | **Company** | Enter approve the brief-back · Backspace reject it |
 | **Support** | Select a man of a mortar section: Fire HE or Fire smoke, then click the target · select a man of an MG section: Attach to a company, then click any man of that company (Back to battalion takes it out again) |
+| **Battalion** | Y artillery HE / U artillery smoke, then click the target · K hand the battle to your second in command (K again takes it back) |
 | **Watch** | J battle cam (follows the hottest fighting) · Z map table · O after-action report · M mute · Shift+R replay the battle with your orders · [ back 30 s · ] on 30 s |
 | **Overlays** | G battlefield grid (cover → visibility → control → off) · C cover points · L aim and path lines · P squad plans · T every soldier's thoughts · B morale bars · V fog of war on/off · H hide help |
 

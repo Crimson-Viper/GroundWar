@@ -99,6 +99,7 @@ public sealed partial class Battle
         if (hq == null) { Note(c.HqGroup, $"{c.Name}: {text}"); return; }
         var method = BestMethod(c.HqGroup, hq, down: false, null);
         var m = NewMessage(c.HqGroup, method, down: false, text, null, null, kind, plan);
+        m.Strength = c.Effective; // the whole company, not just his HQ group
         if (withContacts)
             foreach (var k in c.Knowledge.Contacts)
                 m.Contacts.Add(new ReportedContact(k.EnemyId, k.LastPosition, k.LastSeen, k.Confidence));

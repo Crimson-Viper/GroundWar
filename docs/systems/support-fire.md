@@ -146,8 +146,10 @@ from 53 to 72: defensive fire on infantry crossing open ground is the stronger u
 The full runner table is in [Testing and tuning](../tools/testing.md).
 
 ## Not done yet
-- Artillery (bigger guns from off the map) works the same way and will be added with the battalion battle.
+- Artillery (bigger guns from off the map) was added with the battalion battle: see
+  [The battalion battle](battalion-commander.md#artillery). Company commanders ask for mortars only.
 - Fire requests from your commanders are passed on automatically. You can't yet turn one down or change who has
   priority.
 - Mortar sections stay where they start. Tubes and crews can be hit, but there is no counter-battery fire.
-- The enemy battalion commander (milestone 7, part 2) will use the mortars for its own plans.
+- The battalion commanders (milestone 7, part 2) use the artillery but not the mortars; the company commanders
+  call the mortars themselves.

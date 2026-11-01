@@ -45,6 +45,8 @@ long ticks = 0;
 for (int b = 0; b < battles; b++)
 {
     var battle = Battle.Load(sourceCwd, scenario, seed + (ulong)b, mapOverride);
+    // No player here: the player's battalion (if the scenario has one) is run by his staff, like the enemy's.
+    battle.PlayerHandOver(true);
     var result = battle.RunToEnd();
     ticks += battle.Tick;
     totalTime += result.Time;

@@ -16,7 +16,8 @@ frame and draws it.
 | `Hud.cs` | Status panel, selected soldier panel, log, help, end banner, order and message panels, company panel with the brief-back buttons |
 | `CommsView.cs` | HQ tents, telephone cables, runners, phone pulses, radio rings, flares |
 | `CompanyView.cs` | Company commanders' plans as arrows on the ground, a flag over each company HQ |
-| `SupportView.cs` | Mortar tubes, and a ring over each target your mortars have been told to fire on |
+| `SupportView.cs` | Mortar tubes, and a ring over each target your mortars (or artillery) have been told to fire on |
+| `KeyPointView.cs` | The key points of a battalion battle: a ring and a name, blue or red when only that side's men are on it |
 | `SoundView.cs` | Battle sounds: a pool of 3D sound players for nearby shots, shell bursts, tank guns, distant battle and radio squelch |
 | `SmokeView.cs` | Smoke clouds from shell bursts, black smoke and fire glow over burning wrecks, drifting in the wind |
 | `TableView.cs` | The map table: a paper map with unit counters that fades in when you zoom far out |

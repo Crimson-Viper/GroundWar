@@ -24,6 +24,7 @@ public partial class Hud : CanvasLayer
         "BATTLE   Space pause · . step · 1-6 speed · R restart · N new battle (new seed) · Tab next scenario\n" +
         "SOLDIER  left-click select · F follow · Esc deselect · order panel (bottom right): press an order, then click the map\n" +
         "COMPANY  Enter approve the brief-back · Backspace reject it · selecting any man in a company orders the company\n" +
+        "BATTALION  Y / U artillery HE / smoke, then click the target · K hand the battle to your second in command (or take it back)\n" +
         "WATCH    J battle cam · Z map table · O after-action report · M mute · Shift+R replay with your orders · [ ] back / on 30 s\n" +
         "OVERLAYS G grid (cover / visibility / control) · C cover points · L aim and path lines · P squad plans · T thoughts · B morale bars · V fog of war on/off · H hide help";
 
@@ -39,8 +40,8 @@ public partial class Hud : CanvasLayer
         _log = new Label { Position = new Vector2(12, 0), Modulate = new Color(1, 1, 1, 0.85f) };
         _log.AddThemeFontSizeOverride("font_size", 13);
         _log.AnchorTop = _log.AnchorBottom = 1f;
-        _log.OffsetTop = -290;
-        _log.OffsetBottom = -132;
+        _log.OffsetTop = -312;
+        _log.OffsetBottom = -154;
         _log.VerticalAlignment = VerticalAlignment.Bottom;
         _log.AddThemeColorOverride("font_outline_color", Colors.Black);
         _log.AddThemeConstantOverride("outline_size", 4);
@@ -49,7 +50,7 @@ public partial class Hud : CanvasLayer
         _help = new Label { Text = HelpText };
         _help.AddThemeFontSizeOverride("font_size", 13);
         _help.AnchorTop = _help.AnchorBottom = 1f;
-        _help.OffsetTop = -128;
+        _help.OffsetTop = -150;
         _help.OffsetBottom = -4;
         _help.OffsetLeft = 12;
         _help.VerticalAlignment = VerticalAlignment.Bottom;
@@ -59,6 +60,7 @@ public partial class Hud : CanvasLayer
 
         BuildOrderPanel();
         BuildCompanyPanel();
+        BuildBattalionPanel();
         _messagesLabel = MakePanelLabel(Vector2.Zero, out _messagesPanel);
         _messagesLabel.AddThemeFontSizeOverride("font_size", 13);
         _messagesPanel.AnchorLeft = _messagesPanel.AnchorRight = 1f;
@@ -319,6 +321,83 @@ public partial class Hud : CanvasLayer
             sb.AppendLine($"  {(m.Status == MessageStatus.Lost ? "✗ lost" : "✓")} {Short(m)}  ({m.DoneTime - m.SentTime:0} s, {m.Method.ToString().ToLowerInvariant()})");
         }
         _messagesLabel.Text = sb.ToString().TrimEnd();
+    }
+
+    // ---------------------------------------------------------------- battalion (milestone 7, part 2)
+
+    /// <summary>Main listens to these: call the artillery (then click the target), and hand the battle to the staff or take it back.</summary>
+    public System.Action<FireKind>? ArtilleryRequested { get; set; }
+    public System.Action? HandOverRequested { get; set; }
+    private PanelContainer _battalionPanel = null!;
+    private Label _battalionLabel = null!;
+    private Button _artyHeButton = null!, _artySmokeButton = null!, _handOverButton = null!;
+
+    private void BuildBattalionPanel()
+    {
+        _battalionPanel = new PanelContainer();
+        var style = new StyleBoxFlat { BgColor = new Color(0.05f, 0.06f, 0.05f, 0.78f) };
+        style.SetContentMarginAll(10);
+        style.SetCornerRadiusAll(6);
+        _battalionPanel.AddThemeStyleboxOverride("panel", style);
+        _battalionPanel.AnchorLeft = _battalionPanel.AnchorRight = 1f;
+        _battalionPanel.AnchorTop = _battalionPanel.AnchorBottom = 1f;
+        _battalionPanel.OffsetLeft = -460; _battalionPanel.OffsetRight = -12;
+        // Sits just above the messages panel and grows upwards as its text gets longer.
+        _battalionPanel.OffsetTop = -340; _battalionPanel.OffsetBottom = -340;
+        _battalionPanel.GrowVertical = Control.GrowDirection.Begin;
+        var box = new VBoxContainer();
+        _battalionLabel = new Label { AutowrapMode = TextServer.AutowrapMode.WordSmart, CustomMinimumSize = new Vector2(430, 0) };
+        _battalionLabel.AddThemeFontSizeOverride("font_size", 13);
+        box.AddChild(_battalionLabel);
+        var row = new HBoxContainer();
+        Button Add(string text, System.Action act)
+        {
+            var b = new Button { Text = text, FocusMode = Control.FocusModeEnum.None };
+            b.Pressed += act;
+            row.AddChild(b);
+            return b;
+        }
+        _artyHeButton = Add("Artillery HE (Y)", () => ArtilleryRequested?.Invoke(FireKind.He));
+        _artySmokeButton = Add("Artillery smoke (U)", () => ArtilleryRequested?.Invoke(FireKind.Smoke));
+        _handOverButton = Add("Hand over (K)", () => HandOverRequested?.Invoke());
+        box.AddChild(row);
+        _battalionPanel.AddChild(box);
+        _battalionPanel.Visible = false;
+        AddChild(_battalionPanel);
+    }
+
+    /// <summary>The battalion panel: who is running your battalion, its key points and artillery; with fog off,
+    /// what the enemy battalion commander is doing too.</summary>
+    public void UpdateBattalion(Battle battle, Side playerSide, bool fog, FireKind? pendingArtillery)
+    {
+        var bn = battle.BattalionOf(playerSide);
+        var bt = battle.Batteries.FirstOrDefault(b => b.Side == playerSide);
+        _battalionPanel.Visible = bn != null || bt != null;
+        if (!_battalionPanel.Visible) return;
+        var sb = new StringBuilder();
+        if (bn != null)
+        {
+            sb.AppendLine(bn.Active ? $"Your second in command, {bn.Commander}, is running the battalion. K takes it back." : $"You command the battalion. K hands it to {bn.Commander}.");
+            if (bn.Active && bn.Intent.Length > 0) sb.AppendLine($"  {bn.Intent}");
+        }
+        var known = battle.Knowledge(playerSide);
+        foreach (var p in battle.KeyPoints)
+        {
+            int enemy = known.Contacts.Count(k => battle.Time - k.LastSeen < 120f && System.Numerics.Vector2.Distance(k.LastPosition, p.Position) < p.Radius + 40f);
+            int own = battle.Soldiers.Count(s => s.Side == playerSide && s.IsEffective && System.Numerics.Vector2.Distance(s.Position, p.Position) < p.Radius);
+            sb.AppendLine($"  {char.ToUpperInvariant(p.Name[0])}{p.Name[1..]}: {own} of ours there, {enemy} enemy known");
+        }
+        if (bt != null) sb.AppendLine($"{bt.Name}: {bt.Guns} guns off the map, {bt.AmmoHe} HE and {bt.AmmoSmoke} smoke left");
+        if (pendingArtillery != null) sb.AppendLine($"Click the map: where the artillery fires {(pendingArtillery == FireKind.Smoke ? "smoke" : "high explosive")}. Esc cancels.");
+        if (!fog)
+            foreach (var other in battle.Battalions.Where(b => b.Side != playerSide && b.Active && b.Intent.Length > 0))
+                sb.AppendLine($"{other.Side}, {other.Commander}: {other.Intent}");
+        _battalionLabel.Text = sb.ToString().TrimEnd();
+        _artyHeButton.Visible = _artySmokeButton.Visible = bt != null;
+        _artyHeButton.Disabled = bt is not { AmmoHe: > 0 };
+        _artySmokeButton.Disabled = bt is not { AmmoSmoke: > 0 };
+        _handOverButton.Visible = bn != null;
+        _handOverButton.Text = bn is { Active: true } ? "Take command (K)" : $"Hand over to {bn?.Commander} (K)";
     }
 
     // ---------------------------------------------------------------- after-action report (milestone 6)

@@ -76,7 +76,7 @@ public sealed class Message
     public Order? Order { get; init; }
     public MessageKind Kind { get; init; }
     /// <summary>For a report: how many of the sender's men were still fit when it was written.</summary>
-    public int Strength { get; init; }
+    public int Strength { get; set; }
     public string Text { get; init; } = "";
     public List<ReportedContact> Contacts { get; init; } = new();
     public float SentTime { get; init; }
@@ -116,6 +116,27 @@ public sealed class Headquarters
     public bool HasRadio { get; init; }
     /// <summary>What HQ knows about the enemy: only what reports have brought in.</summary>
     public SideKnowledge Knowledge { get; init; } = null!;
+    /// <summary>The HQ's own men, who defend it (null = none: the HQ is just a place).</summary>
+    public Group? Staff { get; set; }
+    /// <summary>Overrun by the enemy (milestone 7): in a battalion battle, that loses the battle.</summary>
+    public bool Destroyed { get; set; }
+    /// <summary>Since when enemy men have been at the HQ with none of its own (-1 = not now).</summary>
+    public float OverrunSince { get; set; } = -1f;
+}
+
+/// <summary>Guns off the map that battalion HQ calls on by radio (milestone 7). Out of reach of the enemy, so
+/// they only run out of ammunition. See docs/systems/support-fire.md.</summary>
+public sealed class Battery
+{
+    public Side Side { get; init; }
+    public string Name { get; init; } = "Artillery";
+    public int Guns { get; init; }
+    public int AmmoHe { get; set; }
+    public int AmmoSmoke { get; set; }
+    public Queue<FireMission> Queue { get; } = new();
+    public FireMission? Current { get; set; }
+    public float NextRound { get; set; }
+    public int Ammo(FireKind k) => k == FireKind.Smoke ? AmmoSmoke : AmmoHe;
 }
 
 public enum FireMissionStatus { Requested, Ordered, Firing, Done, Refused, Cancelled }
@@ -145,5 +166,8 @@ public sealed class FireMission
     public bool OnCall { get; init; }
     public float CallAt { get; set; } = -1f;
     public bool Waiting => OnCall && CallAt < 0f;
-    public string Describe() => $"{Rounds} rounds {(Kind == FireKind.Smoke ? "smoke" : "HE")}";
+    /// <summary>Fired by the artillery off the map rather than mortars.</summary>
+    public Battery? Battery { get; set; }
+    public bool Artillery => Battery != null;
+    public string Describe() => $"{Rounds} rounds {(Kind == FireKind.Smoke ? "smoke" : "HE")}{(Artillery ? " (artillery)" : "")}";
 }

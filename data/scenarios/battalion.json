@@ -1,0 +1,1108 @@
+// Milestone 7, part 2: the battalion battle. Three Blue companies against three Red ones on a 1 km valley.
+// Red holds a village and a farm, with its reserve company at the churchyard behind them and its battalion HQ in
+// the manor house at the east edge. Blue must overrun Red's HQ; Red wins by holding on (or overrunning Blue's).
+// Both battalions have a commander: Maj. Kessler runs Red. In the game, Maj. Ashford is your second in command,
+// who runs Blue only if you hand the battle over to him (K). In the runner both are run by the computer.
+{
+ "name": "Battalion battle",
+ "description": "Three companies against three: take the village and the farm, then overrun the enemy HQ.",
+ "map": "maps/valley.json",
+ "timeLimit": 3600,
+ "victory": "Hq",
+ "keyPoints": [
+  {
+   "name": "the village",
+   "position": [
+    480,
+    170
+   ],
+   "radius": 45
+  },
+  {
+   "name": "the farm",
+   "position": [
+    503,
+    450
+   ],
+   "radius": 40
+  },
+  {
+   "name": "the churchyard",
+   "position": [
+    720,
+    300
+   ],
+   "radius": 40
+  }
+ ],
+ "sides": [
+  {
+   "side": "Blue",
+   "name": "Blue",
+   "rear": [
+    -1,
+    0
+   ],
+   "hq": {
+    "name": "Blue Battalion HQ",
+    "position": [
+     40,
+     300
+    ],
+    "radio": true,
+    "staff": {
+     "rifle": 6
+    }
+   },
+   "artillery": {
+    "name": "Blue artillery",
+    "guns": 4,
+    "he": 48,
+    "smoke": 12
+   },
+   "groups": [
+    {
+     "name": "A Coy HQ",
+     "order": "Hold",
+     "objective": [
+      95,
+      170
+     ],
+     "objectiveRadius": 6,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      95,
+      170
+     ],
+     "spawnSize": [
+      4,
+      4
+     ],
+     "weapons": {
+      "rifle": 2
+     },
+     "radio": true,
+     "moraleBonus": 15
+    },
+    {
+     "name": "A 1st Squad",
+     "order": "Hold",
+     "objective": [
+      122,
+      110
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      122,
+      110
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "A 2nd Squad",
+     "order": "Hold",
+     "objective": [
+      122,
+      150
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      122,
+      150
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "A 3rd Squad",
+     "order": "Hold",
+     "objective": [
+      122,
+      190
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      122,
+      190
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "A 4th Squad",
+     "order": "Hold",
+     "objective": [
+      122,
+      230
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      122,
+      230
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "B Coy HQ",
+     "order": "Hold",
+     "objective": [
+      95,
+      430
+     ],
+     "objectiveRadius": 6,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      95,
+      430
+     ],
+     "spawnSize": [
+      4,
+      4
+     ],
+     "weapons": {
+      "rifle": 2
+     },
+     "radio": true,
+     "moraleBonus": 15
+    },
+    {
+     "name": "B 1st Squad",
+     "order": "Hold",
+     "objective": [
+      122,
+      370
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      122,
+      370
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "B 2nd Squad",
+     "order": "Hold",
+     "objective": [
+      122,
+      410
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      122,
+      410
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "B 3rd Squad",
+     "order": "Hold",
+     "objective": [
+      122,
+      450
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      122,
+      450
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "B 4th Squad",
+     "order": "Hold",
+     "objective": [
+      122,
+      490
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      122,
+      490
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "C Coy HQ",
+     "order": "Hold",
+     "objective": [
+      70,
+      350
+     ],
+     "objectiveRadius": 6,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      70,
+      350
+     ],
+     "spawnSize": [
+      4,
+      4
+     ],
+     "weapons": {
+      "rifle": 2
+     },
+     "radio": true,
+     "moraleBonus": 15
+    },
+    {
+     "name": "C 1st Squad",
+     "order": "Hold",
+     "objective": [
+      95,
+      260
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      95,
+      260
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "C 2nd Squad",
+     "order": "Hold",
+     "objective": [
+      95,
+      290
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      95,
+      290
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "C 3rd Squad",
+     "order": "Hold",
+     "objective": [
+      95,
+      320
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      95,
+      320
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "C 4th Squad",
+     "order": "Hold",
+     "objective": [
+      95,
+      345
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      95,
+      345
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 9,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "MG Section",
+     "order": "Hold",
+     "objective": [
+      120,
+      300
+     ],
+     "objectiveRadius": 8,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      120,
+      300
+     ],
+     "spawnSize": [
+      6,
+      8
+     ],
+     "weapons": {
+      "rifle": 4,
+      "hmg": 2
+     },
+     "asset": true
+    },
+    {
+     "name": "Mortar Section",
+     "order": "Hold",
+     "objective": [
+      70,
+      240
+     ],
+     "objectiveRadius": 8,
+     "facing": [
+      1,
+      0
+     ],
+     "spawnCenter": [
+      70,
+      240
+     ],
+     "spawnSize": [
+      6,
+      8
+     ],
+     "weapons": {
+      "rifle": 7
+     },
+     "mortars": 3,
+     "mortarHe": 60,
+     "mortarSmoke": 24
+    }
+   ],
+   "phoneLines": [
+    {
+     "points": [
+      [
+       60,
+       280
+      ],
+      [
+       70,
+       246
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "side": "Red",
+   "name": "Red",
+   "rear": [
+    1,
+    0
+   ],
+   "hq": {
+    "name": "Red Battalion HQ",
+    "position": [
+     930,
+     300
+    ],
+    "radio": true,
+    "staff": {
+     "rifle": 6
+    }
+   },
+   "artillery": {
+    "name": "Red artillery",
+    "guns": 4,
+    "he": 40,
+    "smoke": 0
+   },
+   "groups": [
+    {
+     "name": "1st Coy HQ",
+     "order": "Hold",
+     "objective": [
+      520,
+      170
+     ],
+     "objectiveRadius": 6,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      520,
+      170
+     ],
+     "spawnSize": [
+      4,
+      4
+     ],
+     "weapons": {
+      "rifle": 2
+     },
+     "radio": true,
+     "moraleBonus": 15
+    },
+    {
+     "name": "Village West",
+     "order": "Hold",
+     "objective": [
+      452,
+      182
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      452,
+      182
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Village North",
+     "order": "Hold",
+     "objective": [
+      465,
+      136
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      465,
+      136
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Village South",
+     "order": "Hold",
+     "objective": [
+      488,
+      205
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      488,
+      205
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Village East",
+     "order": "Hold",
+     "objective": [
+      505,
+      160
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      505,
+      160
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "2nd Coy HQ",
+     "order": "Hold",
+     "objective": [
+      548,
+      445
+     ],
+     "objectiveRadius": 6,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      548,
+      445
+     ],
+     "spawnSize": [
+      4,
+      4
+     ],
+     "weapons": {
+      "rifle": 2
+     },
+     "radio": true,
+     "moraleBonus": 15
+    },
+    {
+     "name": "Farmhouse Squad",
+     "order": "Hold",
+     "objective": [
+      498,
+      437
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      498,
+      437
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Yard Squad",
+     "order": "Hold",
+     "objective": [
+      484,
+      468
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      484,
+      468
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Barn MG",
+     "order": "Hold",
+     "objective": [
+      510,
+      465
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      510,
+      465
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 3,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Orchard Squad",
+     "order": "Hold",
+     "objective": [
+      462,
+      430
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      462,
+      430
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "3rd Coy HQ",
+     "order": "Hold",
+     "objective": [
+      745,
+      300
+     ],
+     "objectiveRadius": 6,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      745,
+      300
+     ],
+     "spawnSize": [
+      4,
+      4
+     ],
+     "weapons": {
+      "rifle": 2
+     },
+     "radio": true,
+     "moraleBonus": 15
+    },
+    {
+     "name": "Church Squad",
+     "order": "Hold",
+     "objective": [
+      712,
+      285
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      712,
+      285
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Lane Squad",
+     "order": "Hold",
+     "objective": [
+      722,
+      318
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      722,
+      318
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Yew Squad",
+     "order": "Hold",
+     "objective": [
+      740,
+      290
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      740,
+      290
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Wood Squad",
+     "order": "Hold",
+     "objective": [
+      700,
+      330
+     ],
+     "objectiveRadius": 12,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      700,
+      330
+     ],
+     "spawnSize": [
+      12,
+      16
+     ],
+     "weapons": {
+      "rifle": 7,
+      "lmg": 1
+     }
+    },
+    {
+     "name": "Red Mortars",
+     "order": "Hold",
+     "objective": [
+      880,
+      340
+     ],
+     "objectiveRadius": 8,
+     "facing": [
+      -1,
+      0
+     ],
+     "spawnCenter": [
+      880,
+      340
+     ],
+     "spawnSize": [
+      5,
+      6
+     ],
+     "weapons": {
+      "rifle": 5
+     },
+     "mortars": 2,
+     "mortarHe": 40,
+     "mortarSmoke": 0
+    }
+   ],
+   "phoneLines": [
+    {
+     "points": [
+      [
+       900,
+       320
+      ],
+      [
+       882,
+       338
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "companies": [
+  {
+   "name": "A Company",
+   "commander": "Capt. Hale",
+   "hq": "A Coy HQ",
+   "squads": [
+    "A 1st Squad",
+    "A 2nd Squad",
+    "A 3rd Squad",
+    "A 4th Squad"
+   ],
+   "traits": {
+    "aggression": 3,
+    "caution": 3,
+    "initiative": 4,
+    "competence": 3,
+    "composure": 3
+   }
+  },
+  {
+   "name": "B Company",
+   "commander": "Capt. Moore",
+   "hq": "B Coy HQ",
+   "squads": [
+    "B 1st Squad",
+    "B 2nd Squad",
+    "B 3rd Squad",
+    "B 4th Squad"
+   ],
+   "traits": {
+    "aggression": 4,
+    "caution": 2,
+    "initiative": 3,
+    "competence": 3,
+    "composure": 3
+   }
+  },
+  {
+   "name": "C Company",
+   "commander": "Capt. Ward",
+   "hq": "C Coy HQ",
+   "squads": [
+    "C 1st Squad",
+    "C 2nd Squad",
+    "C 3rd Squad",
+    "C 4th Squad"
+   ],
+   "traits": {
+    "aggression": 3,
+    "caution": 4,
+    "initiative": 3,
+    "competence": 4,
+    "composure": 4
+   }
+  },
+  {
+   "name": "1st Company",
+   "commander": "Capt. Brandt",
+   "hq": "1st Coy HQ",
+   "squads": [
+    "Village West",
+    "Village North",
+    "Village South",
+    "Village East"
+   ],
+   "traits": {
+    "aggression": 2,
+    "caution": 4,
+    "initiative": 3,
+    "competence": 3,
+    "composure": 4
+   }
+  },
+  {
+   "name": "2nd Company",
+   "commander": "Capt. Vogel",
+   "hq": "2nd Coy HQ",
+   "squads": [
+    "Farmhouse Squad",
+    "Yard Squad",
+    "Barn MG",
+    "Orchard Squad"
+   ],
+   "traits": {
+    "aggression": 3,
+    "caution": 3,
+    "initiative": 3,
+    "competence": 3,
+    "composure": 3
+   }
+  },
+  {
+   "name": "3rd Company",
+   "commander": "Capt. Richter",
+   "hq": "3rd Coy HQ",
+   "squads": [
+    "Church Squad",
+    "Lane Squad",
+    "Yew Squad",
+    "Wood Squad"
+   ],
+   "traits": {
+    "aggression": 4,
+    "caution": 2,
+    "initiative": 4,
+    "competence": 3,
+    "composure": 3
+   }
+  }
+ ],
+ "battalions": [
+  {
+   "side": "Blue",
+   "commander": "Maj. Ashford",
+   "posture": "Attack",
+   "reserve": [
+    "C Company"
+   ],
+   "traits": {
+    "aggression": 3,
+    "caution": 3,
+    "initiative": 3,
+    "competence": 3,
+    "composure": 3
+   }
+  },
+  {
+   "side": "Red",
+   "commander": "Maj. Kessler",
+   "posture": "Defend",
+   "reserve": [
+    "3rd Company"
+   ],
+   "traits": {
+    "aggression": 3,
+    "caution": 3,
+    "initiative": 3,
+    "competence": 3,
+    "composure": 3
+   }
+  }
+ ],
+ "orders": [
+  {
+   "time": 1,
+   "group": "MG Section",
+   "order": "Attach",
+   "attachTo": "A Company"
+  }
+ ]
+}

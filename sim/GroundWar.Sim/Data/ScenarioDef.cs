@@ -12,6 +12,43 @@ public sealed class ScenarioDef
     public List<ScheduledOrderDef> Orders { get; set; } = new();
     /// <summary>Companies: a commander, his HQ group and the squads under him (milestone 5).</summary>
     public List<CompanyDef> Companies { get; set; } = new();
+    /// <summary>How the battle is won. "Objective" (the default): take or hold the objective. "Hq" (milestone 7):
+    /// destroy the enemy's battalion HQ, or leave him unable to fight.</summary>
+    public string Victory { get; set; } = "Objective";
+    /// <summary>Places that matter on this map (a village, a farm, a crossroads): what battalion commanders fight over.</summary>
+    public List<KeyPointDef> KeyPoints { get; set; } = new();
+    /// <summary>Battalion commanders run by the computer (milestone 7). The player's side has one too: his staff,
+    /// who run the battle only if he hands it over to them.</summary>
+    public List<BattalionDef> Battalions { get; set; } = new();
+}
+
+/// <summary>A named place on the map that battalion commanders fight over.</summary>
+public sealed class KeyPointDef
+{
+    public string Name { get; set; } = "";
+    public float[] Position { get; set; } = new float[2];
+    public float Radius { get; set; } = 40f;
+}
+
+/// <summary>A battalion commander: his personality, whether he attacks or defends, and his reserve.</summary>
+public sealed class BattalionDef
+{
+    public string Side { get; set; } = "Red";
+    public string Commander { get; set; } = "Major";
+    /// <summary>"Attack" (take the key points one by one, then the enemy HQ) or "Defend" (hold them, counterattack).</summary>
+    public string Posture { get; set; } = "Defend";
+    public TraitsDef Traits { get; set; } = new();
+    /// <summary>Companies kept back at the start (by name).</summary>
+    public List<string> Reserve { get; set; } = new();
+}
+
+/// <summary>Guns off the map that battalion HQ can call on by radio (milestone 7).</summary>
+public sealed class ArtilleryDef
+{
+    public string Name { get; set; } = "Artillery";
+    public int Guns { get; set; } = 4;
+    public int He { get; set; } = 48;
+    public int Smoke { get; set; }
 }
 
 /// <summary>A company: its commander's personality, his HQ group, and his squads (by group name).</summary>
@@ -60,6 +97,9 @@ public sealed class HqDef
     public float[] Position { get; set; } = new float[2];
     /// <summary>A radio set at HQ (WW2: company HQ and above).</summary>
     public bool Radio { get; set; } = true;
+    /// <summary>The HQ's own men (clerks, signallers, the commander's runners), e.g. { "rifle": 6 }. They stand at
+    /// the HQ and defend it. With none, the HQ is just a place.</summary>
+    public Dictionary<string, int> Staff { get; set; } = new();
 }
 
 /// <summary>A field telephone line laid from HQ. Its far end is where a squad can pick up the phone.</summary>
@@ -80,6 +120,8 @@ public sealed class SideDef
     /// Without one (older scenarios), everything is instant.</summary>
     public HqDef? Hq { get; set; }
     public List<PhoneLineDef> PhoneLines { get; set; } = new();
+    /// <summary>Guns off the map that this side's battalion HQ can call on.</summary>
+    public ArtilleryDef? Artillery { get; set; }
 }
 
 public sealed class GroupDef
