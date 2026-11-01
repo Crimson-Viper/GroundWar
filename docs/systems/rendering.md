@@ -16,8 +16,12 @@ frame and draws it.
 | `Hud.cs` | Status panel, selected soldier panel, log, help, end banner, order and message panels, company panel with the brief-back buttons |
 | `CommsView.cs` | HQ tents, telephone cables, runners, phone pulses, radio rings, flares |
 | `CompanyView.cs` | Company commanders' plans as arrows on the ground, a flag over each company HQ |
+| `SoundView.cs` | Battle sounds: a pool of 3D sound players for nearby shots, shell bursts, tank guns, distant battle and radio squelch |
+| `SmokeView.cs` | Smoke clouds from shell bursts, black smoke and fire glow over burning wrecks, drifting in the wind |
+| `TableView.cs` | The map table: a paper map with unit counters that fades in when you zoom far out |
+| `ActionCamera.cs` | The battle cam: picks where the fighting is hottest and flies the camera there |
 | `Draw.cs` | Small helpers: sim-to-Godot positions, materials, batching |
-| `shaders/` | Ground pattern; morale/suppression bar |
+| `shaders/` | Ground pattern; morale/suppression bar; soft smoke |
 
 ## Why batched drawing
 At 1,000 soldiers a side, one Godot node per soldier part was far too slow. Every kind of thing is now drawn as
@@ -36,6 +40,8 @@ smooth at any frame rate and any game speed.
 ## Coordinates
 Sim (x, y) in metres becomes Godot (x, 0, y). Use `Draw.To3`. For scaling a mesh in its own frame use
 `basis * Basis.FromScale(...)` (Godot's `Scaled` scales in world space, which skews rotated objects).
+
+More on the sounds, smoke, map table and battle cam in [Spectacle](spectacle.md).
 
 ## Overlays and keys
 See the controls table in the main README. Overlays are toggled in `Main.cs` and drawn by `MapView` and `BattleView`.

@@ -10,6 +10,13 @@ public partial class CameraRig : Node3D
 {
     public Camera3D Camera { get; private set; } = null!;
     public Node3D? FollowTarget { get; set; }
+    /// <summary>How far the camera is from the point it looks at (the map table fades in when far out).</summary>
+    public float Distance => _distance;
+
+    // A smooth flight to a new view (the battle cam and the jump to the map table).
+    private bool _flying;
+    private Vector3 _flyFrom, _flyTo;
+    private float _flyYaw0, _flyYaw1, _flyPitch0, _flyPitch1, _flyDist0, _flyDist1, _flyT, _flyTime;
 
     private Node3D _pitchNode = null!;
     private float _yaw;
@@ -19,7 +26,7 @@ public partial class CameraRig : Node3D
     private Vector2 _bounds = new(300, 200);
 
     private const float MinDistance = 4f;
-    private const float MaxDistance = 450f;
+    private const float MaxDistance = 520f;
 
     public override void _Ready()
     {
@@ -52,9 +59,38 @@ public partial class CameraRig : Node3D
         ApplyTransform();
     }
 
+    /// <summary>Fly smoothly to look at a point from a given distance and angle.</summary>
+    public void FlyTo(Vector3 focus, float distance, float yawDegrees, float pitchDegrees, float seconds = 1.5f)
+    {
+        _flying = true;
+        _flyFrom = Position; _flyTo = new Vector3(focus.X, 0, focus.Z);
+        _flyYaw0 = _yaw;
+        // Turn the short way round.
+        _flyYaw1 = _yaw + Mathf.Wrap(Mathf.DegToRad(yawDegrees) - _yaw, -Mathf.Pi, Mathf.Pi);
+        _flyPitch0 = _pitch; _flyPitch1 = Mathf.DegToRad(pitchDegrees);
+        _flyDist0 = _distance; _flyDist1 = distance;
+        _flyT = 0f; _flyTime = Mathf.Max(0.1f, seconds);
+    }
+
+    /// <summary>Straight up above the middle of the map: the war-room table.</summary>
+    public void ToTable() => FlyTo(new Vector3(_bounds.X * 0.5f, 0, _bounds.Y * 0.5f), Mathf.Max(_bounds.X, _bounds.Y) * 1.1f + 60f, 0f, -80f, 1.2f);
+
     public override void _Process(double delta)
     {
         float dt = (float)delta;
+        if (_flying)
+        {
+            _flyT += dt / _flyTime;
+            float k = Mathf.SmoothStep(0f, 1f, Mathf.Min(_flyT, 1f));
+            var target = FollowTarget != null && IsInstanceValid(FollowTarget) ? new Vector3(FollowTarget.GlobalPosition.X, 0, FollowTarget.GlobalPosition.Z) : _flyTo;
+            Position = _flyFrom.Lerp(target, k);
+            _yaw = Mathf.Lerp(_flyYaw0, _flyYaw1, k);
+            _pitch = Mathf.Lerp(_flyPitch0, _flyPitch1, k);
+            _distance = _targetDistance = Mathf.Lerp(_flyDist0, _flyDist1, k);
+            if (_flyT >= 1f) _flying = false;
+            ApplyTransform();
+            return;
+        }
         bool fast = Input.IsKeyPressed(Key.Shift);
         float panSpeed = (20f + _distance * 0.9f) * (fast ? 3f : 1f);
 

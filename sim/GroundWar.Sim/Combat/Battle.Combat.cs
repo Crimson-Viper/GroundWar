@@ -138,6 +138,7 @@ public sealed partial class Battle
             impact = aim + Geo.Perp(dir) * (Rng.Gaussian() * spread) + dir * (Rng.Gaussian() * spread * 1.5f);
         }
         _shots.Add(new ShotEvent(s.Id, s.Position, impact, hit, w.IsMachineGun, Shell: w.Backblast));
+        if (FirstShotTime < 0f) FirstShot(s);
 
         // Near misses frighten everyone close to where the bullet went.
         float radius = w.SuppressionRadius;

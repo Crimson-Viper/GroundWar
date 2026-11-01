@@ -34,7 +34,7 @@ public sealed class SquadBrain
                     // (A waypoint is only somewhere to get to: arriving isn't taking anything.)
                     if (!g.MoveOnly && EnemyCenter(g, g.Objective, g.ObjectiveRadius + 25f) == null)
                     {
-                        _b.Note(g, $"{g.Name}: reached the objective, holding it");
+                        _b.Note(g, $"{g.Name}: reached the objective, holding it", LogKind.Key);
                         g.TookObjective = true;
                     }
                     g.HoldPosition = g.Objective;
@@ -161,7 +161,7 @@ public sealed class SquadBrain
         bool enemyLeft = EnemyCenter(g, g.Objective, g.ObjectiveRadius + 25f) == null;
         if (onObjective && enemyLeft)
         {
-            _b.Note(g, $"{g.Name}: objective taken, consolidating");
+            _b.Note(g, $"{g.Name}: objective taken, consolidating", LogKind.Key);
             g.TookObjective = true;
             g.HoldPosition = g.Objective;
             g.Order = GroupOrder.Hold;

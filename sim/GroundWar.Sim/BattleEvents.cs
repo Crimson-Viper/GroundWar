@@ -10,8 +10,10 @@ public readonly record struct ShotEvent(int ShooterId, Vector2 From, Vector2 Imp
 public readonly record struct CasualtyEvent(int SoldierId, int ShooterId, bool Killed);
 
 /// <summary>What a log line is about. Thoughts are every soldier's change of action, so there are a lot of them;
-/// events are what a commander would hear about (casualties, men breaking, squads changing tactic).</summary>
-public enum LogKind { Event, Thought, Casualty }
+/// events are what a commander would hear about (casualties, men breaking, squads changing tactic). Key moments are
+/// the few lines that tell the story of the battle (a plan made, a squad breaking, an objective taken); the
+/// after-action report's timeline is made of them.</summary>
+public enum LogKind { Event, Thought, Casualty, Key }
 
 /// <summary>One line of the battle log. Side is whose soldier or squad it is about (null for the whole battle).</summary>
 public readonly record struct LogEntry(float Time, int SoldierId, string Text, Side? Side, LogKind Kind);
