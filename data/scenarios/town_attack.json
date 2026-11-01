@@ -1,0 +1,31 @@
+// Street fighting test: a cover-rich town.
+// Blue 1st Squad works up to the crossroads at x=128 and keeps Red's heads down.
+// Blue 2nd Squad attacks the crossroads at x=178 through the houses and rubble.
+// Red holds the crossroads, with a machine gun covering the main street from further east.
+{
+  "name": "Town attack",
+  "description": "Two Blue squads fight through a town to take a crossroads held by a Red squad and a machine gun.",
+  "map": "maps/town.json",
+  "timeLimit": 900,
+  "sides": [
+    {
+      "side": "Blue", "name": "Blue", "rear": [-1, 0],
+      "groups": [
+        { "name": "Blue 1st Squad", "order": "Suppress", "objective": [178, 100], "objectiveRadius": 18,
+          "supportPosition": [128, 100], "facing": [1, 0],
+          "spawnCenter": [25, 80], "spawnSize": [14, 20], "weapons": { "rifle": 8, "lmg": 2 } },
+        { "name": "Blue 2nd Squad", "order": "Attack", "objective": [178, 100], "objectiveRadius": 16, "facing": [1, 0],
+          "spawnCenter": [25, 122], "spawnSize": [14, 20], "weapons": { "rifle": 9, "lmg": 1 } }
+      ]
+    },
+    {
+      "side": "Red", "name": "Red", "rear": [1, 0],
+      "groups": [
+        { "name": "Red 1st Squad", "order": "Hold", "objective": [180, 100], "objectiveRadius": 16, "facing": [-1, 0],
+          "spawnCenter": [182, 100], "spawnSize": [8, 30], "weapons": { "rifle": 8, "lmg": 1 } },
+        { "name": "Red MG post", "order": "Hold", "objective": [230, 100], "objectiveRadius": 6, "facing": [-1, 0],
+          "spawnCenter": [230, 100], "spawnSize": [4, 6], "weapons": { "rifle": 2, "lmg": 1 } }
+      ]
+    }
+  ]
+}

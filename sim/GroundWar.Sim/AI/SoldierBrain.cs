@@ -84,7 +84,7 @@ public sealed class SoldierBrain
             var center = local ? s.Position : s.TaskPosition;
             float radius = local
                 ? (s.Suppression >= Mr.SuppressionShaken ? Ai.SuppressedCoverSearchRadius * 1.5f : Ai.CoverSearchRadius * 0.6f)
-                : s.TaskRadius + 4f;
+                : s.TaskRadius + 1f; // stay inside the area he'd be sent back to (see farFromTask), or he flips between the two
             var c = FindCover(s, center, radius);
             if (c != null)
             {
