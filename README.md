@@ -55,6 +55,14 @@ travel, bounding overwatch (one team moves, the other covers), fire and movement
 The top-left panel shows each Blue squad's tactic and what it is doing. With **P** on, orange lines show where the gun team is going,
 cyan lines the rifle team, and purple the flanking route.
 
+**The log (bottom left)** lists what a commander would hear about: casualties, men breaking or rallying, squads changing
+tactic. Each soldier's every change of mind is left out, except for the soldier you have selected. With fog of war on,
+Red's own decisions are hidden.
+
+**Who wins.** A side that can no longer fight loses. Otherwise, when the fighting dies down or time runs out, the side holding
+its objective wins (the one with more men on it, if both got there). If nobody holds one and only one side was attacking, the
+defender wins. If both sides attacked, the side with clearly more men still fighting wins (20 points more); otherwise it's a draw.
+
 **Fog of war (V).** You see the battle as Blue does. Red soldiers only appear while Blue can see them; red discs mark where
 an enemy was last seen (fading as the sighting gets older; a big disc is a guess from a muzzle flash). Each squad only knows what its
 own men have seen, or what a squad close by tells it. Press V to see everything.

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Godot;
@@ -146,9 +147,7 @@ public partial class Hud : CanvasLayer
             _selected.Text = t.ToString();
         }
 
-        var lines = battle.Log.Entries.Skip(System.Math.Max(0, battle.Log.Entries.Count - 7))
-            .Select(e => $"{(int)(e.Time / 60)}:{(int)e.Time % 60:00}  {e.Text}");
-        _log.Text = string.Join("\n", lines);
+        _log.Text = RecentLog(battle, selected, fog, playerSide);
 
         if (battle.Result != null)
         {
@@ -159,5 +158,26 @@ public partial class Hud : CanvasLayer
             _banner.Visible = true;
         }
         else _banner.Visible = false;
+    }
+
+    private readonly List<string> _logLines = new();
+
+    /// <summary>The last few lines worth a commander's attention: casualties, men breaking or rallying, squads
+    /// changing tactic. Every soldier's change of action is left out (it buries the rest), except for the
+    /// selected soldier's. With fog of war on, the enemy's own decisions are hidden too.</summary>
+    private string RecentLog(Battle battle, Soldier? selected, bool fog, Side playerSide)
+    {
+        _logLines.Clear();
+        var entries = battle.Log.Entries;
+        for (int i = entries.Count - 1; i >= 0 && _logLines.Count < 7; i--)
+        {
+            var e = entries[i];
+            bool mine = selected != null && e.SoldierId == selected.Id;
+            if (e.Kind == LogKind.Thought && !mine) continue;
+            if (fog && e.Side != null && e.Side != playerSide && e.Kind != LogKind.Casualty) continue;
+            _logLines.Add($"{(int)(e.Time / 60)}:{(int)e.Time % 60:00}  {e.Text}");
+        }
+        _logLines.Reverse();
+        return string.Join("\n", _logLines);
     }
 }

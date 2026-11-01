@@ -83,7 +83,9 @@ public sealed partial class Battle
 
     internal static Side Enemy(Side side) => side == Side.Blue ? Side.Red : Side.Blue;
 
-    internal void Note(Soldier? s, string text) => Log.Add(Time, s?.Id ?? -1, s == null ? text : $"{s.Label} {text}");
+    internal void Note(Soldier? s, string text, LogKind kind = LogKind.Event) =>
+        Log.Add(Time, s?.Id ?? -1, s == null ? text : $"{s.Label} {text}", s?.Side, kind);
+    internal void Note(Group g, string text) => Log.Add(Time, -1, text, g.Side);
 
     private void Spawn()
     {
@@ -279,7 +281,7 @@ public sealed partial class Battle
             if (active > 0 && broken >= active * Rules.Morale.GroupBrokenFraction && broken > 0)
             {
                 g.HasBroken = true;
-                Note(null, $"{g.Name} ({g.Side}) is breaking!");
+                Note(g, $"{g.Name} ({g.Side}) is breaking!");
                 foreach (var m in g.Members)
                     if (m.IsActive && m.MoraleState != MoraleState.Broken) m.Morale -= Rules.Morale.GroupBrokenShock;
             }
@@ -294,23 +296,41 @@ public sealed partial class Battle
     }
 
     /// <summary>Nobody is attacking any more and the guns have gone quiet: whoever holds the ground has won.</summary>
+    /// <summary>Which side holds the objective it took: the one with more fighting men still on it.</summary>
+    private Side? Holder()
+    {
+        int MenOn(Side side)
+        {
+            int n = 0;
+            foreach (var g in _groups)
+            {
+                if (g.Side != side || !g.TookObjective) continue;
+                foreach (var s in _soldiers)
+                    if (s.Side == side && s.IsEffective && Vector2.Distance(s.Position, g.Objective) <= g.ObjectiveRadius + 10f) n++;
+            }
+            return n;
+        }
+        int blue = MenOn(Side.Blue), red = MenOn(Side.Red);
+        if (blue == red) return null;
+        return blue > red ? Side.Blue : Side.Red;
+    }
+
     private BattleResult QuietResult()
     {
-        foreach (var side in new[] { Side.Blue, Side.Red })
-            if (_groups.Any(g => g.Side == side && g.TookObjective))
-                return new BattleResult { Winner = side, Time = Time, Reason = $"{side} took the objective" };
+        if (Holder() is Side holder)
+            return new BattleResult { Winner = holder, Time = Time, Reason = $"{holder} took the objective" };
         foreach (var side in new[] { Side.Blue, Side.Red })
             if (_groups.Any(g => g.Side == side && g.AttackFailed))
                 return new BattleResult { Winner = Enemy(side), Time = Time, Reason = $"{side}'s attack failed" };
         return new BattleResult { Winner = null, Time = Time, Reason = "The fighting died down" };
     }
 
-    /// <summary>Out of time: the attacker wins only if it took the objective; otherwise the defender held.</summary>
+    /// <summary>Out of time: whoever holds the objective wins; otherwise the defender held. If both sides attacked,
+    /// the side left clearly stronger (20 points more of its men still fighting) wins.</summary>
     private BattleResult TimeLimitResult()
     {
-        foreach (var side in new[] { Side.Blue, Side.Red })
-            if (_groups.Any(g => g.Side == side && g.TookObjective))
-                return new BattleResult { Winner = side, Time = Time, Reason = $"Time up: {side} holds the objective" };
+        if (Holder() is Side holder)
+            return new BattleResult { Winner = holder, Time = Time, Reason = $"Time up: {holder} holds the objective" };
         bool blueAttacked = _groups.Any(g => g.Side == Side.Blue && g.OriginalOrder != GroupOrder.Hold);
         bool redAttacked = _groups.Any(g => g.Side == Side.Red && g.OriginalOrder != GroupOrder.Hold);
         if (blueAttacked != redAttacked)
@@ -318,7 +338,25 @@ public sealed partial class Battle
             var defender = blueAttacked ? Side.Red : Side.Blue;
             return new BattleResult { Winner = defender, Time = Time, Reason = $"Time up: {defender} held on" };
         }
-        return new BattleResult { Winner = null, Time = Time, Reason = "Time up" };
+        // Both sides attacked and nobody holds the ground: the side left clearly stronger came off better.
+        float Fit(Side side)
+        {
+            int all = 0, fit = 0;
+            foreach (var s in _soldiers)
+            {
+                if (s.Side != side) continue;
+                all++;
+                if (s.IsEffective) fit++;
+            }
+            return all == 0 ? 0f : fit / (float)all;
+        }
+        float blueFit = Fit(Side.Blue), redFit = Fit(Side.Red);
+        if (MathF.Abs(blueFit - redFit) >= 0.2f)
+        {
+            var better = blueFit > redFit ? Side.Blue : Side.Red;
+            return new BattleResult { Winner = better, Time = Time, Reason = $"Time up: {better} came off better" };
+        }
+        return new BattleResult { Winner = null, Time = Time, Reason = "Time up: neither side got the upper hand" };
     }
 
     private void CheckEnd()
@@ -336,6 +374,6 @@ public sealed partial class Battle
         else if (!_groups.Any(g => g.IsAttacking && g.CountEffective > 0) && Time - LastShotTime() > Rules.Squad.QuietEndTime)
             Result = QuietResult();
         else if (Time >= Scenario.TimeLimit) Result = TimeLimitResult();
-        if (Result != null) Note(null, $"Battle over: {Result.Reason}");
+        if (Result != null) Log.Add(Time, -1, $"Battle over: {Result.Reason}");
     }
 }

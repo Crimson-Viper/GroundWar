@@ -237,7 +237,7 @@ public sealed class SoldierBrain
         if (s.Action != action)
         {
             s.ActionStarted = _b.Time;
-            _b.Note(s, $"{action}: {thought}");
+            _b.Note(s, $"{action}: {thought}", LogKind.Thought);
         }
         s.Action = action;
         s.Thought = thought;

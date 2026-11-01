@@ -174,7 +174,7 @@ public sealed partial class Battle
     {
         var mr = Rules.Morale;
         bool killed = Rng.Chance(Rules.Soldier.KillChanceOnHit);
-        Note(t, $"{(killed ? "killed" : "wounded")} by {shooter.Label} at {Vector2.Distance(t.Position, shooter.Position):0} m ({t.Action}, {(t.IsMoving ? "moving" : t.Stance.ToString().ToLowerInvariant())}, cover {Map.ProtectionAt(t.Position, shooter.Position) * 100:0}%)");
+        Note(t, $"{(killed ? "killed" : "wounded")} by {shooter.Label} at {Vector2.Distance(t.Position, shooter.Position):0} m ({t.Action}, {(t.IsMoving ? "moving" : t.Stance.ToString().ToLowerInvariant())}, cover {Map.ProtectionAt(t.Position, shooter.Position) * 100:0}%)", LogKind.Casualty);
         t.Status = killed ? SoldierStatus.Dead : SoldierStatus.Wounded;
         t.Stance = Stance.Prone;
         t.Path = null;

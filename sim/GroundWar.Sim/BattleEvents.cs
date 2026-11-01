@@ -8,7 +8,12 @@ public readonly record struct ShotEvent(int ShooterId, Vector2 From, Vector2 Imp
 
 public readonly record struct CasualtyEvent(int SoldierId, int ShooterId, bool Killed);
 
-public readonly record struct LogEntry(float Time, int SoldierId, string Text);
+/// <summary>What a log line is about. Thoughts are every soldier's change of action, so there are a lot of them;
+/// events are what a commander would hear about (casualties, men breaking, squads changing tactic).</summary>
+public enum LogKind { Event, Thought, Casualty }
+
+/// <summary>One line of the battle log. Side is whose soldier or squad it is about (null for the whole battle).</summary>
+public readonly record struct LogEntry(float Time, int SoldierId, string Text, Side? Side, LogKind Kind);
 
 public sealed class BattleResult
 {
@@ -25,9 +30,9 @@ public sealed class BattleLog
     public IReadOnlyList<LogEntry> Entries => _entries;
     public bool Verbose { get; set; } = true;
 
-    public void Add(float time, int soldierId, string text)
+    public void Add(float time, int soldierId, string text, Side? side = null, LogKind kind = LogKind.Event)
     {
         if (_entries.Count >= Capacity) _entries.RemoveRange(0, Capacity / 4);
-        _entries.Add(new LogEntry(time, soldierId, text));
+        _entries.Add(new LogEntry(time, soldierId, text, side, kind));
     }
 }

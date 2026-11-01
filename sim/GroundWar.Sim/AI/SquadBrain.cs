@@ -28,7 +28,18 @@ public sealed class SquadBrain
         {
             case GroupOrder.Hold: Defend(g, g.HoldPosition, g.ObjectiveRadius); break;
             case GroupOrder.Advance:
-                if (Vector2.Distance(g.Centroid, g.Objective) <= g.ObjectiveRadius + 5f) { g.HoldPosition = g.Objective; g.Order = GroupOrder.Hold; Defend(g, g.Objective, g.ObjectiveRadius); }
+                if (Vector2.Distance(g.Centroid, g.Objective) <= g.ObjectiveRadius + 5f)
+                {
+                    // Got there first (or the enemy has gone): the place is ours, so hold it.
+                    if (EnemyCenter(g, g.Objective, g.ObjectiveRadius + 25f) == null)
+                    {
+                        _b.Note(g, $"{g.Name}: reached the objective, holding it");
+                        g.TookObjective = true;
+                    }
+                    g.HoldPosition = g.Objective;
+                    g.Order = GroupOrder.Hold;
+                    Defend(g, g.Objective, g.ObjectiveRadius);
+                }
                 else MoveTowards(g, g.Objective);
                 break;
             case GroupOrder.Suppress: SuppressOrder(g); break;
@@ -136,7 +147,7 @@ public sealed class SquadBrain
         // Too many men lost: stop and hold what we have.
         if (g.CountEffective < g.StartStrength * R.FallBackStrength && g.Tactic != Tactic.Assault)
         {
-            _b.Note(null, $"{g.Name}: too many casualties, the attack is called off");
+            _b.Note(g, $"{g.Name}: too many casualties, the attack is called off");
             g.AttackFailed = true;
             g.HoldPosition = center;
             g.Order = GroupOrder.Hold;
@@ -149,7 +160,7 @@ public sealed class SquadBrain
         bool enemyLeft = EnemyCenter(g, g.Objective, g.ObjectiveRadius + 25f) == null;
         if (onObjective && enemyLeft)
         {
-            _b.Note(null, $"{g.Name}: objective taken, consolidating");
+            _b.Note(g, $"{g.Name}: objective taken, consolidating");
             g.TookObjective = true;
             g.HoldPosition = g.Objective;
             g.Order = GroupOrder.Hold;
@@ -189,13 +200,13 @@ public sealed class SquadBrain
         if (g.Teams.Count > 1 && g.Gun.CountEffective >= 2 && g.Rifles.CountEffective >= 3 && PlanFlank(g, e))
         {
             SetTactic(g, Tactic.Flank);
-            _b.Note(null, $"{g.Name}: gun team fixes the enemy, rifle team flanks {(Geo.Cross(e - center, g.FlankPoint - center) > 0 ? "right" : "left")}");
+            _b.Note(g, $"{g.Name}: gun team fixes the enemy, rifle team flanks {(Geo.Cross(e - center, g.FlankPoint - center) > 0 ? "right" : "left")}");
             ContinueFlank(g, e, distRifles);
         }
         else
         {
             SetTactic(g, Tactic.FireAndMovement);
-            _b.Note(null, $"{g.Name}: no way round, fire and movement straight at them");
+            _b.Note(g, $"{g.Name}: no way round, fire and movement straight at them");
             FireAndMovement(g, e, e);
         }
     }
@@ -206,7 +217,7 @@ public sealed class SquadBrain
         // The squad we were supporting has taken the objective: job done, hold here.
         if (_b.Groups.Any(o => o.Side == g.Side && o.TookObjective && Vector2.Distance(o.Objective, g.Objective) < 30f))
         {
-            _b.Note(null, $"{g.Name}: objective taken, ceasing fire");
+            _b.Note(g, $"{g.Name}: objective taken, ceasing fire");
             g.Order = GroupOrder.Hold;
             g.HoldPosition = g.Centroid;
             Defend(g, g.HoldPosition, R.TeamRadius * 2f);
@@ -331,7 +342,7 @@ public sealed class SquadBrain
             if (g.PinnedSince < 0f) g.PinnedSince = _b.Time;
             else if (_b.Time - g.PinnedSince > R.PinnedAbortTime)
             {
-                _b.Note(null, $"{g.Name}: flank pinned down, switching to fire and movement");
+                _b.Note(g, $"{g.Name}: flank pinned down, switching to fire and movement");
                 g.PinnedSince = -1f;
                 FireAndMovement(g, enemy, enemy);
                 return;
@@ -359,7 +370,7 @@ public sealed class SquadBrain
 
     private void Assault(Group g, Vector2 enemy, string? why)
     {
-        if (g.Tactic != Tactic.Assault) _b.Note(null, $"{g.Name}: {why ?? "assault!"}");
+        if (g.Tactic != Tactic.Assault) _b.Note(g, $"{g.Name}: {why ?? "assault!"}");
         SetTactic(g, Tactic.Assault);
         var rifles = g.Rifles;
         var gun = g.Gun;
@@ -381,7 +392,7 @@ public sealed class SquadBrain
         bool pressed = near != null && Vector2.Distance(near.Value, g.Centroid) < 40f;
         if (weak && pressed && g.Order == GroupOrder.Hold)
         {
-            if (g.Tactic != Tactic.FallBack) _b.Note(null, $"{g.Name}: can't hold, falling back by teams");
+            if (g.Tactic != Tactic.FallBack) _b.Note(g, $"{g.Name}: can't hold, falling back by teams");
             SetTactic(g, Tactic.FallBack);
             var rear = _b.Map.Clamp(g.Centroid + g.Rear * R.FallBackStep * 3f, 3f);
             AlternateBounds(g, rear, R.FallBackStep, run: true, label: "Falling back");
@@ -399,7 +410,7 @@ public sealed class SquadBrain
     private void SetTactic(Group g, Tactic t)
     {
         if (g.Tactic == t) return;
-        _b.Note(null, $"{g.Name}: {g.Tactic} -> {t}");
+        _b.Note(g, $"{g.Name}: {g.Tactic} -> {t}");
         g.Tactic = t;
         g.TacticStarted = _b.Time;
         foreach (var team in g.Teams) team.Moving = false;
