@@ -99,3 +99,5 @@ dotnet run --project sim/GroundWar.Runner -- --battles 1 --seed 4 --log     # ev
 dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/meeting.json --map maps/meeting_field_c.json --battles 300   # same scenario, other ground
 dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/stress_1000.json --battles 1 --profile   # 1,000 a side, timing
 ```
+
+<!-- auto-merge test (2026-11-01). Safe to ignore. -->
