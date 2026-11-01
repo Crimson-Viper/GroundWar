@@ -10,10 +10,14 @@ public enum MessageStatus { InTransit, Delivered, Lost }
 
 /// <summary>What a message is about. Company commanders read reports by kind (a squad saying it is pinned, or has
 /// taken the objective), and battalion HQ answers a brief-back with Approve or Reject.</summary>
-public enum MessageKind { Order, Contact, Sitrep, Losses, Pinned, Broken, Taken, Failed, BriefBack, Refusal, Approve, Reject, Note }
+public enum MessageKind { Order, Contact, Sitrep, Losses, Pinned, Broken, Taken, Failed, BriefBack, Refusal, Approve, Reject, Note, FireRequest }
 
-/// <summary>What an order tells a squad to do. Halt and FallBack need no place; the rest do.</summary>
-public enum OrderKind { Hold, Advance, Attack, Suppress, Halt, FallBack }
+/// <summary>What an order tells a squad to do. Halt and FallBack need no place; the rest do. FireMission is for a
+/// mortar section (fire on a place); Attach puts a battalion asset (an MG section) under a company.</summary>
+public enum OrderKind { Hold, Advance, Attack, Suppress, Halt, FallBack, FireMission, Attach }
+
+/// <summary>What a fire mission fires: high explosive or smoke.</summary>
+public enum FireKind { He, Smoke }
 
 /// <summary>An order from HQ to one squad.</summary>
 public sealed class Order
@@ -27,6 +31,14 @@ public sealed class Order
     /// <summary>For Advance: just a place to get to (a start line, a support position), not an objective to take.</summary>
     public bool IsWaypoint { get; init; }
 
+    /// <summary>For FireMission: HE or smoke, and how many rounds.</summary>
+    public FireKind Fire { get; init; }
+    public int Rounds { get; init; }
+    /// <summary>For Attach: the company to join (null = back under battalion).</summary>
+    public Company? AttachTo { get; init; }
+    /// <summary>For FireMission: the request it answers (for a company commander's own request).</summary>
+    public FireMission? Mission { get; init; }
+
     public bool CanGoByFlare => Kind is OrderKind.Halt or OrderKind.FallBack;
 
     public override string ToString() => Kind switch
@@ -36,6 +48,8 @@ public sealed class Order
         OrderKind.Hold => "Hold the position",
         OrderKind.Advance => "Advance to the objective",
         OrderKind.Attack => "Attack the objective",
+        OrderKind.FireMission => $"Fire mission: {Rounds} rounds {(Fire == FireKind.Smoke ? "smoke" : "HE")}",
+        OrderKind.Attach => AttachTo != null ? $"Join {AttachTo.Name}" : "Come back under battalion",
         _ => "Suppress the objective",
     };
 }
@@ -55,6 +69,8 @@ public sealed class Message
     public Company? Company { get; init; }
     /// <summary>A brief-back: the company commander's plan, sent up for HQ to see.</summary>
     public CompanyPlan? Plan { get; init; }
+    /// <summary>A company commander's request for mortar fire, on its way to battalion.</summary>
+    public FireMission? Mission { get; init; }
     /// <summary>True for HQ to squad (an order), false for squad to HQ (a report).</summary>
     public bool Down { get; init; }
     public Order? Order { get; init; }
@@ -100,4 +116,34 @@ public sealed class Headquarters
     public bool HasRadio { get; init; }
     /// <summary>What HQ knows about the enemy: only what reports have brought in.</summary>
     public SideKnowledge Knowledge { get; init; } = null!;
+}
+
+public enum FireMissionStatus { Requested, Ordered, Firing, Done, Refused, Cancelled }
+
+/// <summary>A request for mortar fire: a company commander's (sent up to battalion, which passes it to the mortars)
+/// or battalion's own. See docs/systems/support-fire.md.</summary>
+public sealed class FireMission
+{
+    public int Id { get; init; }
+    public Side Side { get; init; }
+    public Vector2 Target { get; init; }
+    public FireKind Kind { get; init; }
+    public int Rounds { get; init; }
+    /// <summary>The company that asked for it (null = battalion's own).</summary>
+    public Company? RequestedBy { get; init; }
+    public string Reason { get; init; } = "";
+    public float RequestedAt { get; init; }
+    public FireMissionStatus Status { get; set; }
+    public int RoundsFired { get; set; }
+    public int RoundsLanded { get; set; }
+    public float FirstLanded { get; set; } = -1f;
+    public float DoneAt { get; set; } = -1f;
+    /// <summary>The mortar section firing it.</summary>
+    public Group? FiredBy { get; set; }
+    /// <summary>An "on call" target: asked for ahead of time, so the mortars are laid on it and wait for the word
+    /// to fire (the commander's call, when his assault is ready). -1 = not called yet.</summary>
+    public bool OnCall { get; init; }
+    public float CallAt { get; set; } = -1f;
+    public bool Waiting => OnCall && CallAt < 0f;
+    public string Describe() => $"{Rounds} rounds {(Kind == FireKind.Smoke ? "smoke" : "HE")}";
 }

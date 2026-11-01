@@ -38,3 +38,15 @@ public sealed class CoverPoint
     public bool CanFire { get; init; }
     public int ClaimedBy { get; set; } = -1;
 }
+
+/// <summary>A smoke screen from a smoke shell: it blocks sight (not bullets) until it thins out.</summary>
+public sealed class SmokeCloud
+{
+    public Vector2 Center { get; set; }
+    public float FullRadius { get; init; }
+    public float Radius { get; set; }
+    /// <summary>0 = thin wisps, 1 = thick. Below one half it no longer hides anything.</summary>
+    public float Density { get; set; }
+    public float Born { get; init; }
+    public float Expires { get; init; }
+}

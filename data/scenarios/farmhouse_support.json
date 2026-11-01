@@ -1,0 +1,61 @@
+// Milestone 7: the farmhouse attack with battalion support. Blue's battalion has a mortar section (three tubes,
+// HE and smoke) and an MG section, which HQ attaches to A Company at the start. Captain Hale can now ask for
+// mortar fire before the assault, on machine guns that pin his men, and when he refuses an attack. Red has two
+// mortars of its own, which Captain Brandt calls down on attackers he sees coming.
+{
+  "name": "Farmhouse with support",
+  "description": "Company attack with mortars and an MG section: commanders call for fire, smoke screens hide the assault.",
+  "map": "maps/farmhouse.json",
+  "timeLimit": 1500,
+  "sides": [
+    {
+      "side": "Blue", "name": "Blue", "rear": [-1, 0],
+      "hq": { "name": "Blue Battalion HQ", "position": [8, 150], "radio": true },
+      "groups": [
+        { "name": "A Coy HQ", "order": "Hold", "objective": [22, 150], "objectiveRadius": 6, "facing": [1, 0],
+          "spawnCenter": [22, 150], "spawnSize": [4, 4], "weapons": { "rifle": 2 }, "radio": true, "moraleBonus": 15 },
+        { "name": "1st Squad", "order": "Hold", "objective": [40, 96], "objectiveRadius": 12, "facing": [1, 0],
+          "spawnCenter": [40, 96], "spawnSize": [12, 16], "weapons": { "rifle": 9, "lmg": 1 } },
+        { "name": "2nd Squad", "order": "Hold", "objective": [40, 132], "objectiveRadius": 12, "facing": [1, 0],
+          "spawnCenter": [40, 132], "spawnSize": [12, 16], "weapons": { "rifle": 9, "lmg": 1 } },
+        { "name": "3rd Squad", "order": "Hold", "objective": [40, 168], "objectiveRadius": 12, "facing": [1, 0],
+          "spawnCenter": [40, 168], "spawnSize": [12, 16], "weapons": { "rifle": 8, "lmg": 2 } },
+        { "name": "4th Squad", "order": "Hold", "objective": [40, 204], "objectiveRadius": 12, "facing": [1, 0],
+          "spawnCenter": [40, 204], "spawnSize": [12, 16], "weapons": { "rifle": 9, "lmg": 1 } },
+        { "name": "MG Section", "order": "Hold", "objective": [20, 186], "objectiveRadius": 8, "facing": [1, 0], "asset": true,
+          "spawnCenter": [20, 186], "spawnSize": [6, 8], "weapons": { "rifle": 4, "hmg": 2 } },
+        { "name": "Mortar Section", "order": "Hold", "objective": [12, 116], "objectiveRadius": 8, "facing": [1, 0],
+          "spawnCenter": [12, 116], "spawnSize": [6, 8], "weapons": { "rifle": 7 }, "mortars": 3, "mortarHe": 60, "mortarSmoke": 24 }
+      ],
+      "phoneLines": [ { "points": [[10, 130], [12, 118]] } ]
+    },
+    {
+      "side": "Red", "name": "Red", "rear": [1, 0],
+      "hq": { "name": "Red Battalion HQ", "position": [392, 150], "radio": true },
+      "groups": [
+        { "name": "Red Coy HQ", "order": "Hold", "objective": [334, 150], "objectiveRadius": 6, "facing": [-1, 0],
+          "spawnCenter": [334, 150], "spawnSize": [4, 4], "weapons": { "rifle": 2 }, "radio": true, "moraleBonus": 15 },
+        { "name": "Farmhouse Squad", "order": "Hold", "objective": [298, 145], "objectiveRadius": 9, "facing": [-1, 0],
+          "spawnCenter": [298, 145], "spawnSize": [9, 10], "weapons": { "rifle": 6, "lmg": 1 } },
+        { "name": "Yard Squad", "order": "Hold", "objective": [285, 176], "objectiveRadius": 10, "facing": [-1, 0],
+          "spawnCenter": [287, 176], "spawnSize": [6, 16], "weapons": { "rifle": 6, "lmg": 1 } },
+        { "name": "Barn MG", "order": "Hold", "objective": [299, 171], "objectiveRadius": 4, "facing": [-1, 0],
+          "spawnCenter": [300, 171], "spawnSize": [3, 4], "weapons": { "rifle": 2, "lmg": 1 } },
+        { "name": "Red Mortars", "order": "Hold", "objective": [386, 118], "objectiveRadius": 8, "facing": [-1, 0],
+          "spawnCenter": [386, 118], "spawnSize": [5, 6], "weapons": { "rifle": 5 }, "mortars": 2, "mortarHe": 30, "mortarSmoke": 0 }
+      ],
+      "phoneLines": [ { "points": [[390, 130], [386, 120]] } ]
+    }
+  ],
+  "companies": [
+    { "name": "A Company", "commander": "Capt. Hale", "hq": "A Coy HQ", "squads": ["1st Squad", "2nd Squad", "3rd Squad", "4th Squad"],
+      "traits": { "aggression": 3, "caution": 3, "initiative": 4, "competence": 3, "composure": 3 } },
+    { "name": "Red Company", "commander": "Capt. Brandt", "hq": "Red Coy HQ", "squads": ["Farmhouse Squad", "Yard Squad", "Barn MG"],
+      "traits": { "aggression": 2, "caution": 4, "initiative": 3, "competence": 3, "composure": 4 } }
+  ],
+  // What Blue's battalion HQ sends. In the game you can send your own orders: select any man in the company.
+  "orders": [
+    { "time": 1, "group": "MG Section", "order": "Attach", "attachTo": "A Company" },
+    { "time": 5, "group": "A Company", "order": "Attack", "objective": [299, 152], "objectiveRadius": 22 }
+  ]
+}

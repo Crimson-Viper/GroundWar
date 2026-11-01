@@ -86,6 +86,32 @@
     "penetration": 50,          // a direct hit on another tank (mm at the muzzle, half that at full range)
     "blastRadius": 6            // men inside this can be killed or wounded; cover helps
   },
+  "hmg": {
+    "name": "Heavy machine gun (tripod)",
+    "range": 900,
+    "accuracy": [[0, 0.32], [25, 0.22], [50, 0.13], [100, 0.07], [200, 0.035], [300, 0.018], [500, 0.008], [900, 0.002]],
+    "burstSize": 8,
+    "burstInterval": 0.1,
+    "spread": 2.0,              // the tripod holds it steady
+    "fireInterval": 2.2,
+    "fireIntervalJitter": 0.8,
+    "magazineSize": 50,
+    "magazines": 12,
+    "reloadTime": 7.0,
+    "suppression": 10,
+    "suppressionRadius": 4.5,
+    "threat": 3,
+    "isMachineGun": true
+  },
+  "mortar_he": {
+    "name": "Mortar bomb (high explosive)",
+    "range": 2500,              // fired by a mortar section, never carried by a man (see rules.json "support")
+    "accuracy": [[0, 1]],
+    "suppression": 45,
+    "suppressionRadius": 30,
+    "threat": 0,
+    "blastRadius": 9
+  },
   "tank_mg": {
     "name": "Tank machine gun",
     "range": 600,

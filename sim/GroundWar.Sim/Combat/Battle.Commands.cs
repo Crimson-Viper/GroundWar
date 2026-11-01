@@ -71,7 +71,13 @@ public sealed partial class Battle
             _playingBack = true;
             switch (c.Kind)
             {
-                case CommandKind.Order: PlayerOrder(_groups[c.GroupId], c.Order!); break;
+                case CommandKind.Order:
+                    var o = c.Order!;
+                    // An order naming a company names the one in this battle, not the battle it was recorded in.
+                    if (o.AttachTo != null)
+                        o = new Order { Kind = o.Kind, Objective = o.Objective, Radius = o.Radius, AttachTo = _companies[o.AttachTo.Id] };
+                    PlayerOrder(_groups[c.GroupId], o);
+                    break;
                 case CommandKind.Approve: PlayerApprove(_companies[c.CompanyId]); break;
                 case CommandKind.Reject: PlayerReject(_companies[c.CompanyId]); break;
             }

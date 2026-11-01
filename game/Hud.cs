@@ -198,6 +198,12 @@ public partial class Hud : CanvasLayer
 
     /// <summary>Main listens to this: the player pressed an order button.</summary>
     public System.Action<OrderKind>? OrderRequested { get; set; }
+    /// <summary>HE or Smoke pressed with a mortar section selected.</summary>
+    public System.Action<FireKind>? FireRequested { get; set; }
+    /// <summary>Attach (false) or Back to battalion (true) pressed with an MG section selected.</summary>
+    public System.Action<bool>? AttachRequested { get; set; }
+    private Button _heButton = null!, _smokeButton = null!, _attachButton = null!, _detachButton = null!;
+    private HBoxContainer _orderRow = null!, _supportRow = null!;
     private PanelContainer _orderPanel = null!;
     private Label _orderTitle = null!, _orderStatus = null!;
     private PanelContainer _messagesPanel = null!;
@@ -218,7 +224,7 @@ public partial class Hud : CanvasLayer
         _orderTitle = new Label();
         _orderTitle.AddThemeFontSizeOverride("font_size", 14);
         box.AddChild(_orderTitle);
-        var row = new HBoxContainer();
+        var row = _orderRow = new HBoxContainer();
         foreach (var (kind, text) in new[] { (OrderKind.Advance, "Advance"), (OrderKind.Attack, "Attack"), (OrderKind.Suppress, "Suppress"),
                                              (OrderKind.Hold, "Hold"), (OrderKind.Halt, "Halt"), (OrderKind.FallBack, "Fall back") })
         {
@@ -227,6 +233,20 @@ public partial class Hud : CanvasLayer
             row.AddChild(b);
         }
         box.AddChild(row);
+        // Battalion support (milestone 7): fire missions for a mortar section, attach / detach for an MG section.
+        _supportRow = new HBoxContainer();
+        Button Support(string text, System.Action act)
+        {
+            var b = new Button { Text = text, FocusMode = Control.FocusModeEnum.None };
+            b.Pressed += act;
+            _supportRow.AddChild(b);
+            return b;
+        }
+        _heButton = Support("Fire HE", () => FireRequested?.Invoke(FireKind.He));
+        _smokeButton = Support("Fire smoke", () => FireRequested?.Invoke(FireKind.Smoke));
+        _attachButton = Support("Attach to a company", () => AttachRequested?.Invoke(false));
+        _detachButton = Support("Back to battalion", () => AttachRequested?.Invoke(true));
+        box.AddChild(_supportRow);
         _orderStatus = new Label();
         _orderStatus.AddThemeFontSizeOverride("font_size", 12);
         box.AddChild(_orderStatus);
@@ -237,21 +257,36 @@ public partial class Hud : CanvasLayer
 
     /// <summary>The order panel (when one of your squads is selected) and the list of messages on their way.
     /// A squad in a company is ordered through its company commander.</summary>
-    public void UpdateOrders(Battle battle, Soldier? selected, Side playerSide, OrderKind? pending)
+    public void UpdateOrders(Battle battle, Soldier? selected, Side playerSide, OrderKind? pending, FireKind pendingFire = FireKind.He)
     {
         var hq = battle.Hq(playerSide);
         bool mine = selected != null && selected.Side == playerSide;
         _orderPanel.Visible = mine;
         if (mine)
         {
-            var g = selected!.Group.Company?.HqGroup ?? selected.Group;
+            var own = selected!.Group;
+            var g = own.Company?.HqGroup ?? own;
             string who = g.IsCompanyHq ? $"{g.Company!.Name} ({g.Company.CommanderName})" : g.Name;
             _orderTitle.Text = hq == null ? $"Orders for {who} (no HQ in this scenario: orders arrive at once)" : $"Orders for {who}, from {hq.Name}";
-            if (pending != null) _orderStatus.Text = $"Click the map: where to {pending.Value.ToString().ToLowerInvariant()}. Esc cancels.";
+            var ms = own.Mortars;
+            if (ms != null) _orderTitle.Text += $"   ({ms.Tubes} mortars: {ms.AmmoHe} HE, {ms.AmmoSmoke} smoke left)";
+            _heButton.Visible = _smokeButton.Visible = ms != null;
+            _heButton.Disabled = ms is not { AmmoHe: > 0 };
+            _smokeButton.Disabled = ms is not { AmmoSmoke: > 0 };
+            _attachButton.Visible = own.IsAsset && ms == null && own.Company == null;
+            _detachButton.Visible = own.IsAsset && ms == null && own.Company != null;
+            if (_detachButton.Visible) _detachButton.Text = $"Back to battalion (now with {own.Company!.Name})";
+            _supportRow.Visible = _heButton.Visible || _attachButton.Visible || _detachButton.Visible;
+            _orderPanel.OffsetTop = _supportRow.Visible ? -196 : -160;
+            if (pending == OrderKind.FireMission)
+                _orderStatus.Text = $"Click the map: where the mortars fire {(pendingFire == FireKind.Smoke ? "smoke" : "high explosive")}. Esc cancels.";
+            else if (pending == OrderKind.Attach)
+                _orderStatus.Text = $"Click a man of the company {own.Name} is to join. Esc cancels.";
+            else if (pending != null) _orderStatus.Text = $"Click the map: where to {pending.Value.ToString().ToLowerInvariant()}. Esc cancels.";
             else
             {
                 Message? last = null;
-                foreach (var m in battle.Messages) if (m.Down && m.Group == g && m.Company == null) last = m;
+                foreach (var m in battle.Messages) if (m.Down && (m.Group == g || m.Group == own) && m.Company == null) last = m;
                 _orderStatus.Text = last == null ? "Advance, Attack, Suppress and Hold need a place: press, then click the map."
                     : last.Status switch
                     {
@@ -404,7 +439,22 @@ public partial class Hud : CanvasLayer
                 sb.Append("Also weighed: " + string.Join("; ", c.Options.Skip(1).Select(o => $"{GroundWar.Sim.AI.CompanyCommander.PlanName(o.Kind)} (lose {o.ExpectedLoss * 100:0}%, {o.Success * 100:0}% chance)")));
         }
         else if (c.State == CompanyState.Refused)
-            sb.Append("He won't do it as things stand. Send the same order again to insist, or give him another.");
+            sb.Append("He won't do it as things stand. Send the same order again to insist, or give him another." +
+                      (c.RefusalFire != null ? " He has asked for mortar fire on it and will think again once it has landed." : ""));
+        // His fire requests still being worked on.
+        foreach (var fm in battle.FireMissions)
+        {
+            if (fm.RequestedBy != c || fm.Status is FireMissionStatus.Done or FireMissionStatus.Refused or FireMissionStatus.Cancelled) continue;
+            string state = fm.Status switch
+            {
+                _ when fm.Waiting && fm.Status == FireMissionStatus.Firing => "on call: the mortars are laid on, waiting for his word",
+                _ when fm.Waiting => "on call, " + (fm.Status == FireMissionStatus.Requested ? "on its way to battalion" : "battalion has passed it on"),
+                FireMissionStatus.Requested => "asked for, on its way to battalion",
+                FireMissionStatus.Ordered => "battalion has ordered it",
+                _ => fm.RoundsLanded > 0 ? $"{fm.RoundsLanded} of {fm.Rounds} rounds down" : "the mortars are laying on",
+            };
+            sb.Append($"\nMortars: {fm.Describe()} on {fm.Reason}: {state}");
+        }
         _companyLabel.Text = sb.ToString().TrimEnd();
         bool waiting = battle.AwaitingApproval(c);
         _briefBackRow.Visible = waiting;

@@ -113,6 +113,8 @@ public sealed partial class Battle
                     Rear = Geo.SafeNormalize(BattleMap.V(sideDef.Rear), -Vector2.UnitX),
                     SupportPosition = gd.SupportPosition != null ? BattleMap.V(gd.SupportPosition) : null,
                     HasRadio = gd.Radio,
+                    Mortars = gd.Mortars > 0 ? new MortarSection { Tubes = gd.Mortars, AmmoHe = gd.MortarHe, AmmoSmoke = gd.MortarSmoke } : null,
+                    IsAsset = gd.Asset || gd.Mortars > 0,
                 };
                 group.OriginalOrder = group.Order;
                 _groups.Add(group);
@@ -218,6 +220,7 @@ public sealed partial class Battle
         Time = Tick * Dt;
         _shots.Clear();
         _casualties.Clear();
+        _impacts.Clear();
 
         float perceptionInterval = Rules.Perception.Interval;
         float thinkInterval = Rules.Ai.ThinkInterval;
@@ -268,6 +271,7 @@ public sealed partial class Battle
         t0 = Profile.Lap("morale", t0);
         UpdateGroups();
         UpdateComms();
+        UpdateSupport();
 
         if (Tick % 10 == 0)
         {

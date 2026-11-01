@@ -13,6 +13,7 @@ public sealed class Rules
     public SquadRules Squad { get; set; } = new();
     public CommsRules Comms { get; set; } = new();
     public CompanyRules Company { get; set; } = new();
+    public SupportRules Support { get; set; } = new();
 }
 
 public sealed class SquadRules
@@ -213,4 +214,41 @@ public sealed class CompanyRules
     public float ReplanLoss { get; set; } = 0.35f;
     /// <summary>After this many new plans for one order, he stops and holds.</summary>
     public int MaxReplans { get; set; } = 2;
+}
+
+/// <summary>Battalion support (milestone 7): mortars, smoke and fire requests. See docs/systems/support-fire.md.</summary>
+public sealed class SupportRules
+{
+    /// <summary>Seconds for a mortar section to lay its tubes on a new target before the first round.</summary>
+    public float SetUpTime { get; set; } = 12f;
+    /// <summary>Seconds between rounds from one tube.</summary>
+    public float RoundInterval { get; set; } = 5f;
+    /// <summary>Time of flight: this many seconds, plus one per <see cref="FlightSpeed"/> metres.</summary>
+    public float FlightTime { get; set; } = 8f;
+    public float FlightSpeed { get; set; } = 150f;
+    /// <summary>Spread of the first rounds (metres, one standard deviation), and of later ones once the fall of
+    /// shot has been corrected.</summary>
+    public float FirstSpread { get; set; } = 30f;
+    public float AdjustedSpread { get; set; } = 14f;
+    /// <summary>Mortars can't fire closer than this, or further.</summary>
+    public float MinRange { get; set; } = 80f;
+    public float MaxRange { get; set; } = 2500f;
+    /// <summary>Two crew are needed to work each tube.</summary>
+    public int CrewPerTube { get; set; } = 2;
+    /// <summary>Smoke: full radius of one round's cloud (metres), how long it lasts, how long it takes to build up.</summary>
+    public float SmokeRadius { get; set; } = 14f;
+    public float SmokeDuration { get; set; } = 75f;
+    public float SmokeGrowTime { get; set; } = 6f;
+    /// <summary>Wind in metres per second (x, y): smoke drifts with it.</summary>
+    public float[] Wind { get; set; } = { 0.4f, 0.15f };
+    /// <summary>Rounds a commander asks for: HE prep fire, smoke, and quick fire on a machine gun.</summary>
+    public int PrepRounds { get; set; } = 9;
+    public int SmokeRounds { get; set; } = 6;
+    public int QuickRounds { get; set; } = 4;
+    /// <summary>Seconds a company commander waits between his own fire requests on the same area.</summary>
+    public float RequestCooldown { get; set; } = 90f;
+    /// <summary>Friendly troops closer than this to a target make the commander lift or shift the fire.</summary>
+    public float DangerClose { get; set; } = 60f;
+    /// <summary>A defending commander fires on attackers seen within this distance of his position.</summary>
+    public float DefensiveFireRange { get; set; } = 350f;
 }

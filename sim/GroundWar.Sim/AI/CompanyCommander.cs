@@ -57,7 +57,16 @@ public sealed class CompanyCommander
             case CompanyState.Executing:
                 RunPlan(c);
                 break;
+            case CompanyState.Refused:
+                // He asked for mortar fire when he refused: once it has landed and he has seen what it did, he thinks again.
+                if (c.RefusalFire is { Status: FireMissionStatus.Done or FireMissionStatus.Refused } rf && Time - rf.DoneAt > 15f)
+                {
+                    c.RefusalFire = null;
+                    if (rf.Status == FireMissionStatus.Done && c.RefusedOrder != null && c.Traits.Initiative >= 3) Reconsider(c);
+                }
+                break;
         }
+        if (c.State != CompanyState.Executing || c.Plan?.Kind == PlanKind.Defend) DefensiveFire(c);
 
         if (Time - c.LastSitrep >= _b.Rules.Comms.CompanySitrepInterval && (c.State == CompanyState.Executing || c.Knowledge.Count > 0))
         {
@@ -139,6 +148,9 @@ public sealed class CompanyCommander
         c.SupportSquad = null;
         c.BriefBackHeardAt = -1f;
         c.BriefBackAnswered = false;
+        c.RefusalFire = null;
+        c.RefusalFires = 0;
+        CancelPlanned(c, "a new order");
         if (insisted) _b.Note(c.HqGroup, $"{c.CommanderName}: HQ insists. \"Understood. We'll do it.\"", LogKind.Key);
 
         if (o.Kind is OrderKind.Halt or OrderKind.FallBack)
@@ -167,12 +179,14 @@ public sealed class CompanyCommander
         c.State = CompanyState.AwaitingOrders;
         c.Plan = null;
         c.CurrentOrder = null;
+        CancelPlanned(c, "the plan was rejected");
         _b.Note(c.HqGroup, $"{c.CommanderName}: plan rejected, holding and waiting for orders", LogKind.Key);
         c.Status = StatusText(c);
     }
 
     private void MakePlan(Company c, Order o, bool replan)
     {
+        CancelPlanned(c, "the plan has changed");
         c.Options.Clear();
         c.Options.AddRange(BuildOptions(c, o));
         c.Options.Sort((a, b) => b.Score.CompareTo(a.Score));
@@ -246,12 +260,20 @@ public sealed class CompanyCommander
         int mgs = MgsNear(c, o);
         c.RefusalReason = $"expect to lose about {best.ExpectedLoss * 100:0}% of the company{(mgs > 0 ? $" to {mgs} machine gun{(mgs > 1 ? "s" : "")}" : "")}, " +
                           $"with a {best.Success * 100:0}% chance of taking it";
+        // He asks battalion for the mortars to work the objective over; when they're done he'll think again.
+        string asked = "";
+        if (c.RefusalFires < 2 && _b.HasMortars(c.Side, FireKind.He))
+        {
+            var target = NearestMg(c, o, c.Centroid) ?? o.Objective;
+            c.RefusalFire = AskForFire(c, target, FireKind.He, S.PrepRounds, mgs > 0 ? "the machine guns at the objective" : "the objective");
+            if (c.RefusalFire != null) { c.RefusalFires++; asked = " Have asked for mortar fire on it."; }
+        }
         bool withdraw = midAttack && c.Traits.Composure <= 2 && c.Effective < c.StartStrength * 0.6f;
         var squadOrder = new Order { Kind = withdraw ? OrderKind.FallBack : OrderKind.Halt };
         if (midAttack || withdraw)
             foreach (var g in c.Squads) if (g.CountEffective > 0) _b.SendCompanyOrder(c, g, squadOrder);
         string what = midAttack ? (withdraw ? "the attack has failed, falling back" : "the attack has stalled, holding") : $"cannot carry out \"{o}\"";
-        _b.SendUp(c, $"{what}: {c.RefusalReason}. Request support. Send the order again if it must be done.", MessageKind.Refusal, best, withContacts: true);
+        _b.SendUp(c, $"{what}: {c.RefusalReason}. Request support.{asked} Send the order again if it must be done.", MessageKind.Refusal, best, withContacts: true);
         _b.Note(c.HqGroup, $"{c.CommanderName} refuses: {c.RefusalReason}", LogKind.Key);
         c.Status = StatusText(c);
     }
@@ -265,6 +287,11 @@ public sealed class CompanyCommander
         c.State = CompanyState.Executing;
         c.PlanStarted = Time;
         c.PhaseIndex = 0;
+        // The fire plan goes to battalion now, as "on call" targets: by the time the assault is ready the mortars
+        // are laid on and only need the word.
+        CancelPlanned(c, "the plan has changed");
+        foreach (var f in c.Plan.Fires)
+            if (AskForFire(c, f.Target, f.Kind, f.Rounds, f.Reason, onCall: true) is { } fm) c.PlannedMissions[f] = fm;
         StartPhase(c);
     }
 
@@ -275,9 +302,21 @@ public sealed class CompanyCommander
         c.PhaseStarted = Time;
         foreach (var t in ph.Tasks)
             if (t.Squad.CountEffective > 0) _b.SendCompanyOrder(c, t.Squad, t.Order);
+        foreach (var f in c.Plan!.Fires)
+        {
+            if (f.Phase != c.PhaseIndex || !c.PlannedMissions.TryGetValue(f, out var fm) || !fm.Waiting) continue;
+            if (f.Kind == FireKind.He && DangerClose(c.Side, f.Target))
+            {
+                _b.CancelFire(fm, "our own men are too close");
+                _b.Note(c.HqGroup, $"{c.CommanderName}: our men are too close to {f.Reason}, no mortar fire there");
+                continue;
+            }
+            _b.CallFire(c, fm);
+        }
         _b.Note(c.HqGroup, $"{c.Name}: phase {c.PhaseIndex + 1}/{c.Plan!.Phases.Count}, {ph.Name.ToLowerInvariant()}", LogKind.Key);
         if (ph.Kind is PhaseKind.Consolidate or PhaseKind.Hold)
         {
+            CancelPlanned(c, "not needed any more");
             c.State = CompanyState.Holding;
             if (ph.Kind == PhaseKind.Consolidate)
                 _b.SendUp(c, "objective taken, consolidating", MessageKind.Taken, null, withContacts: true);
@@ -342,28 +381,127 @@ public sealed class CompanyCommander
     }
 
     /// <summary>A squad has reported being pinned and he knows of a machine gun near it: he turns the support
-    /// squad's fire onto that gun. Commanders with little initiative stick to the plan.</summary>
+    /// squad's fire onto that gun, and if battalion has mortars he asks for fire on it too (smoke if he's a careful
+    /// man, high explosive if not). Commanders with little initiative stick to the plan.</summary>
     private void ShiftFire(Company c, PlanPhase ph)
     {
-        if (c.Traits.Initiative < 3 || ph.Kind is not (PhaseKind.EstablishFire or PhaseKind.Assault)) return;
-        if (c.SupportSquad is not { CountEffective: > 0 } support) return;
+        if (c.Traits.Initiative < 3 || ph.Kind is not (PhaseKind.EstablishFire or PhaseKind.Assault or PhaseKind.MoveUp)) return;
+        var support = c.SupportSquad is { CountEffective: > 0 } sq ? sq : null;
         foreach (var (g, rep) in c.Reports)
         {
             if (g == support || !rep.Pinned || Time - rep.PinnedAt > 30f || g.CountEffective == 0) continue;
-            Contact? mg = null;
-            float best = 150f;
+            // The nearest machine gun to the pinned squad (for the mortars), and the nearest one the support squad
+            // isn't already firing at.
+            Contact? mg = null, fresh = null;
+            float best = 150f, bestFresh = 150f;
             foreach (var k in c.Knowledge.Contacts)
             {
-                if (!k.IsMachineGun || c.MgsEngaged.Contains(k.EnemyId)) continue;
+                if (!k.IsMachineGun) continue;
                 float d = Vector2.Distance(k.LastPosition, g.Centroid);
                 if (d < best) { best = d; mg = k; }
+                if (d < bestFresh && !c.MgsEngaged.Contains(k.EnemyId)) { bestFresh = d; fresh = k; }
             }
             if (mg == null) continue;
-            c.MgsEngaged.Add(mg.EnemyId);
-            _b.SendCompanyOrder(c, support, new Order { Kind = OrderKind.Suppress, Objective = mg.LastPosition, Radius = 12f, SupportPosition = support.Centroid });
-            _b.Note(c.HqGroup, $"{c.CommanderName}: {g.Name} is pinned by a machine gun, {support.Name} to switch fire onto it", LogKind.Key);
-            return;
+            bool acted = false;
+            if (support != null && fresh != null && ph.Kind != PhaseKind.MoveUp)
+            {
+                c.MgsEngaged.Add(fresh.EnemyId);
+                _b.SendCompanyOrder(c, support, new Order { Kind = OrderKind.Suppress, Objective = fresh.LastPosition, Radius = 12f, SupportPosition = support.Centroid });
+                _b.Note(c.HqGroup, $"{c.CommanderName}: {g.Name} is pinned by a machine gun, {support.Name} to switch fire onto it", LogKind.Key);
+                acted = true;
+            }
+            var kind = c.Traits.Caution >= 3 && _b.HasMortars(c.Side, FireKind.Smoke) ? FireKind.Smoke : FireKind.He;
+            if (AskForFire(c, mg.LastPosition, kind, S.QuickRounds, $"the machine gun pinning {g.Name}") != null) acted = true;
+            if (acted) return;
         }
+    }
+
+    // ---------------------------------------------------------------- mortar fire (milestone 7)
+
+    private SupportRules S => _b.Rules.Support;
+
+    /// <summary>Asks battalion for mortar fire, unless it's high explosive that would land on his own men, or he
+    /// asked for the same place a short while ago.</summary>
+    private FireMission? AskForFire(Company c, Vector2 target, FireKind kind, int rounds, string reason, bool onCall = false, bool quiet = false)
+    {
+        if (!_b.HasMortars(c.Side, kind)) return null;
+        // (A planned on-call target is part of a new plan, so it doesn't wait.)
+        if (!onCall)
+            foreach (var (t, at) in c.FireRequests)
+                if (Time - at < S.RequestCooldown && Vector2.Distance(t, target) < 40f) return null;
+        if (kind == FireKind.He && DangerClose(c.Side, target))
+        {
+            c.FireRequests.Add((target, Time)); // don't keep trying
+            if (!quiet) _b.Note(c.HqGroup, $"{c.CommanderName}: can't call mortar fire on {reason}, our own men are too close");
+            return null;
+        }
+        var fm = _b.RequestFire(c, target, kind, rounds, reason, onCall);
+        if (fm != null) c.FireRequests.Add((target, Time));
+        return fm;
+    }
+
+    /// <summary>On-call targets from the old plan that were never called: the mortars can stand down.</summary>
+    private void CancelPlanned(Company c, string why)
+    {
+        foreach (var fm in c.PlannedMissions.Values) if (fm.Waiting) _b.CancelFire(fm, why);
+        c.PlannedMissions.Clear();
+    }
+
+    private bool DangerClose(Side side, Vector2 target)
+    {
+        foreach (var g in _b.Groups)
+            if (g.Side == side && g.CountEffective > 0 && Vector2.Distance(g.Centroid, target) < S.DangerClose) return true;
+        return false;
+    }
+
+    /// <summary>The known machine gun near the objective closest to where he's coming from, if any.</summary>
+    private Vector2? NearestMg(Company c, Order o, Vector2 from)
+    {
+        Vector2? best = null;
+        float bd = float.MaxValue;
+        foreach (var k in c.Knowledge.Contacts)
+        {
+            if (!k.IsMachineGun || Vector2.Distance(k.LastPosition, o.Objective) > o.Radius + 150f) continue;
+            float d = Vector2.Distance(k.LastPosition, from);
+            if (d < bd) { bd = d; best = k.LastPosition; }
+        }
+        return best;
+    }
+
+    /// <summary>Holding or defending: if a group of enemy infantry has been seen coming, he asks for mortar fire on
+    /// it. A careful man fires on two or three men; a bold one waits for a bigger target.</summary>
+    private void DefensiveFire(Company c)
+    {
+        if (!_b.HasMortars(c.Side, FireKind.He)) return;
+        var centre = c.Centroid;
+        Contact? best = null;
+        int bestN = 0;
+        var contacts = c.Knowledge.Contacts.ToList();
+        foreach (var k in contacts)
+        {
+            if (Time - k.LastSeen > 30f || Vector2.Distance(k.LastPosition, centre) > S.DefensiveFireRange) continue;
+            if (_b.GetSoldier(k.EnemyId) is { IsTank: true }) continue;
+            int n = 0;
+            foreach (var o in contacts)
+                if (Time - o.LastSeen <= 30f && Vector2.DistanceSquared(o.LastPosition, k.LastPosition) < 35f * 35f) n++;
+            if (n > bestN) { bestN = n; best = k; }
+        }
+        int need = Math.Clamp(4 - (c.Traits.Caution - 3), 2, 6);
+        if (best == null || bestN < need) return;
+        float d = Vector2.Distance(best.LastPosition, centre);
+        AskForFire(c, best.LastPosition, FireKind.He, S.QuickRounds, $"{bestN} enemy seen {d:0} m out", quiet: true);
+    }
+
+    /// <summary>After his own mortar fire has landed on an objective he refused to attack, he weighs it up again.</summary>
+    private void Reconsider(Company c)
+    {
+        var o = c.RefusedOrder!;
+        c.RefusedOrder = null;
+        c.RefusalReason = "";
+        c.CurrentOrder = o;
+        c.Replans = 0;
+        _b.Note(c.HqGroup, $"{c.CommanderName}: the mortars have done their work, thinking again", LogKind.Key);
+        MakePlan(c, o, replan: false);
     }
 
     private void Rethink(Company c, string why)
@@ -372,6 +510,7 @@ public sealed class CompanyCommander
         if (c.Replans > R.MaxReplans || c.Traits.Initiative <= 2)
         {
             c.State = CompanyState.Holding;
+            CancelPlanned(c, "the attack has been called off");
             foreach (var g in c.Squads) if (g.CountEffective > 0) _b.SendCompanyOrder(c, g, new Order { Kind = OrderKind.Halt });
             _b.SendUp(c, $"{why}: holding where we are, waiting for orders", MessageKind.Failed, null, withContacts: true);
             _b.Note(c.HqGroup, $"{c.CommanderName}: {why}, holding and asking for orders", LogKind.Key);
@@ -504,11 +643,19 @@ public sealed class CompanyCommander
             case OrderKind.Suppress: plans.Add(SuppressPlan(o, squads, start, perp)); break;
             case OrderKind.Advance: plans.Add(AdvancePlan(o, squads, perp)); break;
             case OrderKind.Attack:
-                plans.Add(FrontalPlan(o, squads, start, dir, perp));
+                // Mortar support: a careful man always wants the objective worked over first; a bold one only
+                // bothers if he knows of machine guns there.
+                var t = c.Traits;
+                int mgs = MgsNear(c, o);
+                bool he = _b.HasMortars(c.Side, FireKind.He) && (t.Caution >= 3 || mgs > 0) && !(t.Aggression >= 4 && t.Caution <= 2 && mgs == 0);
+                bool smoke = _b.HasMortars(c.Side, FireKind.Smoke) && (t.Caution >= 3 || mgs > 0);
+                var heAt = NearestMg(c, o, start) ?? o.Objective;
+                string heWhat = NearestMg(c, o, start) != null ? "the machine gun at the objective" : "the objective";
+                plans.Add(FrontalPlan(o, squads, start, dir, perp, he ? heAt : null, heWhat, smoke));
                 if (squads.Count >= 2)
                 {
-                    plans.Add(FlankPlan(o, squads, dir, perp, +1));
-                    plans.Add(FlankPlan(o, squads, dir, perp, -1));
+                    plans.Add(FlankPlan(o, squads, dir, perp, +1, he ? heAt : null, heWhat));
+                    plans.Add(FlankPlan(o, squads, dir, perp, -1, he ? heAt : null, heWhat));
                 }
                 break;
         }
@@ -577,13 +724,13 @@ public sealed class CompanyCommander
         return plan;
     }
 
-    private CompanyPlan FrontalPlan(Order o, List<Group> squads, Vector2 start, Vector2 dir, Vector2 perp)
+    private CompanyPlan FrontalPlan(Order o, List<Group> squads, Vector2 start, Vector2 dir, Vector2 perp, Vector2? heAt, string heWhat, bool smoke)
     {
         int n = squads.Count;
         var plan = new CompanyPlan { Kind = PlanKind.FrontalAssault };
         bool startLine = Vector2.Distance(start, o.Objective) > R.StartLineDistance + 30f;
         var move = new PlanPhase { Kind = PhaseKind.MoveUp, Name = "Move up to the start line", TimeLimit = 300f };
-        var assault = new PlanPhase { Kind = PhaseKind.Assault, Name = "Assault", TimeLimit = 360f };
+        var assault = new PlanPhase { Kind = PhaseKind.Assault, Name = heAt != null || smoke ? "Assault behind the mortar fire" : "Assault", TimeLimit = 360f };
         var consolidate = new PlanPhase { Kind = PhaseKind.Consolidate, Name = "Consolidate on the objective" };
         for (int i = 0; i < n; i++)
         {
@@ -600,16 +747,28 @@ public sealed class CompanyCommander
             Task(consolidate, squads[i], Make(OrderKind.Hold, Spot(o.Objective + perp * off * 0.4f), MathF.Max(12f, o.Radius * 0.7f)));
         }
         if (startLine) plan.Phases.Add(move);
+        // The mortars are called as the squads leave the start line: the bombs fall while they cross the open
+        // ground and lift as they close in, and the smoke builds up on the near edge of the objective so the
+        // defenders can't see them coming.
+        int at = plan.Phases.Count;
+        if (heAt != null) plan.Fires.Add(new PlannedFire { Phase = at, Target = heAt.Value, Kind = FireKind.He, Rounds = S.PrepRounds, Reason = heWhat });
+        if (smoke) plan.Fires.Add(new PlannedFire { Phase = at, Target = Spot(o.Objective - dir * (o.Radius + 12f)), Kind = FireKind.Smoke, Rounds = S.SmokeRounds, Reason = "the near edge of the objective (smoke screen)" });
         plan.Phases.Add(assault);
         plan.Phases.Add(consolidate);
-        plan.Summary = $"Frontal assault: all {n} squads {(startLine ? $"form up {R.StartLineDistance:0} m short of the objective and " : "")}go straight in together.";
+        plan.Summary = $"Frontal assault: all {n} squads {(startLine ? $"form up {R.StartLineDistance:0} m short of the objective and " : "")}go straight in together." +
+                       (heAt != null || smoke ? $" Mortars fire as they go: {MortarText(heAt != null, smoke)}." : "");
         return plan;
     }
 
-    private CompanyPlan FlankPlan(Order o, List<Group> squads, Vector2 dir, Vector2 perp, int side)
+    private static string MortarText(bool he, bool smoke) =>
+        he && smoke ? "high explosive on the objective and a smoke screen in front of it"
+        : he ? "high explosive on the objective" : "a smoke screen to cover the assault";
+
+    private CompanyPlan FlankPlan(Order o, List<Group> squads, Vector2 dir, Vector2 perp, int side, Vector2? heAt, string heWhat)
     {
         // The squad with the most machine guns gives covering fire; the rest go round.
-        var support = squads.OrderByDescending(g => g.Members.Count(m => m.IsEffective && m.Weapon.IsMachineGun))
+        // (Heavy machine guns count for more than light ones.)
+        var support = squads.OrderByDescending(g => g.Members.Where(m => m.IsEffective && m.Weapon.IsMachineGun).Sum(m => m.Weapon.Threat))
                             .ThenBy(g => MathF.Abs(Vector2.Dot(g.Centroid - o.Objective, perp))).First();
         var flankers = squads.Where(g => g != support).ToList();
         // Those already on that side go first.
@@ -645,8 +804,11 @@ public sealed class CompanyCommander
         plan.Phases.Add(fire);
         plan.Phases.Add(assault);
         plan.Phases.Add(consolidate);
+        // The mortars are called as the flankers go in: the bombs keep the defenders' heads down while they cross
+        // the last stretch, and lift as they close.
+        if (heAt != null) plan.Fires.Add(new PlannedFire { Phase = 2, Target = heAt.Value, Kind = FireKind.He, Rounds = S.PrepRounds, Reason = heWhat });
         plan.Summary = $"Pin and flank {sideName}: {support.Name} gives covering fire from {R.SupportDistance:0} m out while " +
-                       $"{JoinNames(flankers)} go round the {sideName} and assault.";
+                       $"{JoinNames(flankers)} go round the {sideName} and assault." + (heAt != null ? " Mortars fire on the objective as the assault goes in." : "");
         return plan;
     }
 
@@ -688,6 +850,25 @@ public sealed class CompanyCommander
         float supportFire = support == null ? 0f : support.Members.Where(m => m.IsEffective).Sum(m => m.Weapon.IsMachineGun ? 3f : 1f);
         // Covering fire keeps the defenders' heads down during the assault; a frontal rush only has its own fire.
         float suppression = support != null ? 1f - 0.5f * MathF.Min(1f, supportFire / MathF.Max(enemyFire, 1f)) : 0.85f;
+        // Mortar fire before the assault: high explosive knocks out or pins some of the defenders near where it
+        // lands; smoke hides the assault from everyone on the objective.
+        bool he = plan.Fires.Any(f => f.Kind == FireKind.He), smoked = plan.Fires.Any(f => f.Kind == FireKind.Smoke);
+        var softened = threats;
+        if (plan.Fires.Count > 0)
+        {
+            softened = new List<Threat>(threats.Count);
+            foreach (var th in threats)
+            {
+                float f = th.Fire;
+                foreach (var pf in plan.Fires)
+                {
+                    float d = Vector2.Distance(th.Position, pf.Target);
+                    if (pf.Kind == FireKind.He && d < 50f) f *= 0.6f;
+                    else if (pf.Kind == FireKind.Smoke && d < 60f) f *= 0.45f;
+                }
+                softened.Add(new Threat { Position = th.Position, Fire = f, Assumed = th.Assumed, Radius = th.Radius });
+            }
+        }
 
         foreach (var g in squads)
         {
@@ -705,14 +886,14 @@ public sealed class CompanyCommander
                         at = t.Order.Objective;
                         break;
                     case OrderKind.Attack:
-                        exposure += RouteExposure(at, t.Order.Objective, 2f, threats, suppression);
+                        exposure += RouteExposure(at, t.Order.Objective, 2f, softened, suppression);
                         at = t.Order.Objective;
                         assaults = true;
                         break;
                     case OrderKind.Suppress:
                         // In position and shooting back from cover, through the covering fire and the assault.
                         float time = R.EstablishFireTime + 60f;
-                        exposure += FireAt(t.Order.SupportPosition ?? at, threats) * time * 0.35f;
+                        exposure += FireAt(t.Order.SupportPosition ?? at, softened) * time * 0.35f;
                         break;
                     case OrderKind.Hold when ph.Kind == PhaseKind.EstablishFire:
                         exposure += FireAt(at, threats) * R.EstablishFireTime;
@@ -733,10 +914,11 @@ public sealed class CompanyCommander
                 longest = MathF.Max(longest, PathLength(t.Squad.Centroid, t.Order.Objective) / speed);
             }
             totalTime += ph.Kind == PhaseKind.EstablishFire ? R.EstablishFireTime : ph.Kind == PhaseKind.MoveUp || ph.Kind == PhaseKind.Assault ? longest : 0f;
+            if (plan.Fires.Any(f => f.Phase == plan.Phases.IndexOf(ph))) totalTime += 15f; // the word to fire, and the first rounds
         }
         bool fromFlank = plan.Kind is PlanKind.PinAndFlankLeft or PlanKind.PinAndFlankRight;
         if (plan.Kind == PlanKind.Advance) assaultersLeft = men - lossMen;
-        float defence = enemyFire * 1.6f * (fromFlank ? 0.75f : 1f);
+        float defence = enemyFire * 1.6f * (fromFlank ? 0.75f : 1f) * (he ? 0.8f : 1f) * (smoked ? 0.85f : 1f);
         float success = assaultersLeft / MathF.Max(assaultersLeft + defence, 1f);
         float expectedLoss = men > 0 ? lossMen / men : 1f;
 

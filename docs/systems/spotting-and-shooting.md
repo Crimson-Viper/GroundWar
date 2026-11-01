@@ -12,7 +12,9 @@ at a time (`maxTracked`):
 - A mate saw him in the last 2 s (`sharedContactWindow`): 90% chance (someone shouted it out).
 - Otherwise a dice roll: 50% close, falling to 4% at 400 m (`baseSpotChance`, `farSpotChance`), then
   ×4 if the enemy fired in the last 3 s, ×1.5 if he's moving (not crawling), ×0.5 if he's lying down.
-- A high wall in the way: never seen.
+- A high wall in the way: never seen. Nor through the thick middle of a smoke screen, unless the two men are within
+  12 m of each other (see [Battalion support](support-fire.md)). Smoke hides men but doesn't stop bullets or blasts:
+  cover and blast protection only count walls (`BattleMap.WallBlocked`).
 - An enemy in good cover is a further coin flip to pick out (`coverMultiplier`).
 
 What he sees goes into his squad's and side's knowledge (see [Fog of war](fog-of-war.md)).

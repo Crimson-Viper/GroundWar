@@ -3,9 +3,9 @@ using GroundWar.Sim.Units;
 
 namespace GroundWar.Sim;
 
-/// <summary>A bullet fired this tick. Godot draws these as tracers and dust.</summary>
-/// <summary>A bullet or shell fired this tick. Shell = a tank gun round (Godot draws a bigger tracer and a burst).</summary>
-public readonly record struct ShotEvent(int ShooterId, Vector2 From, Vector2 Impact, bool Hit, bool MachineGun, bool Shell = false);
+/// <summary>A bullet or shell fired this tick. Shell = a tank gun round (Godot draws a bigger tracer and a burst).
+/// Indirect = a mortar round leaving the tube: no tracer; it lands later (see Battle.Impacts).</summary>
+public readonly record struct ShotEvent(int ShooterId, Vector2 From, Vector2 Impact, bool Hit, bool MachineGun, bool Shell = false, bool Indirect = false);
 
 public readonly record struct CasualtyEvent(int SoldierId, int ShooterId, bool Killed);
 
