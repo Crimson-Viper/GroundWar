@@ -41,7 +41,8 @@ public sealed partial class Battle
         float p = pr.BaseSpotChance + (pr.FarSpotChance - pr.BaseSpotChance) * t;
         if (Time - target.LastFiredTime < pr.FiringWindow) p *= pr.FiringMultiplier;
         if (target.IsMoving && target.MoveMode != MoveMode.Crawl) p *= pr.MovingMultiplier;
-        if (target.Stance == Stance.Prone) p *= pr.ProneMultiplier;
+        if (target.IsTank) p *= target.Vehicle!.SpotMultiplier;
+        else if (target.Stance == Stance.Prone) p *= pr.ProneMultiplier;
         return Math.Clamp(p, 0f, 0.95f);
     }
 }

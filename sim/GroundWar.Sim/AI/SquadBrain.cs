@@ -49,7 +49,7 @@ public sealed class SquadBrain
 
     // ---------------------------------------------------------------- what the squad knows
 
-    private void ShareWithNeighbours(Group g)
+    internal void ShareWithNeighbours(Group g)
     {
         var leaderPos = g.Leader?.Position ?? g.Centroid;
         foreach (var other in _b.Groups)

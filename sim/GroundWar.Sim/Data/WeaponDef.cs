@@ -22,6 +22,14 @@ public sealed class WeaponDef
     /// <summary>How much enemies want to shoot the man carrying this (machine guns first).</summary>
     public float Threat { get; set; } = 1f;
     public bool IsMachineGun { get; set; }
+    /// <summary>Millimetres of armour this weapon can go through. 0 = can't hurt a tank.</summary>
+    public float Penetration { get; set; }
+    /// <summary>Radius of the explosion in metres, for shells. 0 = a bullet.</summary>
+    public float BlastRadius { get; set; }
+    public bool IsShell => BlastRadius > 0f;
+    public bool CanHurtArmour => Penetration > 0f;
+    /// <summary>Penetration falls off with range: full at the muzzle, half at maximum range.</summary>
+    public float PenetrationAt(float range) => Penetration * (1f - 0.5f * Math.Clamp(range / MathF.Max(Range, 1f), 0f, 1f));
 
     public float HitChanceAt(float range)
     {

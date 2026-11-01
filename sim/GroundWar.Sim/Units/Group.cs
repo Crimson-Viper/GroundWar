@@ -98,6 +98,8 @@ public sealed class Group
     /// <summary>When the squad last lost its leader (-999 = never). Losing one replacement after another
     /// in quick succession is one shock to the men, not several.</summary>
     public float LeaderLostTime { get; set; } = -999f;
+    /// <summary>A group of vehicles (a tank section) rather than a squad of men.</summary>
+    public bool IsVehicles => Members.Count > 0 && Members.All(m => m.IsTank);
     public bool IsAttacking => Order is GroupOrder.Attack or GroupOrder.Advance or GroupOrder.Suppress;
 
     public Group(Side side)

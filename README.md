@@ -33,6 +33,7 @@ Design docs: [Design document](https://claude.ai/artifact/Q1UHZQmTfqk9WJ5CzV6YGs
    - **Firefight at the wall**: one Blue squad attacks alone. It usually fails, which is the point: compare it with the two-squad attack.
    - **Meeting engagement**: two equal squads advance into the middle. The map is the same from both ends, so each side wins about as often as the other.
    - **Town attack**: street fighting. Two Blue squads fight through houses, yards and rubble to take a crossroads held by a Red squad, with a Red machine gun further down the main street. Lots of cover, short ranges; the defender usually holds.
+   - **Tank support**: the first tank. The same attack as the firefight at the wall, but a Blue tank leads the squad in with its main gun and machine gun. Red has anti-tank rifles: one in the squad and a two-man team off to the north, placed to hit the tank's thinner side armour. Rifles and machine guns just ring off the armour. With the tank Blue usually wins; without it Blue usually loses. Click the tank to see its armour, shells and what its commander is thinking.
    - **Stress test**: 1,000 soldiers a side on a big field, to check the game stays smooth at battalion size. Zoom out to see it all.
 
 To get a new version: in GitHub Desktop press **Fetch origin**, then **Pull**, then press F5 in Godot again.
@@ -50,6 +51,11 @@ To try a pull request before it is merged: in GitHub Desktop pick its branch fro
 **Reading a soldier.** Blue and red capsules are the two sides; the stick shows where he faces; a yellow cap marks
 the sergeant. The bar above him: top = morale (green steady, yellow shaken, orange pinned, red broken),
 bottom = suppression (yellow fills as bullets pass close). Dark lying shapes are wounded, grey are dead.
+
+**Reading a tank.** The tank is a grey box in its side's colour: hull, tracks, turret and gun. A knocked-out tank goes dark with
+its turret twisted. Shells show as a bright tracer, a flash and a puff of smoke where they burst. The tank commander drives in
+short bounds, stops to fire the main gun, turns his front armour toward anti-tank rifles, and hangs back if his infantry falls
+too far behind. Anti-tank rifles get through the side and rear up close, and the front only at close range.
 
 **Squads.** Each squad splits into a gun team (around the machine gun) and a rifle team. The squad leader picks a tactic:
 travel, bounding overwatch (one team moves, the other covers), fire and movement, flank, assault, suppress, defend, or fall back.
@@ -76,7 +82,8 @@ blue = hiding spot behind a ruin, orange = someone has claimed it. Bars point at
 All tuning numbers live in plain text files in `data/`. Edit one in any text editor, save, and press **R** in the game.
 
 - `data/rules.json`: spotting, cover, morale and suppression thresholds, how long men stay in a spot before the next rush.
-- `data/weapons.json`: accuracy by range, rate of fire, how frightening each weapon is.
+- `data/weapons.json`: accuracy by range, rate of fire, how frightening each weapon is, and armour penetration.
+- `data/vehicles.json`: the tank's speed, armour, guns, and the chances when a shot gets through.
 - `data/maps/test_range.json`: walls and craters (positions in metres).
 - `data/scenarios/*.json`: who fights, how many, with what orders.
 

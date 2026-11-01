@@ -1,0 +1,20 @@
+// Vehicles. First iteration: one medium tank, grey-box.
+// Armour is in millimetres; a hit only goes through if the weapon's "penetration" (weapons.json) is higher.
+{
+  "tank": {
+    "name": "Medium tank",
+    "speed": 4.5,             // metres per second across open ground
+    "turnRate": 35,           // hull, degrees per second
+    "turretTurnRate": 30,     // degrees per second
+    "length": 6.0, "width": 3.0,
+    "armourFront": 30, "armourSide": 20, "armourRear": 12,
+    "mainGun": "tank_gun",
+    "machineGun": "tank_mg",
+    "knockOutChance": 0.45,   // when a hit goes through the armour
+    "immobiliseChance": 0.3,  // when a hit goes through the armour (the rest hurt the crew)
+    "trackHitChance": 0.1,    // when a hit bounces off: a broken track
+    "spotMultiplier": 4,      // easier to spot than a man in the open
+    "sizeHitMultiplier": 3,   // easier to hit
+    "standOff": 45            // won't close to less than this from enemy infantry without its own infantry near
+  }
+}

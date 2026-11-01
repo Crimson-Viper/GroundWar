@@ -116,7 +116,7 @@ public partial class SoldierCrowd : Node3D
             Positions[i] = pos;
             bool shown = s.Status != SoldierStatus.Routed && visible(s);
             Shown[i] = shown;
-            if (!shown)
+            if (!shown || s.IsTank) // tanks are drawn by TankView
             {
                 Hide(_bodyBuf, i * BodyStride);
                 Hide(_rifleBuf, i * PartStride);

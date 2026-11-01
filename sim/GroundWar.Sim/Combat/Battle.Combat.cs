@@ -22,7 +22,7 @@ public sealed partial class Battle
             s.BurstTimer -= Dt;
             if (s.BurstTimer > 0f) return;
             bool targetOk = s.Target != null ? s.Target.IsActive : s.AreaTarget != null;
-            if (targetOk && !s.IsMoving && s.Suppression < Rules.Morale.SuppressionMax)
+            if (targetOk && (!s.IsMoving || s.IsTank) && s.Suppression < Rules.Morale.SuppressionMax)
             {
                 FireRound(s, s.Target, s.Target?.Position ?? s.AreaTarget!.Value);
                 s.BurstRemaining--;
@@ -32,7 +32,7 @@ public sealed partial class Battle
             return;
         }
 
-        if (s.Action != SoldierAction.Engage || s.IsMoving) return;
+        if (s.Action != SoldierAction.Engage || (s.IsMoving && !s.IsTank)) return;
         var t = s.Target;
         Vector2 aim;
         if (t != null)
@@ -58,7 +58,7 @@ public sealed partial class Battle
         // Frightened men shoot more slowly as well as worse.
         float slow = 1f + s.Suppression / 100f;
         s.FireTimer = (w.FireInterval + w.FireIntervalJitter * Rng.Range(-1f, 1f)) * slow;
-        s.Facing = Geo.SafeNormalize(aim - s.Position, s.Facing);
+        if (!s.IsTank) s.Facing = Geo.SafeNormalize(aim - s.Position, s.Facing); // a tank's hull doesn't swing to its machine gun
         FireRound(s, t, aim);
         s.BurstRemaining = w.BurstSize - 1;
         s.BurstTimer = w.BurstInterval;
@@ -77,6 +77,15 @@ public sealed partial class Battle
     {
         var cr = Rules.Combat;
         float d = Vector2.Distance(shooter.Position, target.Position);
+        if (target.IsTank)
+        {
+            // A big target that walls don't hide; whether the hit does anything is up to the armour.
+            float pt = shooter.Weapon.HitChanceAt(d) * shooter.Skill * target.Vehicle!.SizeHitMultiplier;
+            if (target.IsMoving) pt *= cr.MovingTargetFactor;
+            if (shooter.MoraleState != MoraleState.Steady) pt *= cr.ShakenAccuracy;
+            pt *= 1f - cr.SuppressionAccuracyLoss * Math.Clamp(shooter.Suppression / 100f, 0f, 1f);
+            return Math.Clamp(pt, 0f, 0.95f);
+        }
         float prot = Map.ProtectionAt(target.Position, shooter.Position);
         if (prot >= 1f) return 0f;
         float p = shooter.Weapon.HitChanceAt(d) * shooter.Skill;
@@ -112,6 +121,7 @@ public sealed partial class Battle
             p = 0f;
             foreach (var e in Hash.Near(enemySide, aim, 3f))
             {
+                if (e.IsTank) continue;
                 float d = Vector2.Distance(e.Position, aim);
                 float pe = HitChance(s, e) * Rules.Squad.AreaFireAccuracy * (1f - d / 3f);
                 if (pe > p) { p = pe; victim = e; }
@@ -150,7 +160,12 @@ public sealed partial class Battle
             Report(reveal.Group, s, guess, 0.5f);
         }
 
-        if (hit) ApplyHit(victim!, s);
+        if (hit && victim!.IsTank)
+        {
+            // Bullets that can't go through just ring off the armour.
+            if (w.CanHurtArmour) ArmourHit(victim, s, w);
+        }
+        else if (hit) ApplyHit(victim!, s);
     }
 
     private void SuppressOne(Soldier u, float falloff, Soldier shooter)
@@ -161,7 +176,7 @@ public sealed partial class Battle
 
     private void AddSuppression(Soldier u, float amount, Soldier shooter)
     {
-        if (amount <= 0f) return;
+        if (amount <= 0f || u.IsTank) return; // a tank crew isn't pinned by rifle fire
         var mr = Rules.Morale;
         u.Suppression = MathF.Min(mr.SuppressionMax, u.Suppression + amount);
         u.LastSuppressedTime = Time;

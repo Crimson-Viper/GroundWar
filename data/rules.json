@@ -31,6 +31,7 @@
     "nearMissMoralePerSuppression": 0.05,
     "friendKilled": 12, "friendWounded": 7, "friendRadius": 25,
     "leaderKilled": 15, "leaderShockWindow": 30, "enemyDownSeen": 3,
+    "tankFearPerSecond": 0.3, "tankFearRange": 100,
     "groupBrokenFraction": 0.5, "groupBrokenShock": 12,
     "recoverPerSecond": 0.4, "recoverInCoverPerSecond": 0.3, "recoverLeaderNearbyPerSecond": 0.3,
     "leaderRadius": 25, "aloneDrainPerSecond": 0.3, "aloneRadius": 15, "noAmmoDrainPerSecond": 0.5, "quietSuppression": 10

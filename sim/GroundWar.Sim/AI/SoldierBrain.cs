@@ -326,11 +326,15 @@ public sealed class SoldierBrain
         foreach (var e in s.VisibleEnemies)
         {
             if (!e.IsActive) continue;
+            if (e.IsTank && !s.Weapon.CanHurtArmour) continue; // no point shooting a rifle at a tank
             float d = Vector2.Distance(s.Position, e.Position);
             if (d > s.Weapon.Range) continue;
             if (_b.FriendNear(s, e.Position, 4f)) continue; // don't shoot into a melee with your mates
             float threat = e.Weapon.Threat * (e.IsLeader ? 1.5f : 1f) * (_b.Time - e.LastFiredTime < 3f ? 1.3f : 1f);
             if (e.MoraleState == MoraleState.Broken) threat *= 0.5f;
+            // An anti-tank rifleman is there for the tanks: a hit that can go through the armour counts most.
+            if (s.Weapon.CanHurtArmour)
+                threat *= e.IsTank ? (s.Weapon.PenetrationAt(d) > Battle.ArmourFacing(e, s.Position) ? 20f : 4f) : 0.3f;
             float score = threat * (0.02f + _b.HitChance(s, e)) * (1f + 30f / MathF.Max(d, 10f));
             if (e == s.Target) score *= 1.3f; // keep shooting at the same man
             if (score > bestScore) { bestScore = score; best = e; }
