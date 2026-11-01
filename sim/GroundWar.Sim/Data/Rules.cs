@@ -106,6 +106,9 @@ public sealed class MoraleRules
     public float FriendWounded { get; set; } = 7f;
     public float FriendRadius { get; set; } = 25f;
     public float LeaderKilled { get; set; } = 15f;
+    /// <summary>Morale lost per second by a man who can see an enemy tank this close and has nothing that can hurt it.</summary>
+    public float TankFearPerSecond { get; set; } = 0.8f;
+    public float TankFearRange { get; set; } = 150f;
     /// <summary>Seconds after losing a leader during which losing his replacement too adds no further shock.</summary>
     public float LeaderShockWindow { get; set; } = 30f;
     public float EnemyDownSeen { get; set; } = 3f;

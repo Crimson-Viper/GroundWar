@@ -26,12 +26,29 @@ public sealed class Soldier
     public Side Side { get; init; }
     public Group Group { get; init; } = null!;
     public WeaponDef Weapon { get; init; } = null!;
-    public float Skill { get; init; }
+    public float Skill { get; set; }
     public float StartMorale { get; set; }
     public bool IsLeader { get; set; }
 
     public string Label => $"{(Side == Side.Blue ? 'B' : 'R')}{Id}";
-    public string Role => IsLeader ? "Sergeant" : Weapon.IsMachineGun ? "MG gunner" : "Rifleman";
+    public string Role => Vehicle != null ? Vehicle.Name
+        : IsLeader ? "Sergeant" : Weapon.CanHurtArmour ? "Anti-tank rifleman" : Weapon.IsMachineGun ? "MG gunner" : "Rifleman";
+
+    // Vehicle. A tank is one "soldier" standing for the whole crew: Weapon is its machine gun,
+    // MainGun its cannon. Facing is the hull; the turret turns on its own.
+    public VehicleDef? Vehicle { get; init; }
+    public bool IsTank => Vehicle != null;
+    public WeaponDef? MainGun { get; init; }
+    public Vector2 TurretFacing { get; set; } = Vector2.UnitX;
+    public int MainGunAmmo { get; set; }
+    public float MainGunTimer { get; set; }
+    /// <summary>Who or where the main gun is laid on.</summary>
+    public Soldier? GunTarget { get; set; }
+    public Vector2? GunAim { get; set; }
+    /// <summary>Tracks broken: the tank can still shoot but not move.</summary>
+    public bool Immobilised { get; set; }
+    /// <summary>The tank stops to fire its main gun (a "short halt") and doesn't move off before this time.</summary>
+    public float HaltUntil { get; set; }
 
     // Body
     public Vector2 Position { get; set; }

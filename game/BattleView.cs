@@ -12,6 +12,7 @@ public partial class BattleView : Node3D
 {
     private readonly Battle _battle;
     private SoldierCrowd _crowd = null!;
+    private readonly List<TankView> _tanks = new();
     /// <summary>Follows the selected soldier around, so the camera can follow him.</summary>
     public Node3D SelectedAnchor { get; } = new() { Name = "SelectedAnchor" };
     private System.Numerics.Vector2[] _prev = System.Array.Empty<System.Numerics.Vector2>();
@@ -44,7 +45,7 @@ public partial class BattleView : Node3D
     {
         public Vector3 From, To;
         public float Age, Duration;
-        public bool Hit, MachineGun;
+        public bool Hit, MachineGun, Shell;
     }
 
     private sealed class Puff
@@ -61,6 +62,13 @@ public partial class BattleView : Node3D
         _crowd = new SoldierCrowd(_battle) { Name = "Soldiers" };
         AddChild(_crowd);
         AddChild(SelectedAnchor);
+        foreach (var s in _battle.Soldiers)
+        {
+            if (!s.IsTank) continue;
+            var tv = new TankView(s) { Name = $"Tank {s.Label}" };
+            AddChild(tv);
+            _tanks.Add(tv);
+        }
         _prev = new System.Numerics.Vector2[_battle.Soldiers.Count];
         _curr = new System.Numerics.Vector2[_battle.Soldiers.Count];
         for (int i = 0; i < _curr.Length; i++) _prev[i] = _curr[i] = _battle.Soldiers[i].Position;
@@ -149,8 +157,17 @@ public partial class BattleView : Node3D
         foreach (var shot in _battle.Shots)
         {
             var shooter = _battle.Soldiers[shot.ShooterId];
-            float muzzle = shooter.Stance switch { Stance.Prone => 0.3f, Stance.Crouched => 0.95f, _ => 1.35f };
+            float muzzle = shooter.IsTank ? 1.95f : shooter.Stance switch { Stance.Prone => 0.3f, Stance.Crouched => 0.95f, _ => 1.35f };
             var from = Draw.To3(shot.From, muzzle);
+            if (shot.Shell)
+            {
+                var burst = Draw.To3(shot.Impact, shot.Hit ? 1.5f : 0.3f);
+                var muzzleEnd = from + (burst - from).Normalized() * 3.5f;
+                SpawnTracer(muzzleEnd, burst, from.DistanceTo(burst) / 700f, shot.Hit, true, shell: true);
+                SpawnPuff(muzzleEnd, new Color(1f, 0.8f, 0.4f, 1f), 0.15f, 1.2f);   // muzzle flash
+                SpawnPuff(muzzleEnd, new Color(0.7f, 0.68f, 0.62f, 0.6f), 1.2f, 2.0f); // gun smoke
+                continue;
+            }
             var to = Draw.To3(shot.Impact, shot.Hit ? 0.9f : 0.05f);
             if (!shot.Hit)
             {
@@ -169,6 +186,7 @@ public partial class BattleView : Node3D
     {
         _crowd.UpdateAll(KnownToPlayer, _prev, _curr, alpha, ShowBars, ShowAllLabels, Selected);
         if (Selected != null) SelectedAnchor.Position = _crowd.Positions[Selected.Id];
+        foreach (var tv in _tanks) tv.UpdateVisual(_crowd.Positions[tv.Tank.Id], _crowd.Shown[tv.Tank.Id]);
 
         float dt = paused ? 0f : realDelta * gameSpeed;
         UpdateTracers(dt);
@@ -180,9 +198,9 @@ public partial class BattleView : Node3D
 
     // ---------------------------------------------------------------- effects
 
-    private void SpawnTracer(Vector3 from, Vector3 to, float duration, bool hit, bool mg)
+    private void SpawnTracer(Vector3 from, Vector3 to, float duration, bool hit, bool mg, bool shell = false)
     {
-        _tracers.Add(new Tracer { From = from, To = to, Duration = Mathf.Max(duration, 0.05f), Hit = hit, MachineGun = mg });
+        _tracers.Add(new Tracer { From = from, To = to, Duration = Mathf.Max(duration, 0.05f), Hit = hit, MachineGun = mg, Shell = shell });
     }
 
     private void UpdateTracers(float dt)
@@ -192,6 +210,16 @@ public partial class BattleView : Node3D
         {
             var t = _tracers[i];
             t.Age += dt;
+            if (t.Age >= t.Duration && t.Shell)
+            {
+                // Shell burst: a flash, then a column of earth and smoke.
+                SpawnPuff(t.To + new Vector3(0, 0.5f, 0), new Color(1f, 0.75f, 0.35f, 1f), 0.25f, 3.5f);
+                SpawnPuff(t.To + new Vector3(0, 1.0f, 0), new Color(0.32f, 0.27f, 0.22f, 0.9f), 1.8f, 6f);
+                SpawnPuff(t.To + new Vector3(0, 2.5f, 0), new Color(0.45f, 0.42f, 0.38f, 0.6f), 2.5f, 5f);
+                _tracers[i] = _tracers[^1];
+                _tracers.RemoveAt(_tracers.Count - 1);
+                continue;
+            }
             if (t.Age >= t.Duration)
             {
                 SpawnPuff(t.To, t.Hit ? new Color(0.6f, 0.1f, 0.08f, 0.9f) : new Color(0.55f, 0.5f, 0.42f, 0.8f),
