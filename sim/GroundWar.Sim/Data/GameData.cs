@@ -34,6 +34,7 @@ public sealed class GameData
 {
     public Rules Rules { get; init; } = new();
     public Dictionary<string, WeaponDef> Weapons { get; init; } = new();
+    public Dictionary<string, VehicleDef> Vehicles { get; init; } = new();
 
     public static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -50,7 +51,9 @@ public sealed class GameData
         var rules = Parse<Rules>(source.ReadText("rules.json"));
         var weapons = Parse<Dictionary<string, WeaponDef>>(source.ReadText("weapons.json"));
         foreach (var (id, w) in weapons) w.Id = id;
-        return new GameData { Rules = rules, Weapons = weapons };
+        var vehicles = Parse<Dictionary<string, VehicleDef>>(source.ReadText("vehicles.json"));
+        foreach (var (id, v) in vehicles) v.Id = id;
+        return new GameData { Rules = rules, Weapons = weapons, Vehicles = vehicles };
     }
 
     public static ScenarioDef LoadScenario(IDataSource source, string path) => Parse<ScenarioDef>(source.ReadText(path));

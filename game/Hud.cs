@@ -100,7 +100,7 @@ public partial class Hud : CanvasLayer
         {
             foreach (var g in groups)
             {
-                sb.AppendLine($"{g.Name} ({g.CountEffective}/{g.Members.Count}) {g.Tactic}");
+                sb.AppendLine(g.IsVehicles ? g.Name : $"{g.Name} ({g.CountEffective}/{g.Members.Count}) {g.Tactic}");
                 sb.AppendLine($"   {g.Status}");
             }
         }
@@ -131,6 +131,24 @@ public partial class Hud : CanvasLayer
             var s = selected;
             var t = new StringBuilder();
             t.AppendLine($"{s.Label}  {s.Role}, {s.Group.Name}");
+            if (s.IsTank)
+            {
+                var v = s.Vehicle!;
+                t.AppendLine($"Status: {(s.Status == SoldierStatus.Dead ? "Knocked out" : s.Immobilised ? "Immobilised (tracks broken)" : "Running")}");
+                t.AppendLine($"Armour: front {v.ArmourFront:0} mm, side {v.ArmourSide:0} mm, rear {v.ArmourRear:0} mm");
+                if (s.IsActive)
+                {
+                    t.AppendLine($"Doing: {s.Group.Status}");
+                    t.AppendLine($"Thinking: {s.Thought}");
+                    t.AppendLine($"Main gun: {s.MainGunAmmo} shells{(s.MainGunTimer > 0 ? $", loading ({s.MainGunTimer:0} s)" : ", loaded")}");
+                    t.AppendLine($"Machine gun: {s.Magazine} + {s.SpareMagazines} x {s.Weapon.MagazineSize}{(s.ReloadTimer > 0 ? "  (reloading)" : "")}");
+                    t.AppendLine($"Sees {s.VisibleEnemies.Count} enemies");
+                }
+                t.Append($"Shots {s.ShotsFired}   Hits {s.Hits}");
+                _selected.Text = t.ToString();
+            }
+            else
+            {
             t.AppendLine($"Status: {s.Status}   Stance: {s.Stance}");
             t.AppendLine($"Team: {s.Team?.Name ?? "-"}   Squad: {s.Group.Tactic}");
             if (s.IsActive)
@@ -145,6 +163,7 @@ public partial class Hud : CanvasLayer
             }
             t.Append($"Skill {s.Skill:0.00}   Shots {s.ShotsFired}   Hits {s.Hits}");
             _selected.Text = t.ToString();
+            }
         }
 
         _log.Text = RecentLog(battle, selected, fog, playerSide);

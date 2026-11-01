@@ -16,6 +16,10 @@ public sealed class BattleMap
     public IReadOnlyList<Crater> Craters => _craters;
     public IReadOnlyList<CoverPoint> CoverPoints => _cover;
     public NavGrid Nav { get; }
+    private NavGrid? _tankNav;
+    /// <summary>Where a tank fits: walls get a wide margin, so tanks keep to streets and open ground.
+    /// Built the first time a tank needs it.</summary>
+    public NavGrid TankNav => _tankNav ??= new NavGrid(Width, Height, _walls, 1.8f);
 
     private readonly List<Wall> _walls = new();
     private readonly List<Wall> _highWalls = new();

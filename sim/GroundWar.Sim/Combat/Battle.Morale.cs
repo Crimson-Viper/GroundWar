@@ -28,6 +28,14 @@ public sealed partial class Battle
         }
 
         if (!HasFriendNear(s, mr.AloneRadius)) s.Morale -= mr.AloneDrainPerSecond * Dt;
+        // An enemy tank close by, and nothing in your hands that can stop it.
+        if (!s.Weapon.CanHurtArmour)
+            foreach (var e in s.VisibleEnemies)
+                if (e.IsTank && e.IsActive && Vector2.DistanceSquared(e.Position, s.Position) < mr.TankFearRange * mr.TankFearRange)
+                {
+                    s.Morale -= mr.TankFearPerSecond * Dt * (s.LastProtection >= 0.5f ? 0.5f : 1f); // less so in good cover
+                    break;
+                }
         if (s.Magazine == 0 && s.SpareMagazines == 0 && s.ReloadTimer <= 0f) s.Morale -= mr.NoAmmoDrainPerSecond * Dt;
         s.Morale = Math.Clamp(s.Morale, 0f, s.StartMorale);
         UpdateMoraleState(s);

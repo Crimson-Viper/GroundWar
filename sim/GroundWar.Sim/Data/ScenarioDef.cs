@@ -34,5 +34,7 @@ public sealed class GroupDef
     public float[] SpawnSize { get; set; } = { 10f, 20f };
     /// <summary>Weapon id to count, e.g. { "rifle": 9, "lmg": 1 }.</summary>
     public Dictionary<string, int> Weapons { get; set; } = new();
+    /// <summary>Vehicle id to count, e.g. { "tank": 1 }. A group with vehicles is a vehicle section, not a squad.</summary>
+    public Dictionary<string, int> Vehicles { get; set; } = new();
     public float MoraleBonus { get; set; }
 }
