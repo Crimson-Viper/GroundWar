@@ -237,9 +237,35 @@ public sealed class SoldierBrain
         SetAction(s, SoldierAction.Idle, why);
     }
 
+    /// <summary>A broken man runs for his squad's rally point and lies low there until he (or the squad) rallies.
+    /// With no rally point, or with the enemy on top of it, he runs off the field.</summary>
     private void Flee(Soldier s)
     {
-        if (s.Action == SoldierAction.Flee && s.IsMoving) return;
+        var co = _b.Rules.Cohesion;
+        if (_b.RallyPointFor(s.Group) is Vector2 rally)
+        {
+            bool there = Vector2.DistanceSquared(s.Position, rally) <= co.RallyRadius * co.RallyRadius;
+            if (there)
+            {
+                // Out of it: flat on the ground, getting his breath back.
+                _b.StopMoving(s);
+                s.Stance = Stance.Prone;
+                s.Target = null;
+                SetAction(s, SoldierAction.Idle, "Out of the fight, getting his nerve back");
+                return;
+            }
+            if (s.Action == SoldierAction.Flee && s.IsMoving && s.Destination is Vector2 d &&
+                Vector2.DistanceSquared(d, rally) <= co.RallyRadius * co.RallyRadius) return;
+            _b.ReleaseCover(s);
+            var spot = rally + new Vector2(_b.Rng.Range(-1f, 1f), _b.Rng.Range(-1f, 1f)) * co.RallyRadius * 0.6f;
+            spot = _b.Map.Nav.NearestWalkable(_b.Map.Clamp(spot, 6f));
+            if (_b.SetMove(s, spot, MoveMode.Run))
+            {
+                SetAction(s, SoldierAction.Flee, "Broken! Running back to rally");
+                return;
+            }
+        }
+        if (s.Action == SoldierAction.Flee && s.IsMoving && s.Destination is Vector2 e && _b.DistanceToEdge(e) < 3f) return;
         _b.ReleaseCover(s);
         var dest = _b.RearEdgePoint(s);
         // Spread out a little rather than all running down the same line.

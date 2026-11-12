@@ -50,6 +50,13 @@ takes a morale blow (see [Morale and suppression](morale-and-suppression.md)).
 6. If fewer than 40% of the men can still fight (and they're not mid-assault), the attack is called off; the squad
    holds where it is. This counts as a failed attack for [Who wins](battle-results.md).
 
+**The squad's nerve comes first.** Before any of the above, the squad leader looks at his squad's cohesion (see
+[Morale and suppression](morale-and-suppression.md#squad-cohesion-the-squads-nerve-as-a-unit)). A **shaken** squad
+on the attack goes to ground and shoots back until it steadies. A **wavering** one gives up the attack and pulls
+back about 60 m. A **broken** one is running for its rally point and takes no orders until it rallies. A
+defending squad that is wavering falls back to the next position if the enemy is close, on its flank or behind it.
+In practice a squad stops being able to attack at about 30% losses, well before the 40% rule in step 6.
+
 If the flank's rifle team is pinned for 20 s (`squad.pinnedAbortTime`), the flank is abandoned.
 
 ### Sharing what they see
@@ -70,6 +77,6 @@ The top-left panel shows each squad's tactic and status ("Flanking: rifle team w
 The log records each change of tactic.
 
 ## Tests
-`SquadTests.cs` (squads split into gun and rifle teams; an attacking squad flanks and two squads usually take the
+`CohesionTests.cs` (the squad's nerve), `SquadTests.cs` (squads split into gun and rifle teams; an attacking squad flanks and two squads can take the
 position; a suppressing squad goes to its support position), `BattleTests.cs` (a fallen sergeant is replaced). The
 headless runner's results tables are the main check on how tactics play out (see [Testing and tuning](../tools/testing.md)).

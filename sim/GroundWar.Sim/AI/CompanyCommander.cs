@@ -626,7 +626,7 @@ public sealed class CompanyCommander
 
     private List<CompanyPlan> BuildOptions(Company c, Order o)
     {
-        var squads = c.Squads.Where(g => g.CountEffective >= 2 && !g.HasBroken && !g.IsVehicles).ToList();
+        var squads = c.Squads.Where(g => g.CountEffective >= 2 && !g.HasBroken && g.Nerve < SquadNerve.Wavering && !g.IsVehicles).ToList();
         var plans = new List<CompanyPlan>();
         if (squads.Count == 0) return plans;
         Vector2 start = Vector2.Zero;

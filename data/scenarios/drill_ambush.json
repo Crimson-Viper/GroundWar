@@ -19,7 +19,7 @@
     {
       "side": "Red", "name": "Red", "rear": [0.6, 1],
       "groups": [
-        { "name": "Red 1st Squad", "order": "Hold", "objective": [168, 172], "objectiveRadius": 14, "facing": [0, -1],
+        { "name": "Red 1st Squad", "order": "Hold", "objective": [168, 172], "objectiveRadius": 14, "facing": [-0.8, -0.6],
           "spawnCenter": [168, 171], "spawnSize": [44, 4], "weapons": { "rifle": 7, "lmg": 1 } }
       ]
     }

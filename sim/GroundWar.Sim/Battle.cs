@@ -109,10 +109,12 @@ public sealed partial class Battle
                     Name = hd.Name, Order = "Hold", Objective = hd.Position, ObjectiveRadius = 12f, Facing = new[] { -sideDef.Rear[0], -sideDef.Rear[1] },
                     SpawnCenter = hd.Position, SpawnSize = new[] { 8f, 8f }, Weapons = hd.Staff, MoraleBonus = 10f, Radio = true,
                 });
+            var staffDef = sideDef.Hq is { Staff.Count: > 0 } ? groupDefs[^1] : null;
             foreach (var gd in groupDefs)
             {
                 var group = new Group(side)
                 {
+                    IsHqStaff = gd == staffDef,
                     Id = _groups.Count,
                     Name = gd.Name,
                     Order = Enum.Parse<GroupOrder>(gd.Order, ignoreCase: true),
@@ -343,12 +345,15 @@ public sealed partial class Battle
             }
             if (active > 0 && broken >= active * Rules.Morale.GroupBrokenFraction && broken > 0)
             {
+                // Half the men have run: the squad goes with them.
+                if (g.HasCohesion) { BreakSquad(g, "half its men have run"); continue; }
                 g.HasBroken = true;
                 Note(g, $"{g.Name} ({g.Side}) is breaking!", LogKind.Key);
                 foreach (var m in g.Members)
                     if (m.IsActive && m.MoraleState != MoraleState.Broken) m.Morale -= Rules.Morale.GroupBrokenShock;
             }
         }
+        UpdateCohesion();
     }
 
     private float LastShotTime()

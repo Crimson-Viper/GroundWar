@@ -4,7 +4,7 @@
     "walkSpeed": 1.5, "runSpeed": 3.5, "crawlSpeed": 0.6, "craterSpeedFactor": 0.7,
     "skillMin": 0.8, "skillMax": 1.2,
     "moraleMin": 60, "moraleMax": 85, "leaderMoraleBonus": 10,
-    "killChanceOnHit": 0.45
+    "killChanceOnHit": 0.28
   },
   "perception": {
     "interval": 0.5,             // seconds between looks around
@@ -35,6 +35,28 @@
     "groupBrokenFraction": 0.5, "groupBrokenShock": 12,
     "recoverPerSecond": 0.4, "recoverInCoverPerSecond": 0.3, "recoverLeaderNearbyPerSecond": 0.3,
     "leaderRadius": 25, "aloneDrainPerSecond": 0.3, "aloneRadius": 15, "noAmmoDrainPerSecond": 0.5, "quietSuppression": 10
+  },
+  // Squad cohesion: the squad's nerve as a unit, 0 to 100 (docs/systems/morale-and-suppression.md).
+  "cohesion": {
+    "shakenBelow": 60,           // shaken: an attacking squad goes to ground and shoots back
+    "waveringBelow": 40,         // wavering: gives up the attack and pulls back; a defender falls back if pressed or flanked
+    "brokenBelow": 20,           // broken: the whole squad runs for its rally point
+    "hysteresis": 8,             // a state lifts only when cohesion is this far back above its line
+    "casualtyShock": 14,         // lost per man hit in a squad of ten (smaller squads feel each loss more)
+    "ceilingPerLossPercent": 1.9, // cohesion can't rise above 100 minus this for each 1% of the squad hit (30% hit = 43 at best)
+    "leaderLost": 12,
+    "pinnedDrainPerSecond": 0.4, // with every man pinned; in proportion with fewer
+    "flankedShock": 14, "flankedDrainPerSecond": 1.2, // fire from the side, behind, or two directions at once
+    "flankAngle": 70,            // degrees off the squad's front that counts as the flank
+    "flankedMoraleShock": 6,     // each man's own morale, when the squad is first flanked
+    "turnToFaceTime": 20,        // seconds before a defender has turned to face fire from one new direction
+    "cutOffDrainPerSecond": 1.0, "cutOffRange": 150, // enemy known behind the squad
+    "surpriseShock": 8, "ambushRange": 80, // fired on by an enemy it hadn't seen; doubled inside ambush range
+    "neighbourBroke": 8, "neighbourRadius": 120, // a squad of the same side breaking nearby
+    "recoverPerSecond": 0.5, "recoverWithLeaderPerSecond": 0.3, "quietTime": 8, // only once nobody has shot at it for quietTime
+    "rallyAt": 32,               // a broken squad rallies above this
+    "rallyDistance": 110, "rallyRadius": 12, "rallyDangerDistance": 60,
+    "pullBackDistance": 60       // how far a wavering squad pulls back when it gives up an attack
   },
   "ai": {
     "thinkInterval": 0.4,

@@ -22,6 +22,7 @@ dotnet test sim/GroundWar.Sim.Tests
 | `ReplayTests.cs` | Same seed and same player commands give the same battle; the after-action report adds up |
 | `CompanyTests.cs` | The company commander: brief-back, choosing the covered flank, approve and reject, refusing and being overruled, traits, company messages |
 | `TerrainTests.cs` | The ground: crests, woods, hedgerows and crops hide and protect as they should; flat maps behave as before |
+| `CohesionTests.cs` | The squad's nerve: losses, surprise and flank fire shake it; squads go to ground, give up, break and rally together |
 | `RealismTests.cs` | The realism report measures properly and doesn't change the battle it watches; each drill is a fight that ends |
 
 GitHub runs these on every pull request (`.github/workflows/ci.yml`), plus 10 headless battles and a build of the
@@ -81,7 +82,7 @@ changed, see [The ground](../systems/terrain.md#what-it-did-to-the-battles) for 
 | Tank platoons (milestone 8) | 124 | 74 | 2 |
 
 **How the battles are fought** (not just who wins) is measured by the realism report: see
-[The realism report and the drills](../systems/realism-report.md) for the current table (17 of 60 measures in range on 12 Nov 2026).
+[The realism report and the drills](../systems/realism-report.md). 17 of 60 measures were in range before the core AI rework and 37 of 60 after squad cohesion (12 Nov 2026); win/loss after that step is in [Morale and suppression](../systems/morale-and-suppression.md#what-it-did-to-the-battles).
 
 ## Screenshot mode
 The game can render a frame with no window and save it, which is how screenshots for pull requests are made:

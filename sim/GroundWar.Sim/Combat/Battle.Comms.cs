@@ -329,6 +329,8 @@ public sealed partial class Battle
         // Orders for battalion's support don't change where the men are or what they're doing.
         if (o.Kind == OrderKind.FireMission) { TakeFireMission(g, WithMission(g, o)); return; }
         if (o.Kind == OrderKind.Attach) { Attach(g, o.AttachTo); return; }
+        g.GaveUpOrder = null; // a new order replaces whatever the squad had given up
+        g.LastFallBack = -999f;
         switch (o.Kind)
         {
             case OrderKind.Halt:

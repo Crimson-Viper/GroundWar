@@ -130,6 +130,16 @@ public partial class Hud : CanvasLayer
     public void ToggleHelp() => _helpPanel.Visible = !_helpPanel.Visible;
     public bool HelpVisible { get => _helpPanel.Visible; set => _helpPanel.Visible = value; }
 
+    /// <summary>The squad's nerve, when it isn't steady: " · shaken", " · wavering, flanked", " · BROKEN".</summary>
+    private static string Nerve(Group g)
+    {
+        if (!g.HasCohesion) return "";
+        string s = g.Nerve switch { SquadNerve.Shaken => "shaken", SquadNerve.Wavering => "wavering", SquadNerve.Broken => "BROKEN", _ => "" };
+        if (g.Flanked) s += (s.Length > 0 ? ", " : "") + "flanked";
+        if (g.CutOff) s += (s.Length > 0 ? ", " : "") + "cut off";
+        return s.Length > 0 ? " · " + s : "";
+    }
+
     public void UpdateHud(Battle battle, float speed, bool paused, Soldier? selected, string overlays, bool fog, Side playerSide)
     {
         var sb = new StringBuilder();
@@ -160,7 +170,7 @@ public partial class Hud : CanvasLayer
         {
             foreach (var g in groups)
             {
-                sb.AppendLine(g.IsVehicles ? g.Name : $"{g.Name} ({g.CountEffective}/{g.Members.Count}) {g.Tactic}");
+                sb.AppendLine(g.IsVehicles ? g.Name : $"{g.Name} ({g.CountEffective}/{g.Members.Count}) {g.Tactic}{Nerve(g)}");
                 sb.AppendLine($"   {g.Status}");
             }
         }
@@ -176,7 +186,7 @@ public partial class Hud : CanvasLayer
             }
             if (selected != null)
             {
-                sb.AppendLine($"{selected.Group.Name} ({selected.Group.CountEffective}/{selected.Group.Members.Count}) {selected.Group.Tactic}");
+                sb.AppendLine($"{selected.Group.Name} ({selected.Group.CountEffective}/{selected.Group.Members.Count}) {selected.Group.Tactic}{Nerve(selected.Group)}");
                 sb.AppendLine($"   {selected.Group.Status}");
             }
             else sb.AppendLine("Click a soldier to see his squad");
@@ -222,6 +232,8 @@ public partial class Hud : CanvasLayer
             {
             t.AppendLine($"Status: {s.Status}   Stance: {s.Stance}");
             t.AppendLine($"Team: {s.Team?.Name ?? "-"}   Squad: {s.Group.Tactic}");
+            if (s.Group.HasCohesion)
+                t.AppendLine($"Squad nerve: {s.Group.Nerve} ({s.Group.Cohesion:0}){(s.Group.Flanked ? "  FLANKED" : "")}{(s.Group.CutOff ? "  CUT OFF" : "")}");
             if (s.IsActive)
             {
                 t.AppendLine($"Morale: {s.Morale:0} / {s.StartMorale:0}  ({s.MoraleState})");

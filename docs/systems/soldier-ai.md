@@ -13,7 +13,7 @@ wins. It's cheap enough for 2,000 soldiers, easy to tune, and every decision can
 A man thinks every 0.4 s while in a fight and about every 1 s when nothing is going on (`ai.thinkInterval`).
 Each time:
 
-1. **Broken?** He runs for the rear, and nothing else matters. See [Morale and suppression](morale-and-suppression.md).
+1. **Broken?** He runs for his squad's rally point and lies low there (or off the field if there is nowhere to stop), and nothing else matters. See [Morale and suppression](morale-and-suppression.md).
 2. **Pick a target** (`PickTarget`): among enemies he can see and reach, score = how dangerous the enemy is (his weapon's
    `threat`, ×1.5 for a sergeant, ×1.3 if he's firing right now, halved if he's running away) × chance to hit him ×
    a bonus for being close. He sticks with his current target (×1.3), and never fires where a friend is within 4 m of the enemy.
