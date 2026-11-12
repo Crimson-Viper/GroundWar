@@ -1,0 +1,30 @@
+// Drill 2: a squad is flanked.
+// A Red squad holds a low stone wall, facing west. One Blue squad keeps it busy from the front while a second
+// Blue squad comes out of the wood to the north-east, round the end of the wall, where the wall gives no cover at all.
+// The realistic outcome: fire from the flank is far worse than fire from the front. The Red squad should
+// turn to face it, pull back, or break quickly; it should not sit at the wall and be shot down one by one.
+{
+  "name": "Drill: a squad is flanked",
+  "description": "A Red squad behind a wall is pinned from the front by one Blue squad while another comes in on its flank.",
+  "map": "maps/drill_field.json",
+  "timeLimit": 600,
+  "sides": [
+    {
+      "side": "Blue", "name": "Blue", "rear": [-1, 0],
+      "groups": [
+        { "name": "Blue 1st Squad", "order": "Suppress", "objective": [226, 121], "objectiveRadius": 16,
+          "supportPosition": [150, 118], "facing": [1, 0],
+          "spawnCenter": [118, 120], "spawnSize": [12, 20], "weapons": { "rifle": 8, "lmg": 2 } },
+        { "name": "Blue 2nd Squad", "order": "Attack", "objective": [226, 121], "objectiveRadius": 16, "facing": [0, 1],
+          "spawnCenter": [264, 44], "spawnSize": [20, 12], "weapons": { "rifle": 9, "lmg": 1 } }
+      ]
+    },
+    {
+      "side": "Red", "name": "Red", "rear": [1, 0.4],
+      "groups": [
+        { "name": "Red 1st Squad", "order": "Hold", "objective": [226, 121], "objectiveRadius": 14, "facing": [-1, 0],
+          "spawnCenter": [225, 121], "spawnSize": [4, 20], "weapons": { "rifle": 8, "lmg": 1 } }
+      ]
+    }
+  ]
+}

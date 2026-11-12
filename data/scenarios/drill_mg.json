@@ -1,0 +1,26 @@
+// Drill 1: a squad meets a machine gun.
+// A Blue squad crosses open pasture towards a hedgerow. A Red machine-gun team is lying up in the hedge and
+// Blue doesn't know it is there. The realistic outcome: the squad goes to ground when the gun opens up, wins
+// the firefight or backs off, and does NOT walk on into the gun until it is shot to pieces.
+{
+  "name": "Drill: squad meets a machine gun",
+  "description": "A Blue squad crossing open pasture runs into a hidden Red machine-gun team in the hedgerow.",
+  "map": "maps/drill_field.json",
+  "timeLimit": 600,
+  "sides": [
+    {
+      "side": "Blue", "name": "Blue", "rear": [-1, 0],
+      "groups": [
+        { "name": "Blue 1st Squad", "order": "Advance", "objective": [228, 62], "objectiveRadius": 15, "facing": [1, 0],
+          "spawnCenter": [24, 62], "spawnSize": [12, 24], "weapons": { "rifle": 9, "lmg": 1 } }
+      ]
+    },
+    {
+      "side": "Red", "name": "Red", "rear": [1, 0],
+      "groups": [
+        { "name": "Red MG team", "order": "Hold", "objective": [207, 60], "objectiveRadius": 8, "facing": [-1, 0],
+          "spawnCenter": [207, 58], "spawnSize": [2, 14], "weapons": { "rifle": 3, "lmg": 1 } }
+      ]
+    }
+  ]
+}

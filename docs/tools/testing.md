@@ -21,6 +21,8 @@ dotnet test sim/GroundWar.Sim.Tests
 | `SupportTests.cs` | Smoke blocks sight but not bullets and drifts; fire missions take time and land round the target; commanders plan and ask for mortar fire; attaching an MG section; defensive fire; ammunition running out |
 | `ReplayTests.cs` | Same seed and same player commands give the same battle; the after-action report adds up |
 | `CompanyTests.cs` | The company commander: brief-back, choosing the covered flank, approve and reject, refusing and being overruled, traits, company messages |
+| `TerrainTests.cs` | The ground: crests, woods, hedgerows and crops hide and protect as they should; flat maps behave as before |
+| `RealismTests.cs` | The realism report measures properly and doesn't change the battle it watches; each drill is a fight that ends |
 
 GitHub runs these on every pull request (`.github/workflows/ci.yml`), plus 10 headless battles and a build of the
 Godot code. A pull request with a red cross has a failing check.
@@ -46,6 +48,8 @@ dotnet run -c Release --project sim/GroundWar.Runner -- --scenario scenarios/str
 | `--report` | Print the after-action report of the first battle |
 | `--map <path>` | Fight the scenario on a different map |
 | `--profile` | Print where the time goes each tick |
+| `--realism` | After the table, print the [realism report](../systems/realism-report.md) for the scenario: how the battles were fought, against the targets in `data/realism.json` |
+| `--realism-suite` | Play every scenario listed in `data/realism.json` (30 battles each, or `--battles n`) and print one realism table for all of them |
 
 There is no player in the runner, so in a scenario with battalion commanders the player's battalion is handed over to
 his second in command at the start, and both sides are run by the computer. A battalion battle takes about a
@@ -75,6 +79,9 @@ changed, see [The ground](../systems/terrain.md#what-it-did-to-the-battles) for 
 | Tank platoons | 85 | 14 | 1 |
 | Battalion battle (15 battles; it was 51 / 49 of 100 before) | 6 | 9 | 0 |
 | Tank platoons (milestone 8) | 124 | 74 | 2 |
+
+**How the battles are fought** (not just who wins) is measured by the realism report: see
+[The realism report and the drills](../systems/realism-report.md) for the current table (17 of 60 measures in range on 12 Nov 2026).
 
 ## Screenshot mode
 The game can render a frame with no window and save it, which is how screenshots for pull requests are made:
@@ -107,6 +114,7 @@ facing and weapons. Tab in the game cycles through them in the order listed in `
 | `farmhouse_support` | The farmhouse with battalion support: Blue mortars (HE and smoke) and an MG section attached to A Company; Red mortars |
 | `tank_platoons` | Milestone 8: the farmhouse with a Blue platoon of four tanks attached to A Company. Red has an anti-tank rifle, a bazooka team and two tanks of its own |
 | `stress_1000` | 1,000 a side, to check speed |
+| `drill_mg`, `drill_flanked`, `drill_ambush` | The three drills on the small drill field: a squad meets a machine gun, a squad is flanked, an ambush. See [The realism report and the drills](../systems/realism-report.md) |
 
 ## Maps
 Hand-written JSON (see [Map and cover](../systems/map-and-cover.md)). `tools/make_town_map.py` generates `town.json`

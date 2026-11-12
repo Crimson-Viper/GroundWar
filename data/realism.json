@@ -1,0 +1,40 @@
+// Realism targets: what a believable WW2 infantry fight looks like, as numbers.
+// The realism report (docs/systems/realism-report.md) measures every battle against these.
+// Each line is [lowest, highest] that counts as realistic. They are working targets taken from general
+// WW2 small-unit history, not exact figures: change them if they feel wrong, the report will follow.
+{
+  "targets": {
+    // Of the men out of the fight at the end, how many ran or were routed rather than killed or wounded.
+    // Real fights were mostly decided by men giving up the ground, not by everyone being shot. (%)
+    "brokeShare": [30, 75],
+    // Men killed or wounded on the side that lost. A beaten platoon or company usually gave up long before half were hit. (%)
+    "loserCasualties": [10, 40],
+    // Men killed or wounded on the side that won. A win that costs a third of the force is a disaster, not a win. (%)
+    "winnerCasualties": [3, 25],
+    // How much of a squad has been hit at the moment it breaks. (%)
+    "squadLossAtBreak": [15, 45],
+    // Squads that fought and were shot down to half strength or less. Should be rare. (%)
+    "squadsShotToHalf": [0, 15],
+    // Of the time men spend under fire, how much they spend pinned (or worse). Fire mostly pins, it rarely kills. (%)
+    "pinnedShare": [30, 70],
+    // Men on the move with a squad mate within 2 m. Trained men keep about 5 m apart. (%)
+    "bunched": [0, 15],
+    // Middle range of rifle and machine-gun shots. (metres)
+    "shotRange": [50, 300],
+    // Rounds fired by rifles and machine guns for each man they hit. Real figures run into the thousands;
+    // a few hundred is the least that looks like a firefight rather than a shooting gallery.
+    "roundsPerCasualty": [150, 2000],
+    // Of the men hit, how many are killed outright. In WW2 roughly one in four; the rest were wounded. (%)
+    "killedShare": [20, 35]
+  },
+
+  // What "--realism-suite" plays: the ordinary battles and the three drills.
+  "suite": [
+    "scenarios/farmhouse.json",
+    "scenarios/squad_attack.json",
+    "scenarios/meeting.json",
+    "scenarios/drill_mg.json",
+    "scenarios/drill_flanked.json",
+    "scenarios/drill_ambush.json"
+  ]
+}

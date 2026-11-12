@@ -1,0 +1,38 @@
+// Drill field: a small piece of rolling farmland for the three squad drills (docs/systems/realism-report.md).
+// West half: open pasture falling away from a low crest. Middle: a north-south hedgerow with a gap.
+// North-east: a low stone wall on a rise. South: a wood beside the lane, behind a fold in the ground.
+{
+  "name": "Drill field",
+  "width": 300,
+  "height": 200,
+  "ridges": [
+    // The fold that hides the lane from the wood until a squad comes over it.
+    { "a": [105, 110], "b": [105, 200], "width": 40, "height": 3.5 },
+    // The rise the stone wall stands on.
+    { "a": [215, 20], "b": [215, 95], "width": 55, "height": 3 }
+  ],
+  "hills": [
+    { "center": [40, 60], "radius": 70, "height": 2.5 }
+  ],
+  "walls": [
+    // Hedgerow across the pasture, with a gateway.
+    { "a": [205, 30], "b": [205, 58], "thickness": 2, "hedge": true },
+    { "a": [205, 63], "b": [205, 96], "thickness": 2, "hedge": true },
+    // Low stone wall facing west (the flanked squad's position).
+    { "a": [222, 110], "b": [222, 132], "thickness": 0.6 },
+    // Field wall on the north side: cover for whoever comes round that way.
+    { "a": [236, 90], "b": [262, 90], "thickness": 0.6 }
+  ],
+  "areas": [
+    { "kind": "woods", "points": [[128, 168], [205, 166], [212, 198], [124, 198]] },
+    { "kind": "woods", "points": [[232, 20], [290, 16], [292, 62], [240, 66]] }
+  ],
+  "trees": [[60, 90], [88, 40], [150, 70], [170, 128], [252, 150], [40, 150]],
+  "craters": [
+    { "center": [120, 62], "radius": 3 },
+    { "center": [150, 52], "radius": 3 },
+    { "center": [172, 70], "radius": 2.5 },
+    { "center": [150, 118], "radius": 3 },
+    { "center": [176, 108], "radius": 2.5 }
+  ]
+}
