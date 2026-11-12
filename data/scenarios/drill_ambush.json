@@ -1,0 +1,27 @@
+// Drill 3: an ambush.
+// A Blue squad marches east along the lane, over a fold in the ground, past a wood. A Red squad is lying in
+// the edge of the wood about 40 m from the lane. The realistic outcome: the first seconds are a shock (a few
+// men hit, the rest pinned or running); then the squad either gets out of the killing ground or goes to
+// pieces. What should NOT happen is a calm ten-minute firefight at 40 m that ends with everybody dead.
+{
+  "name": "Drill: ambush",
+  "description": "A Blue squad marching along the lane is ambushed at close range by a Red squad hidden in the wood.",
+  "map": "maps/drill_field.json",
+  "timeLimit": 600,
+  "sides": [
+    {
+      "side": "Blue", "name": "Blue", "rear": [-1, 0],
+      "groups": [
+        { "name": "Blue 1st Squad", "order": "Advance", "objective": [270, 145], "objectiveRadius": 15, "facing": [1, 0],
+          "spawnCenter": [30, 145], "spawnSize": [16, 8], "weapons": { "rifle": 9, "lmg": 1 } }
+      ]
+    },
+    {
+      "side": "Red", "name": "Red", "rear": [0.6, 1],
+      "groups": [
+        { "name": "Red 1st Squad", "order": "Hold", "objective": [168, 172], "objectiveRadius": 14, "facing": [0, -1],
+          "spawnCenter": [168, 171], "spawnSize": [44, 4], "weapons": { "rifle": 7, "lmg": 1 } }
+      ]
+    }
+  ]
+}

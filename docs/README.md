@@ -34,3 +34,4 @@ The design (what the game should become) lives in the design docs. These pages d
 | Page | What it covers |
 |---|---|
 | [Testing and tuning](tools/testing.md) | Automated tests, the headless battle runner, screenshots, scenarios and maps |
+| [The realism report and the drills](systems/realism-report.md) | The yardstick for the core AI: how battles are fought (men who break vs men hit, losses before a side gives up, pinned time, bunching, rounds per hit) against target ranges, and three small drill scenarios |
