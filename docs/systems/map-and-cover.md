@@ -4,6 +4,8 @@
 The ground the battle is fought on: walls, craters, the cover spots soldiers use, how much a spot protects a
 man from a given direction, foxholes dug during the battle, the battlefield grid, and path finding.
 
+Hills, woods, hedgerows and crops have their own page: [The ground](terrain.md).
+
 ## Map files
 `data/maps/*.json`. Positions are in metres; x runs east, y runs south (in Godot, sim y becomes the z axis).
 
@@ -70,7 +72,7 @@ about 63% and in "Town attack" from about 25% to about 13%.
 `Map/BattleGrid.cs`. The map is cut into 5 m squares, each scored for:
 - **cover**: the best cover point in the square;
 - **visibility**: how open the view is (16 sight lines, 150 m long, how many are not blocked);
-- **height**: flat for now (terrain comes later);
+- **height**: the ground height in metres (see [The ground](terrain.md));
 - **control**: which side holds the square, from nearby fighting men; refreshed once a second.
 
 Every AI layer can read it. Press **G** to cycle the overlay: cover → visibility → control → off.

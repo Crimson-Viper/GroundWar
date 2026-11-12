@@ -45,6 +45,8 @@ public sealed class NavGrid
         }
     }
 
+    public void Block(int x, int y) { if (InBounds(x, y)) _blocked[y * Width + x] = true; }
+
     public Vector2 CellCenter(int x, int y) => new((x + 0.5f) * CellSize, (y + 0.5f) * CellSize);
 
     public bool InBounds(int x, int y) => x >= 0 && y >= 0 && x < Width && y < Height;

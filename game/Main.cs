@@ -113,6 +113,7 @@ public partial class Main : Node3D
         _battle = Battle.Load(new GodotDataSource(), Scenarios[_scenario], _seed);
         if (replay != null) _battle.LoadReplay(replay);
         if (runUntil > 0f) _battle.RunUntil(runUntil);
+        Draw.Ground = _battle.Map.Terrain;
         _mapView = new MapView(_battle) { Name = "Map" };
         AddChild(_mapView);
         _battleView = new BattleView(_battle) { Name = "Battle", Fog = _fog };

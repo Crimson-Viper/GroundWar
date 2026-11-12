@@ -17,6 +17,7 @@ public sealed partial class Battle
         };
         if (Map.InCrater(s.Position)) speed *= sr.CraterSpeedFactor;
         if (s.MoraleState == MoraleState.Shaken && s.Action != SoldierAction.Flee) speed *= 0.9f;
+        speed *= Map.SpeedFactor(s.Position, Core.Geo.SafeNormalize(s.Path[s.PathIndex] - s.Position, s.Facing));
         s.Stance = s.MoveMode == MoveMode.Crawl ? Stance.Prone : Stance.Standing;
 
         float remaining = speed * Dt;

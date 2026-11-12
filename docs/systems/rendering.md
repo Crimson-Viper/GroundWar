@@ -11,7 +11,8 @@ frame and draws it.
 | `SoldierCrowd.cs` | Draws every soldier from the low-poly models (one batch per pose), with sergeant's cap, morale bar, name labels |
 | `TankView.cs` | Draws each tank from its model, turning the turret; dark wreck when knocked out. Crews inside a tank aren't drawn (`Soldier.InTank`); they appear when they bail out |
 | `ModelViewer.cs` | A separate scene (F6) to look at the models |
-| `MapView.cs` | Ground, walls, craters, foxholes, objectives, grid and cover overlays |
+| `MapView.cs` | Ground (a height mesh with grass, wheat and woodland colours on maps that have terrain), trees, hedgerows, walls, craters, foxholes, objectives, grid and cover overlays |
+| `Draw.cs` | Helpers. `Draw.To3` turns a sim position into a 3D one **on the ground** (it adds the terrain height), so everything sits on the hills |
 | `CameraRig.cs` | The free camera and follow mode |
 | `Hud.cs` | Status strip, selected soldier panel, log, key list, end banner, order and message panels, company panel with the brief-back buttons, battalion panel (see **The HUD** below) |
 | `CommsView.cs` | HQ tents, telephone cables, runners, phone pulses, radio rings, flares |

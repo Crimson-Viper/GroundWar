@@ -13,11 +13,14 @@ public sealed partial class Battle
         var knowledge = s.Group.Knowledge;
         s.VisibleEnemies.Clear();
         var enemySide = s.Side == Side.Blue ? Side.Red : Side.Blue;
+        // A man lying flat in standing crops is hidden, and blind: he sees only what is almost on top of him.
+        bool inTheWheat = !s.IsTank && s.Stance == Stance.Prone && Map.Terrain.HasCrops && Map.Terrain.KindAt(s.Position) == GroundWar.Sim.Map.GroundKind.Crops;
         // Nearest first. A man can only keep track of so many enemies at once.
         foreach (var e in Hash.Near(enemySide, s.Position, pr.ViewRange))
         {
             if (s.VisibleEnemies.Count >= pr.MaxTracked) break;
             float d = Vector2.Distance(s.Position, e.Position);
+            if (inTheWheat && d > Rules.Terrain.CropsProneViewRange) continue;
 
             // Roll the dice first and only do the (expensive) sight-line check if he might see him.
             float chance;
@@ -44,7 +47,12 @@ public sealed partial class Battle
         if (Time - target.LastFiredTime < pr.FiringWindow) p *= pr.FiringMultiplier;
         if (target.IsMoving && target.MoveMode != MoveMode.Crawl) p *= pr.MovingMultiplier;
         if (target.IsTank) p *= target.Vehicle!.SpotMultiplier;
-        else if (target.Stance == Stance.Prone) p *= pr.ProneMultiplier;
+        else
+        {
+            if (target.Stance == Stance.Prone) p *= pr.ProneMultiplier;
+            // Woods, hedgerows and standing crops hide a man, the more so the lower he keeps.
+            p *= Map.Concealment(target.Position, target.Stance == Stance.Prone ? 2 : target.Stance == Stance.Crouched ? 1 : 0);
+        }
         return Math.Clamp(p, 0f, 0.95f);
     }
 }

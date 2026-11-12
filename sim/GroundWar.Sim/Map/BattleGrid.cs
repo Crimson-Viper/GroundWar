@@ -13,7 +13,7 @@ public sealed class BattleGrid
     public float[] Cover { get; }
     /// <summary>How open the view from this cell is, 0 (boxed in) .. 1 (open field).</summary>
     public float[] Visibility { get; }
-    /// <summary>Ground height in metres. Flat for now; terrain comes later.</summary>
+    /// <summary>Ground height in metres at the middle of the cell.</summary>
     public float[] GroundHeight { get; }
     /// <summary>-1 = Blue controls, +1 = Red controls, 0 = contested or empty.</summary>
     public float[] Control { get; }
@@ -33,6 +33,18 @@ public sealed class BattleGrid
         {
             int idx = IndexOf(cp.Position);
             if (idx >= 0) Cover[idx] = MathF.Max(Cover[idx], cp.Strength);
+        }
+
+        for (int y = 0; y < Height; y++)
+        for (int x = 0; x < Width; x++)
+        {
+            var c = CellCenter(x, y);
+            int i = y * Width + x;
+            GroundHeight[i] = map.Terrain.HeightAt(c);
+            var kind = map.Terrain.KindAt(c);
+            // Woods are cover everywhere in them; crops only hide a man who keeps low.
+            if (kind == GroundKind.Woods) Cover[i] = MathF.Max(Cover[i], 0.45f);
+            else if (kind == GroundKind.Crops) Cover[i] = MathF.Max(Cover[i], 0.15f);
         }
 
         const int rays = 16;

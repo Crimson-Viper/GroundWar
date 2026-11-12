@@ -64,6 +64,16 @@ minute of computer time each (an hour of battle with some 250 men); run several 
 | Farmhouse with support (mortars, smoke, MG section) | 99 | 77 | 24 |
 | Battalion battle (100 battles, both battalions run by the computer) | 51 | 49 | 0 |
 | Farmhouse (company attack) | 94 | 99 | 7 |
+
+**After the ground was added** (100 battles each, 12 Nov 2026; only scenarios on the farmhouse and valley maps
+changed, see [The ground](../systems/terrain.md#what-it-did-to-the-battles) for why the attacker now does so well):
+
+| Scenario | Blue | Red | Draws |
+|---|---|---|---|
+| Farmhouse (company attack) | 80 | 18 | 2 |
+| Farmhouse with support | 97 | 1 | 2 |
+| Tank platoons | 85 | 14 | 1 |
+| Battalion battle (15 battles; it was 51 / 49 of 100 before) | 6 | 9 | 0 |
 | Tank platoons (milestone 8) | 124 | 74 | 2 |
 
 ## Screenshot mode

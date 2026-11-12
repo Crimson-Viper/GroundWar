@@ -54,6 +54,11 @@ objective (the spot with the best cover and a clear view of it). The other squad
 the side and 40 m short. Then the phases: **move up**, **covering fire** (20 s at least, once the support squad is
 firing), **assault from the flank**, **consolidate** on the objective.
 
+Since the ground was added (see [The ground](terrain.md)) he reads it for three choices: the support position
+also scores height (`SupportSpot`); the assembly area is moved, if he can find one, to a spot the defenders can't
+see, such as behind a crest, a wood or a hedgerow (`AssemblySpot`: up to 1.8 times as far out to the side, 15 to
+70 m short); and in a defence each squad is shifted a few metres to ground with cover, a view and height (`DefenceSpot`).
+
 ### Judging a plan
 He estimates three things for each plan:
 - **Expected loss**: for every leg of every squad's route (path-found around walls), every 15 m he works out how much

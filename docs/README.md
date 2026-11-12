@@ -12,6 +12,7 @@ The design (what the game should become) lives in the design docs. These pages d
 |---|---|
 | [Architecture](systems/architecture.md) | How the code is split (simulation vs Godot), the battle loop, data files, determinism |
 | [Map and cover](systems/map-and-cover.md) | Walls, craters, cover points, protection, foxholes, the battlefield grid, path finding |
+| [The ground](systems/terrain.md) | Hills and dead ground, woods, hedgerows, crops: what hides, what protects, what slows, and how the AI uses it |
 | [Soldier AI](systems/soldier-ai.md) | How each man decides what to do: utility scoring, cover, shooting, digging in, fleeing |
 | [Spotting and shooting](systems/spotting-and-shooting.md) | Who sees whom, hit chances, suppression from near misses, wounds and deaths |
 | [Morale and suppression](systems/morale-and-suppression.md) | Steady, shaken, pinned, broken; what raises and lowers morale; rallying |

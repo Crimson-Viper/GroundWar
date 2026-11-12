@@ -62,16 +62,108 @@ public partial class MapView : Node3D
     private void BuildGround()
     {
         var map = _battle.Map;
-        var ground = new MeshInstance3D
+        var t = map.Terrain;
+        if (t.Flat && !t.HasWoods && !t.HasCrops && t.Trees.Count == 0)
         {
-            Name = "Ground",
-            Mesh = new PlaneMesh { Size = new Vector2(map.Width + 400, map.Height + 400) },
-            Position = new Vector3(map.Width * 0.5f, 0, map.Height * 0.5f),
-        };
-        var mat = new ShaderMaterial { Shader = Draw.LoadShader("res://game/shaders/ground.gdshader") };
+            // The plain grey test range, as before.
+            var ground = new MeshInstance3D
+            {
+                Name = "Ground",
+                Mesh = new PlaneMesh { Size = new Vector2(map.Width + 400, map.Height + 400) },
+                Position = new Vector3(map.Width * 0.5f, 0, map.Height * 0.5f),
+            };
+            var mat = new ShaderMaterial { Shader = Draw.LoadShader("res://game/shaders/ground.gdshader") };
+            mat.SetShaderParameter("map_size", new Vector2(map.Width, map.Height));
+            ground.MaterialOverride = mat;
+            AddChild(ground);
+            return;
+        }
+        BuildTerrain();
+        BuildTrees();
+    }
+
+    /// <summary>The ground as one mesh: a 4 m grid of points lifted to the terrain's height and coloured by what
+    /// grows there (grass, wheat, woodland floor). It runs 200 m past the map's edge, so the hills don't end in a cliff.</summary>
+    private void BuildTerrain()
+    {
+        var map = _battle.Map;
+        var t = map.Terrain;
+        const float cell = Terrain.CellSize, margin = 200f;
+        int x0 = -(int)(margin / cell), y0 = x0;
+        int nx = t.Width + 2 * (int)(margin / cell), ny = t.Height + 2 * (int)(margin / cell);
+        var verts = new Vector3[(nx + 1) * (ny + 1)];
+        var normals = new Vector3[verts.Length];
+        var colors = new Color[verts.Length];
+        var grass = new Color(0.36f, 0.45f, 0.26f);
+        var wheat = new Color(0.72f, 0.62f, 0.3f);
+        var floor = new Color(0.25f, 0.31f, 0.2f);
+        for (int y = 0; y <= ny; y++)
+        for (int x = 0; x <= nx; x++)
+        {
+            var p = new SVec2((x + x0) * cell, (y + y0) * cell);
+            int i = y * (nx + 1) + x;
+            verts[i] = new Vector3(p.X, t.HeightAt(p), p.Y);
+            float hx = t.HeightAt(p + new SVec2(cell, 0)) - t.HeightAt(p - new SVec2(cell, 0));
+            float hy = t.HeightAt(p + new SVec2(0, cell)) - t.HeightAt(p - new SVec2(0, cell));
+            normals[i] = new Vector3(-hx, 2f * cell, -hy).Normalized();
+            // A corner takes the colour of the squares round it, so patches have soft edges.
+            Color c = default; int n = 0;
+            for (int dy = -1; dy <= 0; dy++)
+            for (int dx = -1; dx <= 0; dx++)
+            {
+                var q = p + new SVec2((dx + 0.5f) * cell, (dy + 0.5f) * cell);
+                var col = !map.InBounds(q) ? grass : t.KindAt(q) switch { GroundKind.Woods => floor, GroundKind.Crops => wheat, _ => grass };
+                c += col; n++;
+            }
+            colors[i] = c / n;
+        }
+        var idx = new int[nx * ny * 6];
+        int k = 0;
+        for (int y = 0; y < ny; y++)
+        for (int x = 0; x < nx; x++)
+        {
+            int a = y * (nx + 1) + x, b2 = a + 1, c2 = a + nx + 1, d = c2 + 1;
+            idx[k++] = a; idx[k++] = b2; idx[k++] = c2;
+            idx[k++] = b2; idx[k++] = d; idx[k++] = c2;
+        }
+        var arrays = new Godot.Collections.Array();
+        arrays.Resize((int)Mesh.ArrayType.Max);
+        arrays[(int)Mesh.ArrayType.Vertex] = verts;
+        arrays[(int)Mesh.ArrayType.Normal] = normals;
+        arrays[(int)Mesh.ArrayType.Color] = colors;
+        arrays[(int)Mesh.ArrayType.Index] = idx;
+        var mesh = new ArrayMesh();
+        mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
+        var mat = new ShaderMaterial { Shader = Draw.LoadShader("res://game/shaders/terrain.gdshader") };
         mat.SetShaderParameter("map_size", new Vector2(map.Width, map.Height));
-        ground.MaterialOverride = mat;
-        AddChild(ground);
+        AddChild(new MeshInstance3D { Name = "Ground", Mesh = mesh, MaterialOverride = mat });
+    }
+
+    /// <summary>Every tree the sim knows about (see Terrain.Trees), drawn as two batches: trunks and crowns.</summary>
+    private void BuildTrees()
+    {
+        var trees = _battle.Map.Terrain.Trees;
+        if (trees.Count == 0) return;
+        var trunks = new List<Transform3D>(trees.Count);
+        var crowns = new List<Transform3D>(trees.Count);
+        for (int i = 0; i < trees.Count; i++)
+        {
+            var tr = trees[i];
+            float h = tr.HeightMetres, trunk = h * 0.45f;
+            float spread = h * 0.32f * (0.85f + 0.3f * ((i * 37) % 10) / 10f);
+            trunks.Add(new Transform3D(Basis.FromScale(new Vector3(tr.Radius, trunk, tr.Radius)), Draw.To3(tr.Position, trunk * 0.5f)));
+            var basis = new Basis(Vector3.Up, i * 1.7f) * Basis.FromScale(new Vector3(spread, h * 0.36f, spread));
+            crowns.Add(new Transform3D(basis, Draw.To3(tr.Position, h * 0.66f)));
+        }
+        // Treetops thin out (dithered) as the camera comes close, so you can watch the men under them.
+        var crownMat = Draw.Lit(new Color(0.2f, 0.36f, 0.17f));
+        crownMat.DistanceFadeMode = BaseMaterial3D.DistanceFadeModeEnum.PixelDither;
+        crownMat.DistanceFadeMinDistance = 35f;
+        crownMat.DistanceFadeMaxDistance = 80f;
+        AddChild(Draw.Batch(new CylinderMesh { TopRadius = 0.7f, BottomRadius = 1f, Height = 1f, RadialSegments = 6, Rings = 1 },
+            Draw.Lit(new Color(0.3f, 0.23f, 0.16f)), trunks));
+        AddChild(Draw.Batch(new SphereMesh { Radius = 1f, Height = 2f, RadialSegments = 8, Rings = 5 },
+            crownMat, crowns));
     }
 
     // Walls, craters and objective rings are each drawn as one batch, so a big map with hundreds
@@ -81,16 +173,26 @@ public partial class MapView : Node3D
     {
         var low = new List<Transform3D>();
         var high = new List<Transform3D>();
+        var hedges = new List<Transform3D>();
         foreach (var w in _battle.Map.Walls)
         {
             var mid = (w.A + w.B) * 0.5f;
             float h = w.HeightMetres;
-            var basis = new Basis(Vector3.Up, Draw.YawFor(w.Direction)) * Basis.FromScale(new Vector3(w.Thickness, h, w.Length + w.Thickness));
-            (w.High ? high : low).Add(new Transform3D(basis, Draw.To3(mid, h * 0.5f)));
+            var basis = new Basis(Vector3.Up, Draw.YawFor(w.Direction)) * Basis.FromScale(new Vector3(w.Thickness, h + 0.6f, w.Length + w.Thickness)); // 0.6 m into the ground, for slopes
+            if (w.Hedge)
+            {
+                // A hedgerow: a low earth bank with a thick, slightly ragged hedge on top.
+                float hh = h * (0.9f + 0.2f * ((w.Id * 13) % 10) / 10f);
+                var hb = new Basis(Vector3.Up, Draw.YawFor(w.Direction)) * Basis.FromScale(new Vector3(w.Thickness, hh + 0.6f, w.Length + w.Thickness));
+                hedges.Add(new Transform3D(hb, Draw.To3(mid, hh * 0.5f - 0.3f)));
+                continue;
+            }
+            (w.High ? high : low).Add(new Transform3D(basis, Draw.To3(mid, h * 0.5f - 0.3f)));
         }
         var box = new BoxMesh { Size = Vector3.One };
         if (low.Count > 0) AddChild(Draw.Batch(box, Draw.Lit(new Color(0.62f, 0.60f, 0.55f)), low));
         if (high.Count > 0) AddChild(Draw.Batch(box, Draw.Lit(new Color(0.48f, 0.45f, 0.42f)), high));
+        if (hedges.Count > 0) AddChild(Draw.Batch(box, Draw.Lit(new Color(0.22f, 0.36f, 0.16f)), hedges));
     }
 
     private void BuildCraters()
@@ -101,8 +203,8 @@ public partial class MapView : Node3D
         foreach (var c in _battle.Map.Craters)
         {
             if (c.Foxhole) continue;
-            discs.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius, 1, c.Radius)), Draw.To3(c.Center, 0.02f)));
-            rims.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius, 0.35f * c.Radius, c.Radius)), Draw.To3(c.Center, 0f)));
+            discs.Add(new Transform3D(Draw.GroundTilt(c.Center) * Basis.FromScale(new Vector3(c.Radius, 1, c.Radius)), Draw.To3(c.Center, 0.02f)));
+            rims.Add(new Transform3D(Draw.GroundTilt(c.Center) * Basis.FromScale(new Vector3(c.Radius, 0.35f * c.Radius, c.Radius)), Draw.To3(c.Center, 0f)));
         }
         if (discs.Count == 0) return;
         AddChild(Draw.Batch(new CylinderMesh { TopRadius = 1f, BottomRadius = 1f, Height = 0.04f, RadialSegments = 24 },
@@ -126,8 +228,8 @@ public partial class MapView : Node3D
         foreach (var c in map.Craters)
         {
             if (!c.Foxhole) continue;
-            holes.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius, 1, c.Radius)), Draw.To3(c.Center, 0.03f)));
-            spoil.Add(new Transform3D(Basis.FromScale(new Vector3(c.Radius * 1.1f, 0.5f, c.Radius * 1.1f)), Draw.To3(c.Center, 0f)));
+            holes.Add(new Transform3D(Draw.GroundTilt(c.Center) * Basis.FromScale(new Vector3(c.Radius, 1, c.Radius)), Draw.To3(c.Center, 0.03f)));
+            spoil.Add(new Transform3D(Draw.GroundTilt(c.Center) * Basis.FromScale(new Vector3(c.Radius * 1.1f, 0.5f, c.Radius * 1.1f)), Draw.To3(c.Center, 0f)));
         }
         _foxholes = new Node3D { Name = "Foxholes" };
         if (holes.Count > 0)
@@ -196,7 +298,7 @@ public partial class MapView : Node3D
         for (int x = 0; x < grid.Width; x++)
         {
             var c = grid.CellCenter(x, y);
-            mm.SetInstanceTransform(y * grid.Width + x, new Transform3D(Basis.Identity, Draw.To3(c, 0.08f)));
+            mm.SetInstanceTransform(y * grid.Width + x, new Transform3D(Basis.Identity, Draw.To3(c, 0.25f)));
         }
         _gridMesh = new MultiMeshInstance3D
         {
@@ -271,6 +373,8 @@ public partial class MapView : Node3D
                     CoverKind.LowWall => new Color(0.2f, 0.9f, 0.3f),
                     CoverKind.Crater => new Color(0.8f, 0.9f, 0.2f),
                     CoverKind.Foxhole => new Color(0.75f, 0.5f, 0.25f),
+                    CoverKind.Hedge => new Color(0.1f, 0.6f, 0.2f),
+                    CoverKind.Tree => new Color(0.5f, 0.75f, 0.35f),
                     _ => cp.CanFire ? new Color(0.2f, 0.9f, 0.9f) : new Color(0.3f, 0.4f, 1f),
                 };
             mm.SetInstanceColor(i, c);

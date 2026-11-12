@@ -23,6 +23,8 @@ The hull turns in place, then drives once it faces within about 30° of where it
 It uses a wider path-finding grid than men (`BattleMap.TankNav`), so it doesn't squeeze through gaps it can't fit.
 An immobilised tank (broken track) can't move but still fights.
 
+Tanks can't enter woods or cross hedgerows, and climb slopes more slowly (see [The ground](terrain.md)).
+
 ## Guns
 - **Main gun** (`Battle.UpdateMainGun`, `FireShell`): the turret turns towards the target at its own rate. The gun
   fires when on target and loaded (7 s). A moving tank first stops for a short halt (about 4 s) to fire.

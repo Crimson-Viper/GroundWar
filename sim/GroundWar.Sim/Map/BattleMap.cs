@@ -4,7 +4,8 @@ using GroundWar.Sim.Data;
 
 namespace GroundWar.Sim.Map;
 
-/// <summary>The ground: walls, craters, generated cover points, sight lines and walkability.</summary>
+/// <summary>The ground: walls, hedgerows, craters, hills and woods (see <see cref="Terrain"/>), generated cover
+/// points, sight lines and walkability.</summary>
 public sealed class BattleMap
 {
     public const float BucketSize = 10f;
@@ -19,7 +20,12 @@ public sealed class BattleMap
     private NavGrid? _tankNav;
     /// <summary>Where a tank fits: walls get a wide margin, so tanks keep to streets and open ground.
     /// Built the first time a tank needs it.</summary>
-    public NavGrid TankNav => _tankNav ??= new NavGrid(Width, Height, _walls, 1.8f);
+    public NavGrid TankNav => _tankNav ??= BuildTankNav();
+    /// <summary>Hills, woods and crops.</summary>
+    public Terrain Terrain { get; }
+    private readonly TerrainRules _tr;
+    private readonly List<Wall> _hedges = new();
+    private readonly List<Wall>[] _hedgeBuckets;
 
     private readonly List<Wall> _walls = new();
     private readonly List<Wall> _highWalls = new();
@@ -34,22 +40,25 @@ public sealed class BattleMap
     private int _sightStamp;
     private readonly CombatRules _combat;
 
-    public BattleMap(MapDef def, CombatRules combat)
+    public BattleMap(MapDef def, CombatRules combat, TerrainRules? terrain = null)
     {
         _combat = combat;
+        _tr = terrain ?? new TerrainRules();
+        Terrain = new Terrain(def, _tr);
         Name = def.Name;
         Width = def.Width;
         Height = def.Height;
         foreach (var w in def.Walls)
         {
-            var wall = new Wall { Id = _walls.Count, A = V(w.A), B = V(w.B), Thickness = w.Thickness, High = w.High };
+            var wall = new Wall { Id = _walls.Count, A = V(w.A), B = V(w.B), Thickness = w.Thickness, High = w.High && !w.Hedge, Hedge = w.Hedge };
             _walls.Add(wall);
             if (wall.High) _highWalls.Add(wall);
+            if (wall.Hedge) _hedges.Add(wall);
         }
         foreach (var c in def.Craters)
             _craters.Add(new Crater { Id = _craters.Count, Center = V(c.Center), Radius = c.Radius });
 
-        Nav = new NavGrid(Width, Height, _walls, 0.3f);
+        Nav = new NavGrid(Width, Height, _walls.Where(w => !w.Hedge), 0.3f); // a man can push through a hedge
 
         _bucketsX = (int)MathF.Ceiling(Width / BucketSize);
         _bucketsY = (int)MathF.Ceiling(Height / BucketSize);
@@ -57,6 +66,13 @@ public sealed class BattleMap
         _wallBuckets = NewBuckets<Wall>();
         _craterBuckets = NewBuckets<Crater>();
         _highWallBuckets = NewBuckets<Wall>();
+        _hedgeBuckets = NewBuckets<Wall>();
+        foreach (var w in _hedges)
+        {
+            float pad = w.Thickness * 0.5f + _tr.HedgePeerDistance;
+            AddToBuckets(_hedgeBuckets, w, MathF.Min(w.A.X, w.B.X) - pad, MathF.Min(w.A.Y, w.B.Y) - pad,
+                MathF.Max(w.A.X, w.B.X) + pad, MathF.Max(w.A.Y, w.B.Y) + pad);
+        }
         _wallStamp = new int[_walls.Count];
         foreach (var w in _highWalls)
             AddToBuckets(_highWallBuckets, w, MathF.Min(w.A.X, w.B.X) - 1, MathF.Min(w.A.Y, w.B.Y) - 1,
@@ -82,11 +98,17 @@ public sealed class BattleMap
 
     // ---------------------------------------------------------------- sight and cover
 
-    /// <summary>True if a high wall or a smoke screen blocks the view between a and b.</summary>
-    public bool SightBlocked(Vector2 a, Vector2 b) => (_smoke.Count > 0 && SmokeBlocks(a, b)) || WallBlocked(a, b);
+    /// <summary>True if something hides b from a: a high wall, a crest, a hedgerow neither is up against,
+    /// too much woodland, or a smoke screen.</summary>
+    public bool SightBlocked(Vector2 a, Vector2 b) =>
+        (_smoke.Count > 0 && SmokeBlocks(a, b)) || MasonryBlocked(a, b) || (_hedges.Count > 0 && HedgeBlocks(a, b)) ||
+        Terrain.SightBlocked(a, b);
 
-    /// <summary>True if a high wall stands between a and b (smoke hides, but doesn't stop a bullet or a blast).</summary>
-    public bool WallBlocked(Vector2 a, Vector2 b)
+    /// <summary>True if something solid stands between a and b: a high wall or the ground itself. (Smoke, hedges
+    /// and woods hide, but don't stop a bullet or a blast.)</summary>
+    public bool WallBlocked(Vector2 a, Vector2 b) => MasonryBlocked(a, b) || Terrain.GroundBlocks(a, b);
+
+    private bool MasonryBlocked(Vector2 a, Vector2 b)
     {
         if (_highWalls.Count <= 8)
         {
@@ -94,7 +116,32 @@ public sealed class BattleMap
                 if (WallBlocks(w, a, b)) return true;
             return false;
         }
-        // Walk the 10 m squares the line passes through (Amanatides & Woo) and only test the high walls in them.
+        return WalkBuckets(_highWallBuckets, a, b, false);
+    }
+
+    /// <summary>A hedgerow hides what is beyond it, unless the watcher or the man watched is right up against it
+    /// (then he is looking through the leaves).</summary>
+    private bool HedgeBlocks(Vector2 a, Vector2 b)
+    {
+        if (_hedges.Count <= 8)
+        {
+            foreach (var w in _hedges)
+                if (HedgeHides(w, a, b)) return true;
+            return false;
+        }
+        return WalkBuckets(_hedgeBuckets, a, b, true);
+    }
+
+    private bool HedgeHides(Wall w, Vector2 a, Vector2 b)
+    {
+        if (!WallBlocks(w, a, b)) return false;
+        float peer = w.Thickness * 0.5f + _tr.HedgePeerDistance;
+        return Geo.PointSegmentDistSq(a, w.A, w.B, out _) > peer * peer && Geo.PointSegmentDistSq(b, w.A, w.B, out _) > peer * peer;
+    }
+
+    /// <summary>Walk the 10 m squares the line passes through (Amanatides and Woo) and only test the walls in them.</summary>
+    private bool WalkBuckets(List<Wall>[] buckets, Vector2 a, Vector2 b, bool hedge)
+    {
         _sightStamp++;
         int x = Math.Clamp((int)(a.X / BucketSize), 0, _bucketsX - 1), y = Math.Clamp((int)(a.Y / BucketSize), 0, _bucketsY - 1);
         int ex = Math.Clamp((int)(b.X / BucketSize), 0, _bucketsX - 1), ey = Math.Clamp((int)(b.Y / BucketSize), 0, _bucketsY - 1);
@@ -108,11 +155,11 @@ public sealed class BattleMap
         float tMaxY = d.Y != 0 ? (nextY - a.Y) / d.Y : float.MaxValue;
         for (int guard = 0; guard < 4 * (_bucketsX + _bucketsY); guard++)
         {
-            foreach (var w in _highWallBuckets[y * _bucketsX + x])
+            foreach (var w in buckets[y * _bucketsX + x])
             {
                 if (_wallStamp[w.Id] == _sightStamp) continue;
                 _wallStamp[w.Id] = _sightStamp;
-                if (WallBlocks(w, a, b)) return true;
+                if (hedge ? HedgeHides(w, a, b) : WallBlocks(w, a, b)) return true;
             }
             if (x == ex && y == ey) break;
             if (tMaxX < tMaxY) { tMaxX += tDeltaX; x += stepX; }
@@ -152,7 +199,7 @@ public sealed class BattleMap
                 {
                     float distFromTarget = (1f - s) * Vector2.Distance(from, pos);
                     if (distFromTarget * distFromTarget <= check2 + half * half)
-                        prot = MathF.Max(prot, _combat.LowWallProtection);
+                        prot = MathF.Max(prot, w.Hedge ? _tr.HedgeProtection : _combat.LowWallProtection);
                 }
             }
         }
@@ -166,7 +213,64 @@ public sealed class BattleMap
                     prot = MathF.Max(prot, c.Foxhole ? _combat.FoxholeProtection : _combat.CraterProtection);
             }
         }
+        if (Terrain.HasWoods || Terrain.Trees.Count > 0)
+        {
+            // Among trees there is always something in the way; right behind a trunk, a good deal more.
+            if (prot < _tr.TreeProtection && Terrain.BehindTree(pos, from)) prot = _tr.TreeProtection;
+            else if (prot < _tr.WoodsProtection && Terrain.KindAt(pos) == GroundKind.Woods) prot = _tr.WoodsProtection;
+        }
         return prot;
+    }
+
+    /// <summary>True if a man here is in, or right up against, a hedgerow.</summary>
+    public bool AtHedge(Vector2 pos, float within)
+    {
+        if (_hedges.Count == 0) return false;
+        var hb = BucketAt(_hedgeBuckets, pos);
+        if (hb == null) return false;
+        foreach (var w in hb)
+        {
+            float r = w.Thickness * 0.5f + within;
+            if (Geo.PointSegmentDistSq(pos, w.A, w.B, out _) < r * r) return true;
+        }
+        return false;
+    }
+
+    /// <summary>How fast a man gets over this bit of ground heading this way (1 = open level going):
+    /// slower pushing through a hedge, among trees, in crops and uphill.</summary>
+    public float SpeedFactor(Vector2 pos, Vector2 dir)
+    {
+        float f = 1f;
+        if (AtHedge(pos, 0f)) f *= _tr.HedgeSpeedFactor;
+        var kind = Terrain.KindAt(pos);
+        if (kind == GroundKind.Woods) f *= _tr.WoodsSpeedFactor;
+        else if (kind == GroundKind.Crops) f *= _tr.CropsSpeedFactor;
+        float slope = Terrain.SlopeAlong(pos, dir);
+        if (slope > 0f) f /= 1f + _tr.UphillSlowdown * slope;
+        return f;
+    }
+
+    /// <summary>How much harder a man here is to pick out (multiplies the chance to spot him; 1 = no help).
+    /// stance: 0 standing, 1 crouched, 2 prone.</summary>
+    public float Concealment(Vector2 pos, int stance)
+    {
+        float c = 1f;
+        var kind = Terrain.KindAt(pos);
+        if (kind == GroundKind.Woods) c = _tr.WoodsConcealment;
+        else if (kind == GroundKind.Crops && stance > 0) c = stance == 2 ? _tr.CropsProneConcealment : _tr.CropsCrouchedConcealment;
+        if (c > _tr.HedgeConcealment && AtHedge(pos, _tr.HedgePeerDistance)) c = _tr.HedgeConcealment;
+        return c;
+    }
+
+    /// <summary>Where a tank fits: masonry gets a wide margin, and hedgerows and woods are out of bounds.</summary>
+    private NavGrid BuildTankNav()
+    {
+        var nav = new NavGrid(Width, Height, _walls, 1.8f);
+        if (Terrain.HasWoods)
+            for (int y = 0; y < nav.Height; y++)
+            for (int x = 0; x < nav.Width; x++)
+                if (Terrain.KindAt(nav.CellCenter(x, y)) == GroundKind.Woods) nav.Block(x, y);
+        return nav;
     }
 
     /// <summary>A soldier has finished digging a foxhole here: a small hole that protects all round,
@@ -227,7 +331,11 @@ public sealed class BattleMap
                     // Step out from the wall until the spot is walkable (the nav grid is 1 m squares).
                     Vector2 pos = basePos + normal * (offset * side);
                     for (int n = 0; n < 4 && !Nav.IsWalkable(pos); n++) pos += normal * (0.3f * side);
-                    if (w.High)
+                    if (w.Hedge)
+                    {
+                        AddCover(pos, CoverKind.Hedge, -normal * side, _tr.HedgeProtection, true);
+                    }
+                    else if (w.High)
                     {
                         // Middle of a high wall: a safe hiding spot. Ends: you can lean out and fire.
                         AddCover(pos, CoverKind.HighWall, -normal * side, nearEnd ? 0.85f : 0.95f, nearEnd);
@@ -249,6 +357,9 @@ public sealed class BattleMap
                 AddCover(pos, CoverKind.Crater, Vector2.Zero, _combat.CraterProtection, true);
             }
         }
+        // A man can get behind any tree.
+        foreach (var t in Terrain.Trees)
+            AddCover(t.Position, CoverKind.Tree, Vector2.Zero, _tr.TreeProtection, true);
     }
 
     private void AddCover(Vector2 pos, CoverKind kind, Vector2 facing, float strength, bool canFire)

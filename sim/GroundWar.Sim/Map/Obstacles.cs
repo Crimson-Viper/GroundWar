@@ -9,9 +9,11 @@ public sealed class Wall
     public Vector2 B { get; init; }
     public float Thickness { get; init; }
     public bool High { get; init; }
+    /// <summary>A hedgerow, not masonry: see <see cref="Data.WallDef.Hedge"/>.</summary>
+    public bool Hedge { get; init; }
     public float Length => Vector2.Distance(A, B);
     public Vector2 Direction => Vector2.Normalize(B - A);
-    public float HeightMetres => High ? 2.6f : 1.0f;
+    public float HeightMetres => Hedge ? 2.2f : High ? 2.6f : 1.0f;
 }
 
 public sealed class Crater
@@ -23,7 +25,7 @@ public sealed class Crater
     public bool Foxhole { get; init; }
 }
 
-public enum CoverKind { LowWall, HighWall, Crater, Foxhole }
+public enum CoverKind { LowWall, HighWall, Crater, Foxhole, Hedge, Tree }
 
 /// <summary>A spot a soldier can take cover at. Generated from the map's walls and craters.</summary>
 public sealed class CoverPoint

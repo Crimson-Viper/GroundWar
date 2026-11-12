@@ -266,6 +266,8 @@ public sealed class SoldierBrain
         bool threat = s.Group.Knowledge.Contacts.Any() || s.UnderFire(_b.Time, Ai.UnderFireWindow);
         if (!threat) s.Stance = s.InCover ? Stance.Crouched : Stance.Standing;
         else if (s.Suppression >= Mr.SuppressionPinned) s.Stance = Stance.Prone;
+        // In standing crops a man flat on his face sees nothing, so he fights from one knee.
+        else if (!s.InCover && _b.Map.Terrain.HasCrops && _b.Map.Terrain.KindAt(s.Position) == GroundKind.Crops) s.Stance = Stance.Crouched;
         else s.Stance = s.InCover && s.Cover!.Kind is not CoverKind.Crater ? Stance.Crouched : Stance.Prone;
     }
 
@@ -283,6 +285,8 @@ public sealed class SoldierBrain
         CoverKind.LowWall => "low wall",
         CoverKind.HighWall => c.CanFire ? "corner of a ruin" : "behind a ruin",
         CoverKind.Foxhole => "foxhole",
+        CoverKind.Hedge => "hedgerow",
+        CoverKind.Tree => "tree",
         _ => "crater",
     };
 
