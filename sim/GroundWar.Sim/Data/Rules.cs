@@ -9,6 +9,7 @@ public sealed class Rules
     public PerceptionRules Perception { get; set; } = new();
     public CombatRules Combat { get; set; } = new();
     public MoraleRules Morale { get; set; } = new();
+    public CohesionRules Cohesion { get; set; } = new();
     public AiRules Ai { get; set; } = new();
     public SquadRules Squad { get; set; } = new();
     public CommsRules Comms { get; set; } = new();
@@ -160,6 +161,56 @@ public sealed class MoraleRules
     public float AloneRadius { get; set; } = 15f;
     public float NoAmmoDrainPerSecond { get; set; } = 0.5f;
     public float QuietSuppression { get; set; } = 10f;
+}
+
+/// <summary>The squad's nerve as a unit. See docs/systems/morale-and-suppression.md ("Squad cohesion").</summary>
+public sealed class CohesionRules
+{
+    /// <summary>Below these the squad is shaken (goes to ground), wavering (gives up the attack or falls back)
+    /// and broken (runs for its rally point).</summary>
+    public float ShakenBelow { get; set; } = 60f;
+    public float WaveringBelow { get; set; } = 40f;
+    public float BrokenBelow { get; set; } = 20f;
+    /// <summary>A state only lifts once cohesion is this far back above its line, so a squad doesn't flicker.</summary>
+    public float Hysteresis { get; set; } = 8f;
+    /// <summary>Lost for each man hit, for a squad of ten (a smaller squad feels each loss more).</summary>
+    public float CasualtyShock { get; set; } = 14f;
+    /// <summary>The most cohesion a squad can have falls by this much for each 1% of its men hit.</summary>
+    public float CeilingPerLossPercent { get; set; } = 1.9f;
+    public float LeaderLost { get; set; } = 12f;
+    /// <summary>Lost per second with every man pinned (in proportion with fewer).</summary>
+    public float PinnedDrainPerSecond { get; set; } = 0.4f;
+    /// <summary>Fire from the side or from two directions at once: lost at once, then per second while it lasts.</summary>
+    public float FlankedShock { get; set; } = 14f;
+    public float FlankedDrainPerSecond { get; set; } = 1.2f;
+    /// <summary>Degrees off the squad's front beyond which incoming fire counts as from the flank.</summary>
+    public float FlankAngle { get; set; } = 70f;
+    /// <summary>Each man also loses this much of his own morale when the squad finds itself flanked.</summary>
+    public float FlankedMoraleShock { get; set; } = 6f;
+    /// <summary>Seconds of fire from the new direction before a defending squad has turned to face it.</summary>
+    public float TurnToFaceTime { get; set; } = 20f;
+    /// <summary>Enemy known behind the squad, between it and its way out.</summary>
+    public float CutOffDrainPerSecond { get; set; } = 1.0f;
+    public float CutOffRange { get; set; } = 150f;
+    /// <summary>Coming under fire with no idea the enemy was there; doubled inside AmbushRange.</summary>
+    public float SurpriseShock { get; set; } = 8f;
+    public float AmbushRange { get; set; } = 80f;
+    /// <summary>A squad of the same side breaking within this distance.</summary>
+    public float NeighbourBroke { get; set; } = 8f;
+    public float NeighbourRadius { get; set; } = 120f;
+    /// <summary>Regained per second once nobody has shot at the squad for QuietTime seconds; more with a sergeant.</summary>
+    public float RecoverPerSecond { get; set; } = 0.5f;
+    public float RecoverWithLeaderPerSecond { get; set; } = 0.3f;
+    public float QuietTime { get; set; } = 8f;
+    /// <summary>A broken squad rallies when its cohesion is back above this (and it has been left alone).</summary>
+    public float RallyAt { get; set; } = 32f;
+    /// <summary>How far to the rear a broken squad runs before it stops to pull itself together.</summary>
+    public float RallyDistance { get; set; } = 110f;
+    public float RallyRadius { get; set; } = 12f;
+    /// <summary>An enemy known this close to the rally point (or fire falling on it) and the men keep running.</summary>
+    public float RallyDangerDistance { get; set; } = 60f;
+    /// <summary>A wavering squad that gives up an attack pulls back this far.</summary>
+    public float PullBackDistance { get; set; } = 60f;
 }
 
 public sealed class AiRules

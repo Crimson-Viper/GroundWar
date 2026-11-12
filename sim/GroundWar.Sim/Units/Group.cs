@@ -28,6 +28,10 @@ public enum Tactic
     FallBack,        // retreat by teams, one covering the other
 }
 
+/// <summary>The squad's nerve as a unit, from its cohesion. Steady; Shaken (goes to ground, won't start an assault);
+/// Wavering (gives up an attack, falls back from a defence); Broken (runs for its rally point).</summary>
+public enum SquadNerve { Steady, Shaken, Wavering, Broken }
+
 public enum TeamRole { Gun, Rifle }
 
 /// <summary>Half a squad. WW2 squads split into a gun team (around the light machine gun) and a rifle team.</summary>
@@ -76,6 +80,47 @@ public sealed class Group
     public Soldier? Leader { get; set; }
     public bool HasBroken { get; set; }
     public int StartStrength { get; set; }
+
+    // The squad's nerve as a unit (see Battle.Cohesion.cs)
+    /// <summary>0 to 100: how well the squad is holding together.</summary>
+    public float Cohesion { get; set; } = 100f;
+    public SquadNerve Nerve { get; set; } = SquadNerve.Steady;
+    /// <summary>Taking fire from the side, from behind, or from two directions at once.</summary>
+    public bool Flanked { get; set; }
+    public float FlankedSince { get; set; } = -999f;
+    /// <summary>Which way the squad is facing the enemy: where he first showed himself. Null until he does.</summary>
+    public Vector2? Front { get; set; }
+    internal float FrontFireAt { get; set; }
+    /// <summary>Where the flanking fire is coming from.</summary>
+    public Vector2 FlankedFrom { get; set; }
+    /// <summary>Enemy known between the squad and its way to the rear.</summary>
+    public bool CutOff { get; set; }
+    /// <summary>Where its broken men run to and pull themselves together. Null = nowhere safe: off the field.</summary>
+    public Vector2? RallyPoint { get; set; }
+    public float RallyPointSet { get; set; } = -999f;
+    public float BrokeAt { get; set; } = -999f;
+    /// <summary>How many times the squad has broken and rallied.</summary>
+    public int Rallies { get; set; }
+    /// <summary>The squad gave up its attack because its nerve went (not because it was ordered to).</summary>
+    public bool GaveUp { get; set; }
+    /// <summary>The order it gave up, to take up again if it steadies before anyone tells it otherwise.</summary>
+    public GroupOrder? GaveUpOrder { get; set; }
+    /// <summary>The battalion HQ's own men: they stand and defend it whatever happens.</summary>
+    public bool IsHqStaff { get; set; }
+    internal int CohesionCasualties { get; set; }
+    internal float CohesionLeaderLost { get; set; } = -999f;
+    internal float LastUnderFire { get; set; } = -999f;
+    /// <summary>When any of the squad was last shot at.</summary>
+    public float LastUnderFireTime => LastUnderFire;
+    internal float NextCohesion { get; set; }
+    /// <summary>When the squad last pulled back because its nerve went.</summary>
+    public float LastFallBack { get; set; } = -999f;
+    /// <summary>Shaken on the attack and lying where it is, shooting back.</summary>
+    public bool WentToGround { get; set; }
+    /// <summary>The squad knew of some enemy when cohesion was last worked out (a second ago).</summary>
+    internal bool KnewOfEnemy { get; set; }
+    /// <summary>Uses squad cohesion: a squad of men on foot (not tanks, crews, or an HQ).</summary>
+    public bool HasCohesion => !IsVehicles && !IsCrew && !IsCompanyHq && !IsHqStaff && StartStrength >= 3;
 
     /// <summary>What this squad knows about the enemy: only what its own men saw or heard, or nearby squads told it.</summary>
     public SideKnowledge Knowledge { get; }

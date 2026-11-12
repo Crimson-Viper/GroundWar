@@ -20,9 +20,21 @@ public sealed class SquadBrain
 
     public void Think(Group g)
     {
+        if (g.HasBroken && g.HasCohesion)
+        {
+            g.Status = g.CountActive == 0 ? "Destroyed" : g.RallyPoint == null ? "Broken: running from the field" : "Broken: falling back to rally";
+            return;
+        }
         if (g.CountEffective == 0) { g.Status = g.CountActive > 0 ? "Broken" : "Destroyed"; return; }
         ShareWithNeighbours(g);
         GatherContacts(g);
+
+        // The squad's nerve (Battle.Cohesion.cs) comes before its orders.
+        if (g.HasCohesion && g.Order != GroupOrder.Hold)
+        {
+            if (g.Nerve >= SquadNerve.Wavering) { GiveUp(g); return; }
+            if (g.Nerve == SquadNerve.Shaken && g.Order != GroupOrder.Suppress && GoToGround(g)) return;
+        }
 
         switch (g.Order)
         {
@@ -190,6 +202,11 @@ public sealed class SquadBrain
             case Tactic.Flank:
                 ContinueFlank(g, e, distRifles);
                 return;
+            case Tactic.Suppress when g.WentToGround:
+                // Steadied after going to ground: pick the attack up again.
+                g.WentToGround = false;
+                _b.Note(g, $"{g.Name}: steadied, getting on with it");
+                break;
             case Tactic.FireAndMovement:
                 if (distRifles < R.AssaultRange && (EnemySuppressed(g) || distRifles < 30f)) { Assault(g, e, null); return; }
                 FireAndMovement(g, e, e);
@@ -385,8 +402,60 @@ public sealed class SquadBrain
         g.Status = "Assaulting the enemy position";
     }
 
+    /// <summary>A wavering squad has had enough of attacking: it pulls back a little way, out of sight if it can,
+    /// and holds there. It reports the attack as failed.</summary>
+    private void GiveUp(Group g)
+    {
+        bool wasAttack = g.Order is GroupOrder.Attack or GroupOrder.Advance && !g.MoveOnly;
+        var spot = _b.PullBackSpot(g, _b.Rules.Cohesion.PullBackDistance);
+        _b.Note(g, $"{g.Name}: the men have had enough{(g.Flanked ? " (flanked)" : "")}, pulling back", g.GaveUp ? LogKind.Event : LogKind.Key);
+        if (wasAttack) g.AttackFailed = true;
+        g.GaveUp = true;
+        g.GaveUpOrder = g.Order;
+        g.HoldPosition = spot;
+        g.Order = GroupOrder.Hold;
+        g.LastFallBack = _b.Time;
+        Defend(g, spot, R.TeamRadius * 2f);
+        g.Status = "Had enough: pulling back";
+    }
+
+    /// <summary>A shaken squad on the attack stops where it is and shoots back until it has steadied. An assault
+    /// already going in at close range carries on (stopping there is worse). Returns false if it carries on.</summary>
+    private bool GoToGround(Group g)
+    {
+        bool underFire = _b.Time - g.LastUnderFire < _b.Rules.Cohesion.QuietTime;
+        if (!underFire && _contacts.Count == 0) return false; // nothing to hide from: keep moving
+        var enemy = NearestContact(g.Centroid);
+        if (g.Tactic == Tactic.Assault && enemy != null && Vector2.Distance(g.Rifles.Centroid, enemy.Value) < R.LiftFireRange + 10f) return false;
+        if (g.Tactic != Tactic.Suppress || !g.WentToGround)
+            _b.Note(g, $"{g.Name}: gone to ground");
+        g.WentToGround = true;
+        SetTactic(g, Tactic.Suppress);
+        foreach (var t in g.Teams)
+            HoldTeam(g, t, t.Centroid, R.TeamRadius, NearestContact(t.Centroid));
+        g.Status = "Gone to ground, returning fire";
+        return true;
+    }
+
     private void Defend(Group g, Vector2 area, float radius)
     {
+        // Nerve going, and the enemy close, on the flank or behind: get out to the next position back.
+        if (g.HasCohesion && g.Nerve >= SquadNerve.Wavering && g.Order == GroupOrder.Hold && _b.Time - g.LastFallBack > 45f)
+        {
+            var close = NearestContact(g.Centroid);
+            bool threatened = g.Flanked || g.CutOff || (close != null && Vector2.Distance(close.Value, g.Centroid) < 80f);
+            if (threatened && _b.Time - g.LastUnderFire < _b.Rules.Cohesion.QuietTime)
+            {
+                var spot = _b.PullBackSpot(g, R.FallBackStep * 2f);
+                _b.Note(g, $"{g.Name}: can't hold here{(g.Flanked ? " (flanked)" : g.CutOff ? " (enemy behind us)" : "")}, falling back", LogKind.Key);
+                g.HoldPosition = spot;
+                g.LastFallBack = _b.Time;
+                area = spot;
+                radius = R.TeamRadius * 2f;
+            }
+        }
+        if (g.Order == GroupOrder.Hold && g.LastFallBack > -900f) { area = g.HoldPosition; }
+
         // Losing badly and the enemy is close: fall back by teams.
         bool weak = g.CountEffective < g.StartStrength * R.FallBackStrength;
         var near = NearestContact(g.Centroid);

@@ -62,13 +62,13 @@ All three are fought on one small map, `data/maps/drill_field.json`: rolling pas
 on a rise, a wood beside a lane behind a fold in the ground. In the game they are the last three scenarios (Tab
 round to them, after the 1,000-a-side stress test).
 
-| Drill | Setup | What should happen | What happens today |
+| Drill | Setup | What should happen | What happened at the baseline |
 |---|---|---|---|
 | **A squad meets a machine gun** (`drill_mg`) | A Blue squad of 10 crosses 180 m of open pasture towards a hedgerow. A Red machine-gun team of 4 is lying in the hedge. Blue doesn't know | The squad goes to ground when the gun opens up. It then wins the firefight slowly or backs off. A gun in a hedge should stop a squad in the open cold | Blue wins 100 of 100 and loses about one man. Both sides spot each other at about 185 m, the squad shoots it out standing off, and the gun team is killed to nearly the last man (72% hit). The machine gun itself causes only 8% of the hits |
 | **A squad is flanked** (`drill_flanked`) | A Red squad holds a low wall facing west. One Blue squad fires on it from the front. A second comes out of the wood to the north-east, round the end of the wall | Fire from the flank is far worse than fire from the front. Red should turn to face it, pull back, or break fast | Over in about 40 seconds. Red loses 53% of its men before the rest run. It is the best of the three (43% of Red's losses are men running), but only because the fire is so deadly, not because being flanked means anything to them |
 | **An ambush** (`drill_ambush`) | A Blue squad marches along the lane, over a fold in the ground, past a wood. A Red squad lies in the wood's edge about 40 m from the lane | A few seconds of shock, a few men hit, the rest pinned or running. Then the squad gets out or goes to pieces. Both sides alive at the end | Red wins 84 of 100. The ambushed squad stays and trades fire at 45 m until 81% of it is hit. Only 17% of the men out of the fight ran. Men under fire at point-blank range are pinned just 28% of the time |
 
-## Where we are now
+## Where we started
 100 battles of each scenario, 12 November 2026, on the code as it stood after the ground was added (nothing in the AI changed in this step). A `*` marks a value outside its target.
 
 | Measure | Target | Farmhouse | Squad attack | Meeting | Drill: MG | Drill: flanked | Drill: ambush |
@@ -98,7 +98,11 @@ Winners over those 100 battles (Blue / Red / draw): Farmhouse 80 / 18 / 2, Squad
 How they ended: in the three drills 299 of 300 battles ended with one side wiped out or fled. In the meeting
 engagement 78 of 100 did.
 
-What this says, in plain words:
+(That was the baseline. **After step 3, morale and cohesion, it is 37 of 60**: see the before and after table in
+[Morale and suppression](morale-and-suppression.md#what-it-did-to-the-battles). Each later step adds its own
+before and after to its own page.)
+
+What the baseline says, in plain words:
 - **Fights end by killing.** The side that loses has 53 to 81% of its men hit. The target is 10 to 40%. Only
   about one man in five who leaves the fight does so by running. This is the review's main finding, now with a number on it.
 - **Squads break far too late.** A squad has lost half its men, on average, before it breaks, and about half of

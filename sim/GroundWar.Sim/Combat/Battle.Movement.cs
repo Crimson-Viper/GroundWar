@@ -69,6 +69,9 @@ public sealed partial class Battle
         return best;
     }
 
+    internal float DistanceToEdge(Vector2 p) =>
+        MathF.Min(MathF.Min(p.X, Map.Width - p.X), MathF.Min(p.Y, Map.Height - p.Y));
+
     internal Vector2 RearEdgePoint(Soldier s)
     {
         var r = s.Group.Rear;

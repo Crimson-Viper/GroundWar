@@ -50,6 +50,8 @@ public sealed partial class Battle
         MoraleState next;
         if (old == MoraleState.Broken)
         {
+            // A man whose whole squad has broken rallies with it (see Battle.Cohesion.cs), not on his own.
+            if (s.Group.HasBroken && s.Group.HasCohesion) return;
             if (s.Morale <= mr.RallyAbove || NearestKnownEnemy(s) < mr.RallySafeDistance) return;
             next = Classify(s);
             Note(s, "rallies");
