@@ -56,7 +56,7 @@ public sealed partial class Battle
         Scenario = scenario;
         Seed = seed;
         Rng = new Rng(seed);
-        Map = new BattleMap(mapDef, data.Rules.Combat);
+        Map = new BattleMap(mapDef, data.Rules.Combat, data.Rules.Terrain);
         Grid = new BattleGrid(Map);
         _brain = new SoldierBrain(this);
         _squadBrain = new SquadBrain(this);

@@ -45,6 +45,7 @@
     "thinkInterval": 1.5,        // seconds between squad leader decisions
     "travelStep": 40,            // metres per leg when no enemy is expected
     "boundStep": 30,             // metres per bound in bounding overwatch
+    "deadGroundBonus": 0.5,      // how much a squad prefers to end a bound out of the enemy's sight (cover scores up to 1.2)
     "rushStep": 22,              // metres per rush under fire
     "teamRadius": 9,             // how spread out a team settles at its destination
     "maxBoundTime": 40,
@@ -130,5 +131,18 @@
     "hqThreatRange": 350,        // enemy this close to a defender's HQ bring his reserve back to guard it
     "artilleryCooldown": 120, "artilleryMinTargets": 5, "artilleryDangerClose": 110,
     "contactAge": 90             // sightings older than this are too stale to act on
+  },
+  "terrain": {                   // hills, woods, hedgerows and crops: see docs/systems/terrain.md
+    "treeHeight": 8,             // a line of sight that passes above this clears a wood
+    "woodsSightDepth": 30,       // metres of woodland you can see through
+    "treeCoverDistance": 1.5,    // a trunk this close, on the side the fire comes from, is cover
+    "woodsProtection": 0.2, "treeProtection": 0.6, "hedgeProtection": 0.4,
+    "hedgePeerDistance": 2.5,    // a man this close to a hedgerow sees (and is seen) through it
+    "hedgeSpeedFactor": 0.3, "woodsSpeedFactor": 0.8, "cropsSpeedFactor": 0.9,
+    "uphillSlowdown": 3,         // speed is divided by 1 + this x the slope (a 1-in-5 climb: 1.6 times slower)
+    "woodsConcealment": 0.5, "hedgeConcealment": 0.4,              // chance-to-spot multipliers (1 = no help)
+    "cropsProneConcealment": 0.2, "cropsCrouchedConcealment": 0.5,
+    "cropsProneViewRange": 12,   // a man flat in the wheat sees no further than this
+    "highGroundBonus": 0.15      // per metre: how much a commander likes higher ground for covering fire and defence
   }
 }

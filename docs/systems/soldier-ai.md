@@ -41,7 +41,8 @@ squad's area (plus 1 m, so they don't flip between two spots); men under fire on
 
 ### Stance
 Standing to move, crouched behind walls, prone in craters and the open when under fire. Stance changes how easy he
-is to hit (see [Spotting and shooting](spotting-and-shooting.md)).
+is to hit (see [Spotting and shooting](spotting-and-shooting.md)). In standing crops he fights from one knee,
+because a man flat in the wheat can't see (see [The ground](terrain.md)).
 
 ## Tuning
 `data/rules.json` → `ai`: think interval, cover search radii, stickiness, how long "under fire" lasts, dig time.

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Godot;
 using GroundWar.Sim;
+using GroundWar.Sim.Map;
 using GroundWar.Sim.Units;
 using Side = GroundWar.Sim.Units.Side;
 using SVec2 = System.Numerics.Vector2;
@@ -15,7 +16,7 @@ namespace GroundWar.Game;
 /// </summary>
 public partial class TableView : Node3D
 {
-    private const float Height = 4.2f; // above walls and men, below HQ flags and labels
+    private float Height = 4.2f; // above walls, men, hilltops and trees; below HQ flags and labels
     private readonly Battle _battle;
     private MeshInstance3D _paper = null!;
     private StandardMaterial3D _paperMat = null!;
@@ -36,6 +37,8 @@ public partial class TableView : Node3D
     public override void _Ready()
     {
         float w = _battle.Map.Width, h = _battle.Map.Height;
+        var terrain = _battle.Map.Terrain;
+        Height = 4.2f + terrain.MaxHeight + (terrain.Trees.Count > 0 ? 9f : 0f);
         _paperMat = new StandardMaterial3D
         {
             AlbedoTexture = ImageTexture.CreateFromImage(Paint()),
@@ -80,9 +83,30 @@ public partial class TableView : Node3D
         var grid = new Color(0.62f, 0.58f, 0.46f);
         for (float gx = 0; gx <= w; gx += 50f) ink.Line(new SVec2(gx, 0), new SVec2(gx, h), 0.6f, grid);
         for (float gy = 0; gy <= h; gy += 50f) ink.Line(new SVec2(0, gy), new SVec2(w, gy), 0.6f, grid);
+        // Woods in green, crops in straw, and form lines every 2 m of height, as on a staff map.
+        var terrain = _battle.Map.Terrain;
+        if (terrain.HasWoods || terrain.HasCrops || !terrain.Flat)
+        {
+            for (int py = 0; py < ink.H; py++)
+            for (int px = 0; px < ink.W; px++)
+            {
+                var p = new SVec2((px + 0.5f) / scale, (py + 0.5f) / scale);
+                var kind = terrain.KindAt(p);
+                if (kind == GroundKind.Woods) ink.Tint(px, py, new Color(0.45f, 0.62f, 0.38f), 0.55f);
+                else if (kind == GroundKind.Crops) ink.Tint(px, py, new Color(0.86f, 0.74f, 0.36f), 0.45f);
+                if (!terrain.Flat)
+                {
+                    float hh = terrain.HeightAt(p);
+                    float hx = terrain.HeightAt(p + new SVec2(1f / scale, 0)), hy = terrain.HeightAt(p + new SVec2(0, 1f / scale));
+                    if (Mathf.FloorToInt(hh / 2f) != Mathf.FloorToInt(hx / 2f) || Mathf.FloorToInt(hh / 2f) != Mathf.FloorToInt(hy / 2f))
+                        ink.Tint(px, py, new Color(0.55f, 0.36f, 0.2f), 0.7f);
+                }
+            }
+            foreach (var t in terrain.Trees) if (terrain.KindAt(t.Position) != GroundKind.Woods) ink.Ring(t.Position, 1.2f, new Color(0.3f, 0.45f, 0.25f));
+        }
         foreach (var c in _battle.Map.Craters) ink.Ring(c.Center, c.Radius, new Color(0.45f, 0.38f, 0.28f));
         foreach (var wall in _battle.Map.Walls)
-            ink.Line(wall.A, wall.B, wall.High ? 1.6f : 0.9f, wall.High ? new Color(0.18f, 0.15f, 0.12f) : new Color(0.35f, 0.42f, 0.25f));
+            ink.Line(wall.A, wall.B, wall.High || wall.Hedge ? 1.6f : 0.9f, wall.High ? new Color(0.18f, 0.15f, 0.12f) : wall.Hedge ? new Color(0.2f, 0.36f, 0.16f) : new Color(0.35f, 0.42f, 0.25f));
         return Image.CreateFromData(ink.W, ink.H, false, Image.Format.Rgba8, ink.Data);
     }
 
@@ -92,6 +116,13 @@ public partial class TableView : Node3D
         public readonly float Scale;
         public readonly byte[] Data;
         public Ink(int w, int h, float scale) { W = w; H = h; Scale = scale; Data = new byte[w * h * 4]; }
+
+        public void Tint(int x, int y, Color c, float amount)
+        {
+            int o = (y * W + x) * 4;
+            Data[o] = (byte)Mathf.Lerp(Data[o], c.R * 255, amount); Data[o + 1] = (byte)Mathf.Lerp(Data[o + 1], c.G * 255, amount);
+            Data[o + 2] = (byte)Mathf.Lerp(Data[o + 2], c.B * 255, amount);
+        }
 
         private void Dot(int x, int y, int r, Color c)
         {
@@ -157,7 +188,7 @@ public partial class TableView : Node3D
             }
             ctr.Block.Visible = show;
             if (!show) continue;
-            ctr.Block.Position = Draw.To3(g.Centroid, Height + 0.7f);
+            ctr.Block.Position = Draw.To3Flat(g.Centroid, Height + 0.7f);
             string name = g.IsCompanyHq ? $"{g.Company!.Name} HQ" : g.Name.Replace(" Squad", "");
             ctr.Label.Text = g.IsVehicles ? $"{name}\n▲" : $"{name}\n{g.CountEffective}/{g.Members.Count}";
         }
@@ -169,7 +200,7 @@ public partial class TableView : Node3D
             foreach (var c in _battle.Knowledge(PlayerSide).Contacts)
             {
                 if (n + 2 > _marks.InstanceCount) break;
-                var at = Draw.To3(c.LastPosition, Height + 0.1f);
+                var at = Draw.To3Flat(c.LastPosition, Height + 0.1f);
                 _marks.SetInstanceTransform(n++, new Transform3D(new Basis(Vector3.Up, Mathf.Pi / 4), at));
                 _marks.SetInstanceTransform(n++, new Transform3D(new Basis(Vector3.Up, -Mathf.Pi / 4), at));
             }

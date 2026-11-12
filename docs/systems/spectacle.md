@@ -26,7 +26,8 @@ way you'd watch a film: from the planning table down to one man in a ditch.
 - Fades in as the camera pulls back past 260 m from what it's looking at, fully there at 360 m
   (`TableView.FadeStart`, `FadeEnd`). Zoom back in and it fades away. **Z** flies straight up to it, and again back down.
 - The paper is drawn once at the start from the map: a 50 m grid, high walls and tall hedges in dark ink, low walls
-  and hedges in green, shell holes as rings.
+  and hedges in green, shell holes as rings, woods as green patches, crops in straw, and a brown form line
+  for every 2 m of height.
 - **Counters**: a blue wooden block for each of your squads (and company HQs) with its name and how many men are fit.
   They sit where the squad is now (your own troops are always shown live).
 - **The enemy**: red pencil crosses where battalion HQ believes the enemy is, from reports. With fog of war off (V) the

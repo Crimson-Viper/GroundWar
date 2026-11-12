@@ -31,6 +31,7 @@ public partial class ModelViewer : Node3D
             }
         }
         if (_screenshot != null) _turning = false;
+        Draw.Ground = null;
 
         AddChild(new WorldEnvironment
         {

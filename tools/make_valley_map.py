@@ -2,14 +2,18 @@
 # A battalion-sized valley (1000 x 600 m) for milestone 7, part 2. Blue's battalion comes from the west, where its HQ
 # sits in a walled farmyard. Red holds a line across the middle: a village in the north and a farm in the south,
 # with a walled churchyard behind them and its battalion HQ in a manor house at the east edge.
-# Tall hedgerows (high walls) give covered ways forward; low hedges give fire positions; small woods are clumps of
-# short high walls (thickets and trunks) that break up sight lines.
+# The valley runs east-west between two ridges; the village, the farm, the churchyard and the manor each sit on a
+# low rise, and a shallow stream bed crosses no man's land. Tall hedgerows (they hide, but don't stop a bullet)
+# give covered ways forward; low hedges give fire positions; the woods are real woods (see docs/systems/terrain.md).
 import json, random
 r = random.Random(23)
-walls = []; craters = []
+import math
+walls = []; craters = []; areas = []
 
-def W(a, b, high, t=None):
-    walls.append({"a": [round(a[0],1), round(a[1],1)], "b": [round(b[0],1), round(b[1],1)], "thickness": t or (0.7 if high else 0.6), "high": high})
+def W(a, b, high, t=None, hedge=False):
+    w = {"a": [round(a[0],1), round(a[1],1)], "b": [round(b[0],1), round(b[1],1)], "thickness": t or (0.7 if high else 0.6), "high": high and not hedge}
+    if hedge: w["hedge"] = True
+    walls.append(w)
 
 def line(a, b, high, gaps=(), t=None):
     # a wall from a to b with gaps (start, end) given as fractions along it
@@ -25,7 +29,7 @@ def hedge(a, b, high, gaps=()):
     for i in range(n):
         f0, f1 = i/n, (i+1)/n
         if any(g0 < (f0+f1)/2 < g1 for g0, g1 in gaps): continue
-        W(pts[i], pts[i+1], high, 1.4 if high else 0.9)
+        W(pts[i], pts[i+1], high, 1.6 if high else 0.9, hedge=high)  # tall ones are real hedgerows
 
 def house(x, y, w, h, door_side, window_side):
     # stone walls; a door (gap) on one side and windows (a low stretch you can shoot over) on another
@@ -38,14 +42,16 @@ def house(x, y, w, h, door_side, window_side):
             line((a[0]+(b[0]-a[0])*0.7, a[1]+(b[1]-a[1])*0.7), b, True)
         else: line(a, b, True)
 
-def wood(cx, cy, rx, ry, n):
-    # thickets: short tall pieces in random directions
-    for _ in range(n):
-        x = cx + r.uniform(-rx, rx); y = cy + r.uniform(-ry, ry)
-        if ((x-cx)/rx)**2 + ((y-cy)/ry)**2 > 1: continue
-        a = r.uniform(0, 3.14159); L = r.uniform(2.5, 6)
-        import math
-        W((x, y), (x + math.cos(a)*L, y + math.sin(a)*L), True, 1.6)
+def wood(cx, cy, rx, ry, n=0):
+    # a wood: a ragged oval of trees
+    pts = []
+    for i in range(18):
+        ang = 2 * math.pi * i / 18; k = r.uniform(0.85, 1.15)
+        pts.append([round(cx + math.cos(ang) * rx * k, 1), round(cy + math.sin(ang) * ry * k, 1)])
+    areas.append({"kind": "woods", "points": pts})
+
+def field(x0, y0, x1, y1):
+    areas.append({"kind": "crops", "points": [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]})
 
 # ---- Blue's rear: battalion HQ in a walled farmyard at the west edge.
 line((20,280), (64,280), False, gaps=[(0.45,0.6)])
@@ -112,9 +118,30 @@ hedge((860, 220), (860, 380), True, gaps=[(0.47,0.53)])
 for _ in range(40):
     craters.append({"center": [round(r.uniform(170, 620),1), round(r.uniform(30, 570),1)], "radius": round(r.uniform(1.8, 3.4),1)})
 
-out = {"name": "Valley", "width": 1000, "height": 600, "walls": walls, "craters": craters}
+# Wheat fields in no man's land.
+field(170, 110, 290, 180); field(170, 330, 290, 400); field(320, 430, 410, 510); field(330, 120, 420, 220)
+
+# The ground: a ridge along each long edge, low rises under the village, the farm, the churchyard and the manor,
+# and a shallow stream bed running north-south through no man's land.
+ridges = [
+    {"a": [0, -20], "b": [1000, -20], "width": 170, "height": 16},
+    {"a": [0, 620], "b": [1000, 620], "width": 170, "height": 14},
+    {"a": [345, 60], "b": [360, 540], "width": 45, "height": -3},
+]
+hills = [
+    {"center": [485, 170], "radius": 120, "height": 6},
+    {"center": [500, 448], "radius": 110, "height": 5},
+    {"center": [722, 300], "radius": 100, "height": 6},
+    {"center": [932, 302], "radius": 120, "height": 7},
+    {"center": [45, 300], "radius": 120, "height": 5},
+    {"center": [235, 300], "radius": 70, "height": 3},
+]
+# No shell holes in the woods.
+out = {"name": "Valley", "width": 1000, "height": 600, "walls": walls, "craters": craters,
+       "ridges": ridges, "hills": hills, "areas": areas}
 with open("data/maps/valley.json", "w") as f:
     f.write("// Valley: made by tools/make_valley_map.py (edit that, not this). A battalion battlefield: Blue's HQ in the west,\n")
-    f.write("// a village and a farm across the middle, a churchyard behind them, Red's HQ in a manor house in the east.\n")
+    f.write("// a village and a farm on low rises across the middle, a churchyard behind them, Red's HQ in a manor house in\n")
+    f.write("// the east; ridges along the north and south edges, woods, wheat and a stream bed in no man's land.\n")
     json.dump(out, f, indent=1)
 print(len(walls), "walls,", len(craters), "craters")

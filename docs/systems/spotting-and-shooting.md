@@ -19,6 +19,10 @@ at a time (`maxTracked`):
 
 What he sees goes into his squad's and side's knowledge (see [Fog of war](fog-of-war.md)).
 
+**Ground.** A crest, a wood (after 30 m of trees) or a hedgerow blocks the view; woods, hedgerows and crops also
+make a man harder to pick out (`Map.Concealment`); and a man lying flat in crops sees only 12 m. All of it is
+on [The ground](terrain.md) page.
+
 ## Shooting (`Battle.UpdateWeapon`, `FireRound`)
 A man set to "Engage" fires when his weapon is ready: rifles every ~4 s, machine guns in bursts (`data/weapons.json`).
 He counts rounds, changes magazines, and eventually runs out. Frightened men fire more slowly (up to twice as slow at

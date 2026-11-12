@@ -466,7 +466,8 @@ public sealed class SquadBrain
         return _b.Time - t.MoveStarted > R.MaxBoundTime && t.Members.All(m => !m.IsEffective || !m.IsMoving);
     }
 
-    /// <summary>The next spot to bound to: about one step towards the goal, nudged towards the best cover.</summary>
+    /// <summary>The next spot to bound to: about one step towards the goal, nudged towards the best cover and,
+    /// when the enemy's whereabouts are known, towards ground he can't see (behind a crest, a wood, a hedgerow).</summary>
     private Vector2 NextBound(Group g, Vector2 from, Vector2 goal, float step)
     {
         var dir = Geo.SafeNormalize(goal - from, g.Facing);
@@ -474,6 +475,7 @@ public sealed class SquadBrain
         if (dist <= step) return goal;
         Vector2 best = from + dir * step;
         float bestScore = float.MinValue;
+        var enemy = NearestContact(from);
         for (int i = -3; i <= 3; i++)
         {
             var d = Geo.Rotate(dir, i * 0.2f);
@@ -484,6 +486,7 @@ public sealed class SquadBrain
                 float cover = idx >= 0 ? _b.Grid.Cover[idx] : 0f;
                 float progress = dist - Vector2.Distance(p, goal);
                 float score = cover * 1.2f + progress / step * 0.6f - MathF.Abs(i) * 0.05f;
+                if (enemy is Vector2 en && Vector2.DistanceSquared(p, en) > 30f * 30f && _b.Map.SightBlocked(en, p)) score += R.DeadGroundBonus;
                 if (score > bestScore) { bestScore = score; best = p; }
             }
         }

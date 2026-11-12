@@ -15,6 +15,37 @@ public sealed class Rules
     public CompanyRules Company { get; set; } = new();
     public SupportRules Support { get; set; } = new();
     public BattalionRules Battalion { get; set; } = new();
+    public TerrainRules Terrain { get; set; } = new();
+}
+
+/// <summary>Hills, woods, hedgerows and crops. See docs/systems/terrain.md.</summary>
+public sealed class TerrainRules
+{
+    /// <summary>Height of the treetops: a line of sight passing above this clears the wood.</summary>
+    public float TreeHeight { get; set; } = 8f;
+    /// <summary>Metres of woodland a man can see through before the trees close the view.</summary>
+    public float WoodsSightDepth { get; set; } = 30f;
+    /// <summary>A trunk this close, on the side the fire comes from, counts as cover.</summary>
+    public float TreeCoverDistance { get; set; } = 1.5f;
+    public float WoodsProtection { get; set; } = 0.2f;
+    public float TreeProtection { get; set; } = 0.6f;
+    public float HedgeProtection { get; set; } = 0.4f;
+    /// <summary>A man this close to a hedgerow can see (and be seen) through it.</summary>
+    public float HedgePeerDistance { get; set; } = 2.5f;
+    public float HedgeSpeedFactor { get; set; } = 0.3f;
+    public float WoodsSpeedFactor { get; set; } = 0.8f;
+    public float CropsSpeedFactor { get; set; } = 0.9f;
+    /// <summary>Going uphill: speed is divided by 1 + this x the slope (so 3 makes a 1-in-5 climb 60% slower).</summary>
+    public float UphillSlowdown { get; set; } = 3f;
+    /// <summary>Chance-to-spot multipliers for a man in each kind of ground (1 = no help).</summary>
+    public float WoodsConcealment { get; set; } = 0.5f;
+    public float HedgeConcealment { get; set; } = 0.4f;
+    public float CropsProneConcealment { get; set; } = 0.2f;
+    public float CropsCrouchedConcealment { get; set; } = 0.5f;
+    /// <summary>How far a man lying flat in crops can see. To see further (and shoot) he has to get up on a knee.</summary>
+    public float CropsProneViewRange { get; set; } = 12f;
+    /// <summary>How much being higher than the target helps the commander's choice of a support position (per metre).</summary>
+    public float HighGroundBonus { get; set; } = 0.15f;
 }
 
 public sealed class SquadRules
@@ -22,6 +53,8 @@ public sealed class SquadRules
     public float ThinkInterval { get; set; } = 1.5f;
     public float TravelStep { get; set; } = 40f;
     public float BoundStep { get; set; } = 30f;
+    /// <summary>How much a squad prefers a bound that ends out of the enemy's sight (cover scores 0 to 1.2).</summary>
+    public float DeadGroundBonus { get; set; } = 0.5f;
     public float RushStep { get; set; } = 22f;
     public float TeamRadius { get; set; } = 9f;
     public float MaxBoundTime { get; set; } = 40f;

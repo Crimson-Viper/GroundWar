@@ -1,5 +1,5 @@
 // Farmhouse: made by tools/make_farm_map.py (edit that, not this). A walled farmhouse and barn held by Red,
-// tall hedgerows covering a way round the north, open wheat to the south.
+// on a low ridge; tall hedgerows and a wood covering a way round the north, standing wheat to the south.
 {
  "name": "Farmhouse",
  "width": 400,
@@ -254,8 +254,9 @@
     162.4,
     110.1
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -266,8 +267,9 @@
     176.1,
     109.9
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -278,8 +280,9 @@
     187.7,
     110.2
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -290,8 +293,9 @@
     199.4,
     110.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -302,8 +306,9 @@
     213.0,
     110.7
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -314,8 +319,9 @@
     224.3,
     109.5
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -326,8 +332,9 @@
     236.8,
     110.7
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -338,8 +345,9 @@
     250.8,
     108.9
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -350,8 +358,9 @@
     264.1,
     111.1
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -362,8 +371,9 @@
     275.8,
     110.3
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -374,8 +384,9 @@
     288.0,
     110.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -386,8 +397,9 @@
     149.2,
     96.3
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -398,8 +410,9 @@
     150.1,
     83.9
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -410,8 +423,9 @@
     149.3,
     71.9
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -422,8 +436,9 @@
     150.0,
     60.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -434,8 +449,9 @@
     108.9,
     52.7
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -446,8 +462,9 @@
     109.9,
     66.4
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -458,8 +475,9 @@
     110.0,
     91.6
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -470,8 +488,9 @@
     110.0,
     104.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -482,8 +501,9 @@
     199.9,
     32.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -494,8 +514,9 @@
     201.2,
     46.2
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -506,8 +527,9 @@
     200.8,
     58.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -518,8 +540,9 @@
     199.6,
     69.4
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -530,8 +553,9 @@
     199.5,
     81.5
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -542,8 +566,9 @@
     200.0,
     95.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -626,8 +651,9 @@
     61.0,
     62.8
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -638,8 +664,9 @@
     62.7,
     74.4
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -650,8 +677,9 @@
     61.0,
     87.1
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -662,8 +690,9 @@
     63.1,
     100.6
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -674,8 +703,9 @@
     61.1,
     111.9
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -686,8 +716,9 @@
     61.0,
     123.9
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -698,8 +729,9 @@
     62.1,
     149.9
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -710,8 +742,9 @@
     61.3,
     163.1
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -722,8 +755,9 @@
     61.1,
     175.3
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -734,8 +768,9 @@
     61.3,
     199.4
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -746,8 +781,9 @@
     63.1,
     213.2
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -758,8 +794,9 @@
     61.3,
     237.2
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -770,8 +807,9 @@
     62.0,
     250.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -782,8 +820,9 @@
     74,
     99.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -794,8 +833,9 @@
     74,
     141.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -806,8 +846,9 @@
     74,
     189.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -818,8 +859,9 @@
     74,
     233.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -1106,8 +1148,9 @@
     345.1,
     108.6
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -1118,8 +1161,9 @@
     345.3,
     120.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -1130,8 +1174,9 @@
     346.0,
     132.6
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -1142,8 +1187,9 @@
     343.8,
     145.6
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -1154,8 +1200,9 @@
     344.2,
     171.4
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -1166,8 +1213,9 @@
     345.2,
     183.6
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -1178,8 +1226,9 @@
     344.7,
     198.2
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   },
   {
    "a": [
@@ -1190,8 +1239,9 @@
     345.0,
     210.0
    ],
-   "thickness": 1.4,
-   "high": true
+   "thickness": 1.6,
+   "high": false,
+   "hedge": true
   }
  ],
  "craters": [
@@ -1328,5 +1378,214 @@
    ],
    "radius": 2.1
   }
+ ],
+ "ridges": [
+  {
+   "a": [
+    305,
+    40
+   ],
+   "b": [
+    305,
+    260
+   ],
+   "width": 95,
+   "height": 8
+  },
+  {
+   "a": [
+    170,
+    120
+   ],
+   "b": [
+    170,
+    205
+   ],
+   "width": 45,
+   "height": 2
+  },
+  {
+   "a": [
+    120,
+    88
+   ],
+   "b": [
+    270,
+    88
+   ],
+   "width": 30,
+   "height": -2.5
+  }
+ ],
+ "hills": [
+  {
+   "center": [
+    40,
+    150
+   ],
+   "radius": 70,
+   "height": 1.5
+  }
+ ],
+ "areas": [
+  {
+   "kind": "woods",
+   "points": [
+    [
+     236,
+     40
+    ],
+    [
+     300,
+     34
+    ],
+    [
+     318,
+     62
+    ],
+    [
+     296,
+     98
+    ],
+    [
+     244,
+     100
+    ],
+    [
+     228,
+     70
+    ]
+   ]
+  },
+  {
+   "kind": "woods",
+   "points": [
+    [
+     116,
+     12
+    ],
+    [
+     190,
+     10
+    ],
+    [
+     194,
+     52
+    ],
+    [
+     156,
+     56
+    ],
+    [
+     118,
+     38
+    ]
+   ]
+  },
+  {
+   "kind": "crops",
+   "points": [
+    [
+     82,
+     118
+    ],
+    [
+     166,
+     118
+    ],
+    [
+     166,
+     210
+    ],
+    [
+     82,
+     210
+    ]
+   ]
+  },
+  {
+   "kind": "crops",
+   "points": [
+    [
+     176,
+     118
+    ],
+    [
+     272,
+     118
+    ],
+    [
+     272,
+     210
+    ],
+    [
+     176,
+     210
+    ]
+   ]
+  },
+  {
+   "kind": "crops",
+   "points": [
+    [
+     96,
+     222
+    ],
+    [
+     224,
+     222
+    ],
+    [
+     224,
+     288
+    ],
+    [
+     96,
+     288
+    ]
+   ]
+  }
+ ],
+ "trees": [
+  [
+   332.5,
+   111.4
+  ],
+  [
+   334.5,
+   121.1
+  ],
+  [
+   333.0,
+   133.2
+  ],
+  [
+   343.5,
+   111.8
+  ],
+  [
+   344.2,
+   121.5
+  ],
+  [
+   343.5,
+   131.1
+  ],
+  [
+   262,
+   222
+  ],
+  [
+   300,
+   224
+  ],
+  [
+   86,
+   230
+  ],
+  [
+   244,
+   150
+  ]
  ]
 }

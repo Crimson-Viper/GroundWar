@@ -185,7 +185,7 @@ public partial class BattleView : Node3D
                 // Misses keep going a little past the target into the ground.
                 var dir = (to - from).Normalized();
                 to = from + dir * (from.DistanceTo(to) + 2f);
-                to.Y = 0.05f;
+                to.Y = Draw.GroundAt(to) + 0.05f;
             }
             float dist = from.DistanceTo(to);
             SpawnTracer(from, to, dist / 450f, shot.Hit, shot.MachineGun);

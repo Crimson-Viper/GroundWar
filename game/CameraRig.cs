@@ -150,12 +150,14 @@ public partial class CameraRig : Node3D
     private void ApplyTransform()
     {
         if (_pitchNode == null) return;
+        // The point the camera looks at rides on the ground, so zooming in on a hilltop doesn't end up inside it.
+        Position = new Vector3(Position.X, Draw.GroundAt(Position), Position.Z);
         Rotation = new Vector3(0, _yaw, 0);
         _pitchNode.Rotation = new Vector3(_pitch, 0, 0);
         Camera.Position = new Vector3(0, 0, _distance);
     }
 
-    /// <summary>Where the mouse points on the ground (y = 0), if anywhere.</summary>
+    /// <summary>Where the mouse points on the ground, if anywhere.</summary>
     public Vector3? GroundPointUnderMouse(Vector2 screenPos)
     {
         var origin = Camera.ProjectRayOrigin(screenPos);
@@ -163,6 +165,12 @@ public partial class CameraRig : Node3D
         if (Mathf.Abs(dir.Y) < 1e-4f) return null;
         float t = -origin.Y / dir.Y;
         if (t < 0) return null;
+        // On hilly ground: step the hit point onto the surface (a few rounds is plenty for gentle slopes).
+        for (int i = 0; i < 6 && Draw.Ground != null; i++)
+        {
+            var p = origin + dir * t;
+            t = Mathf.Max(0f, (Draw.GroundAt(p) - origin.Y) / dir.Y);
+        }
         return origin + dir * t;
     }
 }

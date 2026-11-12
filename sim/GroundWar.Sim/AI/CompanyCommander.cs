@@ -766,7 +766,7 @@ public sealed class CompanyCommander
         var ph = new PlanPhase { Kind = PhaseKind.Hold, Name = "Defend" };
         for (int i = 0; i < squads.Count; i++)
         {
-            var at = Spot(o.Objective + perp * Offset(i, squads.Count, 40f));
+            var at = DefenceSpot(o.Objective + perp * Offset(i, squads.Count, 40f), facing);
             Task(ph, squads[i], Make(OrderKind.Hold, at, 15f));
             plan.Arrows.Add((squads[i].Centroid, at, 0));
         }
@@ -858,7 +858,7 @@ public sealed class CompanyCommander
         string sideName = side > 0 ? "right" : "left";
         var plan = new CompanyPlan { Kind = side > 0 ? PlanKind.PinAndFlankRight : PlanKind.PinAndFlankLeft, Support = support };
         var supportAt = SupportSpot(o, dir, perp);
-        var assembly = o.Objective + perp * side * R.FlankWidth - dir * 40f;
+        var assembly = AssemblySpot(o, dir, perp, side);
 
         var move = new PlanPhase { Kind = PhaseKind.MoveUp, Name = $"Move up: support position and {sideName} flank", TimeLimit = 360f };
         var fire = new PlanPhase { Kind = PhaseKind.EstablishFire, Name = "Covering fire", TimeLimit = 150f };
@@ -897,19 +897,66 @@ public sealed class CompanyCommander
     private static string JoinNames(List<Group> groups) => groups.Count == 1 ? groups[0].Name
         : string.Join(", ", groups.Take(groups.Count - 1).Select(g => g.Name)) + " and " + groups[^1].Name;
 
-    /// <summary>Somewhere about <see cref="CompanyRules.SupportDistance"/> short of the objective, with cover and a clear view of it.</summary>
+    /// <summary>Somewhere about <see cref="CompanyRules.SupportDistance"/> short of the objective, with cover and a
+    /// clear view of it. Higher ground is better: it sees over the men going in.</summary>
     private Vector2 SupportSpot(Order o, Vector2 dir, Vector2 perp)
     {
         var baseAt = o.Objective - dir * R.SupportDistance;
         var edge = o.Objective - dir * o.Radius * 0.6f;
+        float objHeight = _b.Map.Terrain.HeightAt(o.Objective);
         Vector2 best = Spot(baseAt);
         float bestScore = float.MinValue;
-        for (int a = -2; a <= 2; a++)
-        for (int b = -1; b <= 1; b++)
+        for (int a = -3; a <= 3; a++)
+        for (int b = -2; b <= 1; b++)
         {
             var p = Spot(baseAt + perp * (a * 15f) + dir * (b * 15f));
             int idx = _b.Grid.IndexOf(p);
-            float score = (idx >= 0 ? _b.Grid.Cover[idx] : 0f) + (_b.Map.SightBlocked(p, edge) ? 0f : 1.5f) - MathF.Abs(a) * 0.05f;
+            float score = (idx >= 0 ? _b.Grid.Cover[idx] : 0f) + (_b.Map.SightBlocked(p, edge) ? 0f : 1.5f) - MathF.Abs(a) * 0.05f
+                          + Math.Clamp((_b.Map.Terrain.HeightAt(p) - objHeight) * _b.Rules.Terrain.HighGroundBonus, -0.6f, 0.6f);
+            if (score > bestScore) { bestScore = score; best = p; }
+        }
+        return best;
+    }
+
+    /// <summary>Where the flankers form up before going in: out to the side of the objective, and if the ground
+    /// allows it somewhere the defenders can't see (behind a crest, a wood or a hedgerow), with cover.</summary>
+    private Vector2 AssemblySpot(Order o, Vector2 dir, Vector2 perp, int side)
+    {
+        Vector2 best = Spot(o.Objective + perp * side * R.FlankWidth - dir * 40f);
+        float bestScore = float.MinValue;
+        foreach (float wide in new[] { 1f, 1.4f, 1.8f })
+        foreach (float back in new[] { 40f, 15f, 70f })
+        {
+            var p = Spot(o.Objective + perp * side * R.FlankWidth * wide - dir * back);
+            if (Vector2.Distance(p, o.Objective) < o.Radius + 25f) continue;
+            int idx = _b.Grid.IndexOf(p);
+            float score = (_b.Map.SightBlocked(o.Objective, p) ? 1.5f : 0f) + (idx >= 0 ? _b.Grid.Cover[idx] : 0f)
+                          - (wide - 1f) * 0.6f - MathF.Abs(back - 40f) * 0.004f;
+            if (score > bestScore) { bestScore = score; best = p; }
+        }
+        return best;
+    }
+
+    /// <summary>A squad's place in a defence: near its slot in the line, but shifted to the best ground within
+    /// a few metres: cover to fight from, a view of the way the enemy will come, and height.</summary>
+    private Vector2 DefenceSpot(Vector2 slot, Vector2 facing)
+    {
+        var perp = new Vector2(-facing.Y, facing.X);
+        Vector2 best = Spot(slot);
+        float bestScore = float.MinValue;
+        float h0 = _b.Map.Terrain.HeightAt(slot);
+        for (int a = -1; a <= 1; a++)
+        for (int b = -1; b <= 1; b++)
+        {
+            var p = Spot(slot + perp * (a * 10f) + facing * (b * 12f));
+            int idx = _b.Grid.IndexOf(p);
+            if (idx < 0) continue;
+            int seen = 0;
+            foreach (float ang in new[] { -0.5f, 0f, 0.5f })
+                if (!_b.Map.SightBlocked(p, p + Geo.Rotate(facing, ang) * 120f)) seen++;
+            float score = _b.Grid.Cover[idx] + seen * 0.3f
+                          + Math.Clamp((_b.Map.Terrain.HeightAt(p) - h0) * _b.Rules.Terrain.HighGroundBonus, -0.4f, 0.4f)
+                          - (MathF.Abs(a) + MathF.Abs(b)) * 0.05f;
             if (score > bestScore) { bestScore = score; best = p; }
         }
         return best;

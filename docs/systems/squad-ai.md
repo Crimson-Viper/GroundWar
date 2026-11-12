@@ -55,6 +55,11 @@ If the flank's rifle team is pinned for 20 s (`squad.pinnedAbortTime`), the flan
 ### Sharing what they see
 Squads within 80 m of each other (`squad.shareRadius`) share sightings each time they think. See [Fog of war](fog-of-war.md).
 
+### Using the ground
+Each bound ends at the best spot about one step ahead (`NextBound`): cover counts most, then progress. Since the
+ground was added, a spot the nearest known enemy **can't see** (behind a crest, a wood, a hedgerow) gets a bonus
+(`squad.deadGroundBonus`), so squads work forward through dead ground when there is some. See [The ground](terrain.md).
+
 ## Tuning
 `data/rules.json` → `squad`: every distance and time above (travel step, bound step, rush step, plan range, assault
 range, flank offsets, fall-back strength, share radius, etc.), each with a comment.

@@ -81,7 +81,7 @@ public sealed partial class Battle
         if (align < 0.85f) return; // turning on the spot
         float drive = DriveFactor(t); // the driver, or the bow gunner in his seat
         if (drive <= 0f) return;
-        float speed = v.Speed * drive * (Map.InCrater(t.Position) ? 0.6f : 1f);
+        float speed = v.Speed * drive * (Map.InCrater(t.Position) ? 0.6f : 1f) * Map.SpeedFactor(t.Position, t.Facing);
         float step = MathF.Min(speed * Dt, dist);
         t.Position += t.Facing * step;
     }
